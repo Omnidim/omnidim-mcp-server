@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-22
+
+### Added
+
+- Setup help on direct run. Running `npx -y @omnidim-ai/mcp-server` from a terminal now prints install instructions for Claude Code, Claude Desktop, Cursor, and Windsurf, instead of waiting silently for input.
+- Branded startup banner that identifies the server as OmniDimension Voice AI along with the version and tool count.
+
 ## [0.1.1] - 2026-05-22
 
 ### Added
