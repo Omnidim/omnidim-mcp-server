@@ -1,0 +1,64 @@
+{
+  "name": "@omnidim-ai/mcp-server",
+  "version": "0.1.0",
+  "description": "Official MCP server for OmniDimension. Drive voice agents, dispatch calls, and manage knowledge bases from Claude, Cursor, Windsurf, and any MCP client.",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "omnidim-mcp-server": "build/index.js"
+  },
+  "files": [
+    "build",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node build/index.js",
+    "build": "tsc && shx chmod 755 build/index.js",
+    "typecheck": "tsc --noEmit",
+    "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
+    "regen": "node scripts/regen.mjs && npm run build",
+    "prestart": "npm run build",
+    "preinspect": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "omnidim",
+    "omnidimension",
+    "voice-ai",
+    "voice-agent",
+    "claude",
+    "cursor",
+    "anthropic"
+  ],
+  "homepage": "https://omnidim.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Omnidim/omnidim-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Omnidim/omnidim-mcp-server/issues"
+  },
+  "author": "OmniDimension <support@omnidim.io>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.10.0",
+    "axios": "^1.9.0",
+    "zod": "^3.24.3",
+    "json-schema-to-zod": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "typescript": "^5.8.3",
+    "shx": "^0.4.0"
+  }
+}
