@@ -17,11 +17,14 @@
     "start": "node build/index.js",
     "build": "tsc && shx chmod 755 build/index.js",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
     "regen": "node scripts/regen.mjs && npm run build",
     "prestart": "npm run build",
     "preinspect": "npm run build",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
@@ -53,12 +56,14 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.0",
     "axios": "^1.9.0",
-    "zod": "^3.24.3",
-    "json-schema-to-zod": "^2.6.1"
+    "json-schema-to-zod": "^2.6.1",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@types/node": "^22.15.2",
+    "@vitest/coverage-v8": "^4.1.7",
+    "shx": "^0.4.0",
     "typescript": "^5.8.3",
-    "shx": "^0.4.0"
+    "vitest": "^4.1.7"
   }
 }
