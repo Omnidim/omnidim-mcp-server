@@ -168,6 +168,35 @@ src = src.replace(
   `${bannerAnchor}\nimport { trimLargeResponse } from "./helpers.js";\n`
 );
 
+// Add an instructions block to the MCP initialize response. The text
+// orients the LLM client to what this server does before any tool call.
+const INSTRUCTIONS_BLOCK = `const SERVER_INSTRUCTIONS = \`OmniDimension is a voice AI platform. This server exposes tools for managing voice agents and call infrastructure.
+
+Surfaces:
+- Agents: create, list, get, update, delete voice agents (transcriber, LLM, voice, post-call actions, transfer rules, dynamic-variable templating).
+- Calls: dispatchCall for a single outbound call, listCallLogs and getCallLog for history and transcripts.
+- Bulk calls: campaign management with scheduling, retry, and live status.
+- Knowledge base: upload PDFs and attach to agents.
+- Phone numbers: list, attach to agents, import from Twilio, Exotel, or SIP.
+- Providers: discover available LLMs, voices, STT, and TTS engines.
+- Simulations: run scripted test scenarios against an agent.
+- Reseller: child organization management (requires partner-level credentials; non-reseller keys get 403).
+
+Conventions:
+- List endpoints accept pageno (>= 1) and pagesize (1-150). Use name to filter.
+- For details on one item, call get<Resource>(id) after listing.
+- Configure OMNIDIM_API_KEY in your MCP client config to authenticate.
+- API reference: https://docs.omnidim.io\`;
+
+`;
+src = src.replace(
+  /const server = new Server\(\s*\{ name: SERVER_NAME, version: SERVER_VERSION \},\s*\{ capabilities: \{ tools: \{\} \} \}\s*\);/,
+  `${INSTRUCTIONS_BLOCK}const server = new Server(
+    { name: SERVER_NAME, version: SERVER_VERSION },
+    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS }
+);`
+);
+
 // Route JSON responses through the trimmer.
 src = src.replace(
   /try \{\s*\n\s*responseText = JSON\.stringify\(response\.data, null, 2\);\s*\n\s*\} catch \(e\) \{/,

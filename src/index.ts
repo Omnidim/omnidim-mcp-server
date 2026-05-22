@@ -42,7 +42,7 @@ interface McpToolDefinition {
  * Server configuration
  */
 export const SERVER_NAME = "OmniDimension";
-export const SERVER_VERSION = "0.1.0";
+export const SERVER_VERSION = "0.1.1";
 // Base URL for the API, can be set via environment variable or determined from OpenAPI spec
 export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
 if (process.env.API_BASE_URL) {
@@ -52,9 +52,27 @@ if (process.env.API_BASE_URL) {
 /**
  * MCP Server instance
  */
+const SERVER_INSTRUCTIONS = `OmniDimension is a voice AI platform. This server exposes tools for managing voice agents and call infrastructure.
+
+Surfaces:
+- Agents: create, list, get, update, delete voice agents (transcriber, LLM, voice, post-call actions, transfer rules, dynamic-variable templating).
+- Calls: dispatchCall for a single outbound call, listCallLogs and getCallLog for history and transcripts.
+- Bulk calls: campaign management with scheduling, retry, and live status.
+- Knowledge base: upload PDFs and attach to agents.
+- Phone numbers: list, attach to agents, import from Twilio, Exotel, or SIP.
+- Providers: discover available LLMs, voices, STT, and TTS engines.
+- Simulations: run scripted test scenarios against an agent.
+- Reseller: child organization management (requires partner-level credentials; non-reseller keys get 403).
+
+Conventions:
+- List endpoints accept pageno (>= 1) and pagesize (1-150). Use name to filter.
+- For details on one item, call get<Resource>(id) after listing.
+- Configure OMNIDIM_API_KEY in your MCP client config to authenticate.
+- API reference: https://docs.omnidim.io`;
+
 const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { tools: {} } }
+    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS }
 );
 
 /**
