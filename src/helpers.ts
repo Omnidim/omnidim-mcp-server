@@ -1,3 +1,43 @@
+export const PACKAGE_NAME = "@omnidim-ai/mcp-server";
+
+const bold = (s: string): string => `\x1b[1m${s}\x1b[0m`;
+const italic = (s: string): string => `\x1b[3m${s}\x1b[0m`;
+const dim = (s: string): string => `\x1b[2m${s}\x1b[0m`;
+
+function brand(): string {
+    return `${bold("OmniDimension")} ${dim("·")} ${italic("Voice AI")} MCP Server`;
+}
+
+export function isInteractive(): boolean {
+    return Boolean(process.stdin.isTTY && process.stdout.isTTY);
+}
+
+export function printInteractiveHelp(version: string): void {
+    const lines = [
+        "",
+        `  ${brand()}   ${dim(`v${version}`)}`,
+        "",
+        `  ${bold("Claude Code")}`,
+        `    claude mcp add omnidim -e OMNIDIM_API_KEY=... -- npx -y ${PACKAGE_NAME}`,
+        "",
+        `  ${bold("Claude Desktop · Cursor · Windsurf")}`,
+        '      "omnidim": {',
+        '        "command": "npx",',
+        `        "args": ["-y", "${PACKAGE_NAME}"],`,
+        '        "env": { "OMNIDIM_API_KEY": "your_key" }',
+        "      }",
+        "",
+        `  ${dim("API key")}   https://omnidim.io/api-management`,
+        `  ${dim("Docs")}      https://docs.omnidim.io`,
+        "",
+    ];
+    process.stdout.write(lines.join("\n") + "\n");
+}
+
+export function startupBanner(version: string, toolCount: number): string {
+    return `\n  ${brand()}   ${dim(`v${version} · ${toolCount} tools`)}\n`;
+}
+
 export const MAX_LIST_CHARS = 25000;
 
 export const LIST_KEYS = [

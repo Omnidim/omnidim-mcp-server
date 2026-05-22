@@ -165,7 +165,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { trimLargeResponse } from "./helpers.js";\n`
+  `${bannerAnchor}\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\n`
 );
 
 // Add an instructions block to the MCP initialize response. The text
@@ -230,6 +230,24 @@ src = src.replace(
         };
     }
 `
+);
+
+// Insert a TTY-detection branch at the top of main() so the binary prints
+// install help and exits when a human runs it directly.
+src = src.replace(
+  /(async function main\(\) \{\s*\n)\/\/ Set up stdio transport\s*\n(\s*try \{)/,
+  `$1  if (isInteractive()) {
+    printInteractiveHelp(SERVER_VERSION);
+    process.exit(0);
+  }
+$2`
+);
+
+// Replace the bare console.error startup line with a branded banner.
+// Line-anchored to avoid the nested-backtick parse problem.
+src = src.replace(
+  /^.*console\.error\(`\$\{SERVER_NAME\} MCP Server.*$/m,
+  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));`
 );
 
 // Gate the per-request log behind OMNIDIM_DEBUG.

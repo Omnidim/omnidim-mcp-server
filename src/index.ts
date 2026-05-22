@@ -2,7 +2,7 @@
 /**
  * OmniDimension MCP server.
  */
-import { trimLargeResponse } from "./helpers.js";
+import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
 
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -42,7 +42,7 @@ interface McpToolDefinition {
  * Server configuration
  */
 export const SERVER_NAME = "OmniDimension";
-export const SERVER_VERSION = "0.1.1";
+export const SERVER_VERSION = "0.1.2";
 // Base URL for the API, can be set via environment variable or determined from OpenAPI spec
 export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
 if (process.env.API_BASE_URL) {
@@ -1063,11 +1063,14 @@ async function executeApiTool(
  * Main function to start the server
  */
 async function main() {
-// Set up stdio transport
+  if (isInteractive()) {
+    printInteractiveHelp(SERVER_VERSION);
+    process.exit(0);
+  }
   try {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error(`${SERVER_NAME} MCP Server (v${SERVER_VERSION}) running on stdio${API_BASE_URL ? `, proxying API at ${API_BASE_URL}` : ''}`);
+    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));
   } catch (error) {
     console.error("Error during server startup:", error);
     process.exit(1);
