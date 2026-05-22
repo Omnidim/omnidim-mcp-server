@@ -1,0 +1,308 @@
+#!/usr/bin/env node
+/**
+ * Regenerate src/index.ts from the OmniDimension OpenAPI spec.
+ *
+ * Generates into a temp directory so the generator doesn't trample
+ * customized files (package.json, tsconfig, .gitignore, LICENSE, etc.),
+ * then copies src/index.ts back and re-applies the defensive patches
+ * documented inline below.
+ *
+ * Usage:
+ *   npm run regen
+ *   SPEC=path/to/omnidim.yaml node scripts/regen.mjs
+ */
+import { spawnSync } from 'node:child_process';
+import { readFileSync, writeFileSync, existsSync, mkdtempSync, copyFileSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { resolve, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(__dirname, '..');
+const DEFAULT_SPEC = resolve(ROOT, '../omnidim-docs/openapi/omnidim.yaml');
+const SPEC = process.env.SPEC ? resolve(process.env.SPEC) : DEFAULT_SPEC;
+
+if (!existsSync(SPEC)) {
+  console.error(`spec not found: ${SPEC}`);
+  process.exit(1);
+}
+
+const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
+const TMP = mkdtempSync(join(tmpdir(), 'omnidim-mcp-regen-'));
+
+console.log(`regenerating from ${SPEC}`);
+console.log(`tmp output: ${TMP}`);
+
+const result = spawnSync(
+  'npx',
+  [
+    '-y',
+    'openapi-mcp-generator@latest',
+    '--input', SPEC,
+    '--output', TMP,
+    '--server-name', pkg.name,
+    '--server-version', pkg.version,
+    '--base-url', 'https://backend.omnidim.io/api/v1',
+    '--transport', 'stdio',
+    '--force',
+  ],
+  { stdio: 'inherit' }
+);
+if (result.status !== 0) {
+  rmSync(TMP, { recursive: true, force: true });
+  process.exit(result.status ?? 1);
+}
+
+const indexPath = resolve(ROOT, 'src/index.ts');
+copyFileSync(join(TMP, 'src/index.ts'), indexPath);
+rmSync(TMP, { recursive: true, force: true });
+
+let src = readFileSync(indexPath, 'utf8');
+
+// Replace the generator's banner comment. Uses [\s\S]*? rather than
+// [^*]* because the banner is multi-line and intermediate ` * ` lines
+// would otherwise break the negated-character-class match.
+src = src.replace(
+  /\/\*\*\s*\n \* MCP Server generated from OpenAPI spec[\s\S]*?\*\//,
+  '/**\n * OmniDimension MCP server.\n */'
+);
+
+src = src.replace(
+  /export const SERVER_NAME = ".*?";/,
+  'export const SERVER_NAME = "OmniDimension";'
+);
+
+// Drop the dotenv autoload. MCP convention is for the client to pass
+// env vars in its config block; loading .env from the caller's CWD
+// vacuums in credentials from unrelated projects.
+src = src.replace(
+  /\/\/ Load environment variables from \.env file\nimport dotenv from 'dotenv';\ndotenv\.config\(\);\n\n/,
+  ''
+);
+
+// Silence the startup log unless API_BASE_URL is explicitly overridden.
+src = src.replace(
+  /export const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
+  `export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
+if (process.env.API_BASE_URL) {
+    console.error(\`API_BASE_URL override: \${API_BASE_URL}\`);
+}`
+);
+
+// Add User-Agent + 60s timeout to every backend request.
+src = src.replace(
+  /\/\/ Prepare the axios request configuration\n\s+const config: AxiosRequestConfig = \{\n\s+method: definition\.method\.toUpperCase\(\),\s*\n\s+url: requestUrl,\s*\n\s+params: queryParams,\s*\n\s+headers: headers,\n\s+\.\.\.\(requestBodyData !== undefined && \{ data: requestBodyData \}\),\n\s+\};/,
+  `// Prepare the axios request configuration
+    headers['user-agent'] = \`\${SERVER_NAME}-mcp-server/\${SERVER_VERSION}\`;
+    const config: AxiosRequestConfig = {
+      method: definition.method.toUpperCase(),
+      url: requestUrl,
+      params: queryParams,
+      headers: headers,
+      timeout: 60_000,
+      ...(requestBodyData !== undefined && { data: requestBodyData }),
+    };`
+);
+
+// Replace eval() with a scoped new Function + per-tool cache. The schema
+// string is compile-time generated from inputSchema literals (never user
+// input), but shipping eval to npm is a footgun and an auditor flag.
+src = src.replace(
+  /function getZodSchemaFromJsonSchema\(jsonSchema: any, toolName: string\): z\.ZodTypeAny \{[\s\S]*?\n\}\n/,
+  `const zodSchemaCache: Map<string, z.ZodTypeAny> = new Map();
+function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodTypeAny {
+    const cached = zodSchemaCache.get(toolName);
+    if (cached) return cached;
+    if (typeof jsonSchema !== 'object' || jsonSchema === null) {
+        const fallback = z.object({}).passthrough();
+        zodSchemaCache.set(toolName, fallback);
+        return fallback;
+    }
+    try {
+        const body = jsonSchemaToZod(jsonSchema);
+        const factory = new Function('z', \`return (\${body});\`) as (z: any) => z.ZodTypeAny;
+        const schema = factory(z);
+        if (typeof (schema as any)?.parse !== 'function') {
+            throw new Error('Schema factory did not produce a valid Zod schema.');
+        }
+        zodSchemaCache.set(toolName, schema);
+        return schema;
+    } catch (err: any) {
+        console.error(\`Failed to generate Zod schema for '\${toolName}':\`, err);
+        const fallback = z.object({}).passthrough();
+        zodSchemaCache.set(toolName, fallback);
+        return fallback;
+    }
+}
+`
+);
+
+// Read bearer token from OMNIDIM_API_KEY (matches the Python SDK
+// convention), falling back to the generator's auto-named env var.
+src = src.replaceAll(
+  /return !!process\.env\[`BEARER_TOKEN_\$\{schemeName\.replace\(\/\[\^a-zA-Z0-9\]\/g, '_'\)\.toUpperCase\(\)\}`\];/g,
+  `return !!(process.env.OMNIDIM_API_KEY || process.env[\`BEARER_TOKEN_\${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}\`]);`
+);
+src = src.replaceAll(
+  /const token = process\.env\[`BEARER_TOKEN_\$\{schemeName\.replace\(\/\[\^a-zA-Z0-9\]\/g, '_'\)\.toUpperCase\(\)\}`\];/g,
+  `const token = process.env.OMNIDIM_API_KEY || process.env[\`BEARER_TOKEN_\${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}\`];`
+);
+
+// axios v1 typed response.headers as a union; the generator's call to
+// `.toLowerCase()` on it fails strict TS.
+src = src.replace(
+  "const contentType = response.headers['content-type']?.toLowerCase() || '';",
+  "const contentType = String(response.headers['content-type'] ?? '').toLowerCase();"
+);
+
+// Inject the trim helper directly after the new banner. Doing this with
+// the banner as the anchor means a future change to the banner only
+// requires updating one regex in this file.
+const TRIM_HELPER = `
+// Trim list responses to fit a model context budget. Single-resource
+// responses are never trimmed; an oversized payload from getAgent etc.
+// is handled by the MCP client (spill-to-file + chunked read).
+const MAX_LIST_CHARS = 25000;
+const LIST_KEYS = [
+  'bots', 'call_log_data', 'records', 'files', 'phone_numbers',
+  'llms', 'voices', 'stt', 'tts', 'services', 'organizations',
+  'data', 'results', 'items',
+];
+
+// Reseller list endpoints return child orgs' plaintext api_key values.
+// Strip them before they reach the model.
+function redactSensitive(value: any): any {
+  if (Array.isArray(value)) return value.map(redactSensitive);
+  if (value && typeof value === 'object') {
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[k] = k === 'api_key' ? '[redacted]' : redactSensitive(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+function findList(data: any): { arr: any[]; key: string | null } | null {
+  if (Array.isArray(data)) return { arr: data, key: null };
+  if (!data || typeof data !== 'object') return null;
+  for (const k of LIST_KEYS) {
+    if (Array.isArray(data[k])) return { arr: data[k], key: k };
+  }
+  return null;
+}
+
+function trimLargeResponse(data: any): { text: string; note?: string } {
+  const redacted = redactSensitive(data);
+  const full = JSON.stringify(redacted, null, 2);
+  const list = findList(redacted);
+
+  if (!list || full.length <= MAX_LIST_CHARS) return { text: full };
+
+  const { arr, key } = list;
+  let kept = arr.length;
+  while (kept > 1) {
+    const trimmed = arr.slice(0, kept);
+    const candidate = key
+      ? JSON.stringify({ ...redacted, [key]: trimmed }, null, 2)
+      : JSON.stringify(trimmed, null, 2);
+    if (candidate.length <= MAX_LIST_CHARS) {
+      return {
+        text: candidate,
+        note: \`[Showing \${kept} of \${arr.length} items. Lower pagesize, filter by name, or fetch a specific item by ID for full detail.]\`,
+      };
+    }
+    kept = Math.max(1, Math.floor(kept * 0.6));
+  }
+
+  return {
+    text: full.slice(0, MAX_LIST_CHARS),
+    note: \`[Response truncated. Full size: \${full.length} chars.]\`,
+  };
+}
+`;
+const bannerAnchor = '/**\n * OmniDimension MCP server.\n */';
+if (!src.includes(bannerAnchor)) {
+  console.error(`banner anchor missing — generator output shape changed; investigate before re-running`);
+  process.exit(2);
+}
+src = src.replace(bannerAnchor, bannerAnchor + '\n' + TRIM_HELPER);
+
+// Route JSON responses through the trimmer.
+src = src.replace(
+  /try \{\s*\n\s*responseText = JSON\.stringify\(response\.data, null, 2\);\s*\n\s*\} catch \(e\) \{/,
+  `try {
+             const trimmed = trimLargeResponse(response.data);
+             responseText = trimmed.text;
+             if (trimmed.note) responseText += \`\\n\\n\${trimmed.note}\`;
+         } catch (e) {`
+);
+
+// Make pagination params strict (integer ≥1) so invalid values are
+// rejected by Zod before reaching the backend (which 500s on them).
+src = src.replaceAll('"pageno":{"type":"number"', '"pageno":{"type":"integer","minimum":1');
+src = src.replaceAll('"pagesize":{"type":"number"', '"pagesize":{"type":"integer","minimum":1');
+src = src.replaceAll('"page":{"type":"number","default":1', '"page":{"type":"integer","minimum":1,"default":1');
+src = src.replaceAll('"page_size":{"type":"number","default":30', '"page_size":{"type":"integer","minimum":1,"default":30');
+
+// Replace the "no credentials" warning-and-continue branch with an
+// early return so the model sees a helpful instruction, not a 401.
+src = src.replace(
+  /\/\/ Log warning if security is required but not available\s*\n\s+else if \(definition\.securityRequirements\?\.length > 0\) \{[\s\S]*?console\.warn\(`Tool '\$\{toolName\}' requires security[^}]*?\}\s*\n/,
+  `else if (definition.securityRequirements?.length > 0) {
+        return {
+            content: [{
+                type: 'text',
+                text: \`OMNIDIM_API_KEY is not set. Configure it in your MCP client's "env" block, then restart the client. Get a key at https://omnidim.io/settings/api-keys.\`,
+            }],
+        };
+    }
+`
+);
+
+// Gate the per-request log behind OMNIDIM_DEBUG.
+src = src.replace(
+  /\/\/ Log request info to stderr \(doesn't affect MCP output\)\s*\n\s+console\.error\(`Executing tool "\$\{toolName\}": \$\{config\.method\} \$\{config\.url\}`\);/,
+  `if (process.env.OMNIDIM_DEBUG) {
+        console.error(\`Executing tool "\${toolName}": \${config.method} \${config.url}\`);
+    }`
+);
+
+// Gate the "Applied <auth>" stderr lines behind OMNIDIM_DEBUG.
+for (const phrase of ['Applied API key', 'Applied Bearer token', 'Applied Basic authentication', 'Applied OAuth2 token', 'Applied OpenID Connect token']) {
+  src = src.replaceAll(
+    `console.error(\`${phrase}`,
+    `if (process.env.OMNIDIM_DEBUG) console.error(\`${phrase}`
+  );
+}
+
+// Surface HTML responses (Odoo's frontend 404 page on bad path converters)
+// as a clean error instead of dumping the HTML body at the model.
+src = src.replace(
+  /\/\/ Handle string responses\s*\n\s+else if \(typeof response\.data === 'string'\) \{\s*\n\s+responseText = response\.data;\s*\n\s+\}/,
+  `// The backend returns an HTML 404 page (not JSON) when a path
+    // converter rejects an input (e.g. GET /agents/abc).
+    else if (contentType.includes('text/html')) {
+         const title = typeof response.data === 'string'
+             ? (response.data.match(/<title>([^<]*)<\\/title>/i)?.[1]?.trim() ?? 'HTML response')
+             : 'HTML response';
+         responseText = \`Upstream returned HTML instead of JSON (HTTP \${response.status}: "\${title}"). The path or method is likely wrong.\`;
+    }
+    else if (typeof response.data === 'string') {
+         responseText = response.data;
+    }`
+);
+
+writeFileSync(indexPath, src);
+
+const specHash = createHash('sha256').update(readFileSync(SPEC)).digest('hex');
+const endpoints = (src.match(/^  \["/gm) ?? []).length;
+const specYml = `openapi_spec_url: https://docs.omnidim.io/openapi.yaml
+openapi_spec_hash: ${specHash}
+configured_endpoints: ${endpoints}
+generator: openapi-mcp-generator
+`;
+writeFileSync(resolve(ROOT, '.spec.yml'), specYml);
+
+console.log(`done. ${endpoints} endpoints. spec hash ${specHash.slice(0, 12)}`);
