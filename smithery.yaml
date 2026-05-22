@@ -1,0 +1,16 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - omnidimApiKey
+    properties:
+      omnidimApiKey:
+        type: string
+        description: Your OmniDimension API key. Get one at https://omnidim.io/settings/api-keys
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', '@omnidim-ai/mcp-server'],
+      env: { OMNIDIM_API_KEY: config.omnidimApiKey },
+    })
