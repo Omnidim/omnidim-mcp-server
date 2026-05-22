@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-05-20
+## [0.1.1] - 2026-05-22
+
+### Added
+
+- Server identifies itself to MCP clients via an `instructions` field on initialize. The text orients the LLM to which tool surfaces exist, the conventions for pagination, and the authentication setup, so tool selection on the first request is better-informed.
+
+### Changed
+
+- Extracted response trim and redaction helpers to `src/helpers.ts` so they can be unit-tested independently of the generated tool table. `scripts/regen.mjs` now imports them instead of inlining.
+
+### Build
+
+- Added vitest with 18 unit tests covering `redactSensitive`, `findList`, and `trimLargeResponse`. CI gates the publish on tests passing.
+- Forced GitHub Actions to run on Node.js 24 to silence the Node.js 20 deprecation warning.
+
+## [0.1.0] - 2026-05-22
 
 ### Added
 
