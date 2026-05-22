@@ -35,8 +35,24 @@ When in doubt, grep the dashboard repo (`omni-dashboard-new/app`) or the docs re
 
 - `main` is the release branch. Every commit on `main` must build and pass tests in CI.
 - Production publishes on a `v*` git tag (e.g. `v0.1.0`). The CI workflow runs `npm publish --provenance --access public`.
-- Staging publishes (when configured) go to a `next` dist-tag for pre-release validation.
 - Never publish from a laptop. Tag → CI → npm.
+
+### npm token requirements
+
+The `NPM_TOKEN` secret used by CI **must be a Granular Access Token**, not a Classic Automation token. Reason: since 2024, npm requires 2FA OTP on publish even when authenticating with an Automation token. Granular tokens have a per-token "bypass 2FA on publish" setting that an Automation token lacks. Symptom of using the wrong token type: CI publish fails with `npm error code EOTP — This operation requires a one-time password`.
+
+Generate the token at `https://www.npmjs.com/settings/<username>/tokens` → Generate New Token → Granular Access Token → scope it to the `@omnidim-ai` org with Read and Write permissions.
+
+## Changelog discipline
+
+Every release gets an entry in `CHANGELOG.md` before its tag is pushed.
+
+- Format: Keep a Changelog. Sections are `### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Security` as needed.
+- The `[Unreleased]` section collects entries as work lands on `main`. When tagging `vX.Y.Z`, rename that section to `[X.Y.Z] - YYYY-MM-DD` and start a fresh `[Unreleased]` above it.
+- Entries describe user-visible behaviour, not commit-by-commit history. Group related commits into a single bullet.
+- Breaking changes go under `### Changed` with a **BREAKING** prefix and a migration note.
+- Security fixes belong in `### Security` with a CVE reference if one exists.
+- If a tag goes out without an entry, that's a release process bug — fix it retroactively in the same release.
 
 ## Commits
 
