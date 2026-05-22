@@ -49,10 +49,11 @@ Every release gets an entry in `CHANGELOG.md` before its tag is pushed.
 
 - Format: Keep a Changelog. Sections are `### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Security` as needed.
 - The `[Unreleased]` section collects entries as work lands on `main`. When tagging `vX.Y.Z`, rename that section to `[X.Y.Z] - YYYY-MM-DD` and start a fresh `[Unreleased]` above it.
+- **Diff against what's on npm, not against the last local checkpoint.** The entry describes what changes for a customer upgrading from the previous published version to this one. WIP iterations between tags (re-tries, design changes that never shipped, debug logs that were added and removed) do not appear in the changelog.
 - Entries describe user-visible behaviour, not commit-by-commit history. Group related commits into a single bullet.
 - Breaking changes go under `### Changed` with a **BREAKING** prefix and a migration note.
 - Security fixes belong in `### Security` with a CVE reference if one exists.
-- If a tag goes out without an entry, that's a release process bug — fix it retroactively in the same release.
+- If a tag goes out without a clean entry, that's a release process bug — edit the GitHub Release notes after the fact and fix the local CHANGELOG.md for future tags.
 
 ## Commits
 
