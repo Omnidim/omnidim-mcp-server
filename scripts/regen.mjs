@@ -254,7 +254,7 @@ src = src.replace(
         return {
             content: [{
                 type: 'text',
-                text: \`OMNIDIM_API_KEY is not set. Configure it in your MCP client's "env" block, then restart the client. Get a key at https://omnidim.io/settings/api-keys.\`,
+                text: \`OMNIDIM_API_KEY is not set. Configure it in your MCP client's "env" block, then restart the client. Get a key at https://omnidim.io/api-management.\`,
             }],
         };
     }

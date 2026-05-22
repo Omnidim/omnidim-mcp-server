@@ -7,7 +7,7 @@ startCommand:
     properties:
       omnidimApiKey:
         type: string
-        description: Your OmniDimension API key. Get one at https://omnidim.io/settings/api-keys
+        description: Your OmniDimension API key. Get one at https://omnidim.io/api-management
   commandFunction: |-
     (config) => ({
       command: 'npx',

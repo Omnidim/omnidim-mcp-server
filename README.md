@@ -30,7 +30,7 @@ Add this block to your MCP client config:
 }
 ```
 
-Get your API key from [omnidim.io/settings/api-keys](https://omnidim.io/settings/api-keys).
+Get your API key from [omnidim.io/api-management](https://omnidim.io/api-management).
 
 **Config file locations:**
 
@@ -74,4 +74,4 @@ OMNIDIM_API_KEY=sk_... npx @modelcontextprotocol/inspector node build/index.js
 
 ## License
 
-MIT
+[MIT](./LICENSE)
