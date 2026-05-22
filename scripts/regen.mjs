@@ -248,9 +248,12 @@ src = src.replaceAll('"page_size":{"type":"number","default":30', '"page_size":{
 
 // Replace the "no credentials" warning-and-continue branch with an
 // early return so the model sees a helpful instruction, not a 401.
+// Anchored on the comment marker through the 4-space-indented closing
+// brace of the else-if, which is the only `}` at that indent level
+// inside this stretch of generator output.
 src = src.replace(
-  /\/\/ Log warning if security is required but not available\s*\n\s+else if \(definition\.securityRequirements\?\.length > 0\) \{[\s\S]*?console\.warn\(`Tool '\$\{toolName\}' requires security[^}]*?\}\s*\n/,
-  `else if (definition.securityRequirements?.length > 0) {
+  / {4}\/\/ Log warning if security is required but not available\n[\s\S]*?\n {4}\}\n/,
+  `    else if (definition.securityRequirements?.length > 0) {
         return {
             content: [{
                 type: 'text',
