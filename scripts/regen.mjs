@@ -156,78 +156,17 @@ src = src.replace(
   "const contentType = String(response.headers['content-type'] ?? '').toLowerCase();"
 );
 
-// Inject the trim helper directly after the new banner. Doing this with
-// the banner as the anchor means a future change to the banner only
-// requires updating one regex in this file.
-const TRIM_HELPER = `
-// Trim list responses to fit a model context budget. Single-resource
-// responses are never trimmed; an oversized payload from getAgent etc.
-// is handled by the MCP client (spill-to-file + chunked read).
-const MAX_LIST_CHARS = 25000;
-const LIST_KEYS = [
-  'bots', 'call_log_data', 'records', 'files', 'phone_numbers',
-  'llms', 'voices', 'stt', 'tts', 'services', 'organizations',
-  'data', 'results', 'items',
-];
-
-// Reseller list endpoints return child orgs' plaintext api_key values.
-// Strip them before they reach the model.
-function redactSensitive(value: any): any {
-  if (Array.isArray(value)) return value.map(redactSensitive);
-  if (value && typeof value === 'object') {
-    const out: Record<string, any> = {};
-    for (const [k, v] of Object.entries(value)) {
-      out[k] = k === 'api_key' ? '[redacted]' : redactSensitive(v);
-    }
-    return out;
-  }
-  return value;
-}
-
-function findList(data: any): { arr: any[]; key: string | null } | null {
-  if (Array.isArray(data)) return { arr: data, key: null };
-  if (!data || typeof data !== 'object') return null;
-  for (const k of LIST_KEYS) {
-    if (Array.isArray(data[k])) return { arr: data[k], key: k };
-  }
-  return null;
-}
-
-function trimLargeResponse(data: any): { text: string; note?: string } {
-  const redacted = redactSensitive(data);
-  const full = JSON.stringify(redacted, null, 2);
-  const list = findList(redacted);
-
-  if (!list || full.length <= MAX_LIST_CHARS) return { text: full };
-
-  const { arr, key } = list;
-  let kept = arr.length;
-  while (kept > 1) {
-    const trimmed = arr.slice(0, kept);
-    const candidate = key
-      ? JSON.stringify({ ...redacted, [key]: trimmed }, null, 2)
-      : JSON.stringify(trimmed, null, 2);
-    if (candidate.length <= MAX_LIST_CHARS) {
-      return {
-        text: candidate,
-        note: \`[Showing \${kept} of \${arr.length} items. Lower pagesize, filter by name, or fetch a specific item by ID for full detail.]\`,
-      };
-    }
-    kept = Math.max(1, Math.floor(kept * 0.6));
-  }
-
-  return {
-    text: full.slice(0, MAX_LIST_CHARS),
-    note: \`[Response truncated. Full size: \${full.length} chars.]\`,
-  };
-}
-`;
+// Import the trim/redact helpers from a hand-maintained module so they
+// stay testable and aren't overwritten by regeneration.
 const bannerAnchor = '/**\n * OmniDimension MCP server.\n */';
 if (!src.includes(bannerAnchor)) {
   console.error(`banner anchor missing — generator output shape changed; investigate before re-running`);
   process.exit(2);
 }
-src = src.replace(bannerAnchor, bannerAnchor + '\n' + TRIM_HELPER);
+src = src.replace(
+  bannerAnchor,
+  `${bannerAnchor}\nimport { trimLargeResponse } from "./helpers.js";\n`
+);
 
 // Route JSON responses through the trimmer.
 src = src.replace(
