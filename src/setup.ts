@@ -172,7 +172,7 @@ async function validateApiKey(apiKey: string): Promise<string | null> {
             validateStatus: () => true,
         });
         if (res.status === 200) return null;
-        if (res.status === 401) return "key rejected by server";
+        if (res.status === 401) return "Uh oh! Key rejected";
         return `unexpected status ${res.status}`;
     } catch (e) {
         return e instanceof Error ? e.message : "network error";
