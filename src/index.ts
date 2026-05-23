@@ -2,6 +2,7 @@
 /**
  * OmniDimension MCP server.
  */
+import { readApiKey } from "./credentials.js";
 import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
 
 
@@ -42,7 +43,7 @@ interface McpToolDefinition {
  * Server configuration
  */
 export const SERVER_NAME = "OmniDimension";
-export const SERVER_VERSION = "0.1.2";
+export const SERVER_VERSION = "0.2.0";
 // Base URL for the API, can be set via environment variable or determined from OpenAPI spec
 export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
 if (process.env.API_BASE_URL) {
@@ -843,7 +844,7 @@ async function executeApiTool(
             // HTTP security (basic, bearer)
             if (scheme.type === 'http') {
                 if (scheme.scheme?.toLowerCase() === 'bearer') {
-                    return !!(process.env.OMNIDIM_API_KEY || process.env[`BEARER_TOKEN_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`]);
+                    return !!(process.env.OMNIDIM_API_KEY || readApiKey() || process.env[`BEARER_TOKEN_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`]);
                 }
                 else if (scheme.scheme?.toLowerCase() === 'basic') {
                     return !!process.env[`BASIC_USERNAME_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`] && 
@@ -907,7 +908,7 @@ async function executeApiTool(
             // HTTP security (Bearer or Basic)
             else if (scheme?.type === 'http') {
                 if (scheme.scheme?.toLowerCase() === 'bearer') {
-                    const token = process.env.OMNIDIM_API_KEY || process.env[`BEARER_TOKEN_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
+                    const token = process.env.OMNIDIM_API_KEY || readApiKey() || process.env[`BEARER_TOKEN_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
                     if (token) {
                         headers['authorization'] = `Bearer ${token}`;
                         if (process.env.OMNIDIM_DEBUG) console.error(`Applied Bearer token for '${schemeName}'`);

@@ -27,7 +27,7 @@ export function printInteractiveHelp(version: string): void {
         '        "env": { "OMNIDIM_API_KEY": "your_key" }',
         "      }",
         "",
-        `  ${dim("API key")}   https://omnidim.io/api-management`,
+        `  ${dim("API key")}   omnidim.io/api-management`,
         `  ${dim("Docs")}      https://docs.omnidim.io`,
         "",
     ];
@@ -36,6 +36,42 @@ export function printInteractiveHelp(version: string): void {
 
 export function startupBanner(version: string, toolCount: number): string {
     return `\n  ${brand()}   ${dim(`v${version} · ${toolCount} tools`)}\n`;
+}
+
+const teal = (s: string): string => `\x1b[38;5;30m${s}\x1b[0m`;
+
+const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const BRAND_GLYPH = "●";
+
+function brandLine(glyph: string): string {
+    return `  ${teal(glyph)}  ${bold("OmniDimension")} ${dim("·")} ${italic("Voice AI")}`;
+}
+
+const SUBTITLE = `     ${dim("MCP server setup")} ${dim("·")} ${dim("omnidim.io")}`;
+
+export async function printAnimatedSetupBanner(): Promise<void> {
+    if (!process.stdout.isTTY) {
+        printSetupBanner();
+        return;
+    }
+    process.stdout.write("\n");
+    process.stdout.write("\x1b[?25l");
+    try {
+        for (let i = 0; i < 16; i++) {
+            process.stdout.write(`\r${brandLine(SPINNER[i % SPINNER.length])}`);
+            await new Promise((r) => setTimeout(r, 70));
+        }
+        process.stdout.write(`\r${brandLine(BRAND_GLYPH)}`);
+    } finally {
+        process.stdout.write("\x1b[?25h");
+    }
+    process.stdout.write("\n");
+    process.stdout.write(SUBTITLE + "\n\n");
+}
+
+export function printSetupBanner(): void {
+    const lines = ["", brandLine(BRAND_GLYPH), SUBTITLE, ""];
+    process.stdout.write(lines.join("\n") + "\n");
 }
 
 export const MAX_LIST_CHARS = 25000;

@@ -165,7 +165,25 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\n`
+);
+
+// Add a `setup` subcommand branch at the top of main() so direct
+// invocation runs the interactive setup instead of the MCP server.
+src = src.replace(
+  /(async function main\(\) \{\n)(\s*if \(isInteractive)/,
+  `$1  if (process.argv[2] === "setup") {
+    const { runSetup } = await import("./setup.js");
+    process.exit(await runSetup());
+  }
+$2`
+);
+
+// Fall back to the saved credentials file when neither OMNIDIM_API_KEY
+// nor BEARER_TOKEN_<scheme> is set in the environment.
+src = src.replaceAll(
+  "process.env.OMNIDIM_API_KEY || process.env[`BEARER_TOKEN_",
+  "process.env.OMNIDIM_API_KEY || readApiKey() || process.env[`BEARER_TOKEN_"
 );
 
 // Add an instructions block to the MCP initialize response. The text
