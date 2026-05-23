@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-23
+
+### Fixed
+
+- `setup` subcommand is now wired into the binary entrypoint. In 0.2.0 the regeneration pipeline silently skipped the wiring patch and `npx -y @omnidim-ai/mcp-server setup` fell through to the help screen instead of running the interactive flow.
+
 ## [0.2.0] - 2026-05-23
 
 ### Added

@@ -168,17 +168,6 @@ src = src.replace(
   `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\n`
 );
 
-// Add a `setup` subcommand branch at the top of main() so direct
-// invocation runs the interactive setup instead of the MCP server.
-src = src.replace(
-  /(async function main\(\) \{\n)(\s*if \(isInteractive)/,
-  `$1  if (process.argv[2] === "setup") {
-    const { runSetup } = await import("./setup.js");
-    process.exit(await runSetup());
-  }
-$2`
-);
-
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
 // nor BEARER_TOKEN_<scheme> is set in the environment.
 src = src.replaceAll(
@@ -250,11 +239,15 @@ src = src.replace(
 `
 );
 
-// Insert a TTY-detection branch at the top of main() so the binary prints
-// install help and exits when a human runs it directly.
+// Insert the setup subcommand and TTY-detection branches at the top of
+// main(). One patch so neither branch can race the other's anchor.
 src = src.replace(
   /(async function main\(\) \{\s*\n)\/\/ Set up stdio transport\s*\n(\s*try \{)/,
-  `$1  if (isInteractive()) {
+  `$1  if (process.argv[2] === "setup") {
+    const { runSetup } = await import("./setup.js");
+    process.exit(await runSetup());
+  }
+  if (isInteractive()) {
     printInteractiveHelp(SERVER_VERSION);
     process.exit(0);
   }

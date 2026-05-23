@@ -1064,6 +1064,10 @@ async function executeApiTool(
  * Main function to start the server
  */
 async function main() {
+  if (process.argv[2] === "setup") {
+    const { runSetup } = await import("./setup.js");
+    process.exit(await runSetup());
+  }
   if (isInteractive()) {
     printInteractiveHelp(SERVER_VERSION);
     process.exit(0);
