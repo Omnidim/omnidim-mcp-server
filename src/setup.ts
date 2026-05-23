@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { createInterface } from "node:readline/promises";
+import { createInterface, Interface as ReadlineInterface } from "node:readline/promises";
 
 import axios from "axios";
 
@@ -102,6 +102,67 @@ function installClaudeCode(apiKey: string): void {
     }
 }
 
+// Echoes `*` per input char so pasted keys never land in scrollback.
+function readMaskedLine(prompt: string): Promise<string> {
+    process.stdout.write(prompt);
+    const stdin = process.stdin;
+    if (stdin.isTTY !== true) {
+        const rl = createInterface({ input: stdin, output: process.stdout, terminal: false });
+        return new Promise((resolve) => {
+            let settled = false;
+            const done = (line: string) => {
+                if (settled) return;
+                settled = true;
+                rl.close();
+                resolve(line);
+            };
+            rl.once("line", done);
+            rl.once("close", () => done(""));
+        });
+    }
+    return new Promise((resolve) => {
+        let buf = "";
+        const cleanup = () => {
+            stdin.removeListener("data", onData);
+            stdin.setRawMode(false);
+            stdin.pause();
+        };
+        const finish = () => {
+            cleanup();
+            process.stdout.write("\n");
+            resolve(buf);
+        };
+        const onData = (chunk: Buffer) => {
+            const s = chunk.toString("utf8");
+            for (const ch of s) {
+                const code = ch.charCodeAt(0);
+                if (ch === "\r" || ch === "\n") {
+                    finish();
+                    return;
+                }
+                if (code === 3) {
+                    cleanup();
+                    process.stdout.write("\n");
+                    process.exit(130);
+                }
+                if (code === 127 || code === 8) {
+                    if (buf.length > 0) {
+                        buf = buf.slice(0, -1);
+                        process.stdout.write("\b \b");
+                    }
+                    continue;
+                }
+                if (code < 32) continue;
+                buf += ch;
+                process.stdout.write("*");
+            }
+        };
+        stdin.setRawMode(true);
+        stdin.resume();
+        stdin.on("data", onData);
+    });
+}
+
 async function validateApiKey(apiKey: string): Promise<string | null> {
     try {
         const res = await axios.get(`${PROD_API}/agents`, {
@@ -120,13 +181,13 @@ async function validateApiKey(apiKey: string): Promise<string | null> {
 
 export async function runSetup(): Promise<number> {
     await printAnimatedSetupBanner();
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    try {
-        process.stdout.write(`  Get a key at ${dim("omnidim.io/api-management")}\n`);
+    process.stdout.write(`  Get a key at ${dim("omnidim.io/api-management")}\n`);
 
+    let rl: ReadlineInterface | null = null;
+    try {
         let apiKey = "";
         for (let i = 0; i < 3 && !apiKey; i++) {
-            const input = (await rl.question("  API key: ")).trim();
+            const input = (await readMaskedLine("  API key: ")).trim();
             if (!input) {
                 process.stdout.write(red("  empty input, try again\n"));
                 continue;
@@ -157,6 +218,7 @@ export async function runSetup(): Promise<number> {
         process.stdout.write("  Detected:\n");
         for (const t of detected) process.stdout.write(`    ${dim("•")} ${t.name}\n`);
 
+        rl = createInterface({ input: process.stdin, output: process.stdout });
         const ans = (await rl.question("\n  Install for all? [Y/n] ")).trim().toLowerCase();
         if (ans === "n" || ans === "no") return 0;
 
@@ -175,6 +237,6 @@ export async function runSetup(): Promise<number> {
         process.stdout.write(`\n     ${italicDim(pickClosingLine())}\n\n`);
         return 0;
     } finally {
-        rl.close();
+        rl?.close();
     }
 }
