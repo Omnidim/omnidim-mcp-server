@@ -4,13 +4,19 @@ Model Context Protocol server for [OmniDimension](https://omnidim.io). Drive voi
 
 ## Quick start
 
+```bash
+npx -y @omnidim-ai/mcp-server setup
+```
+
+Prompts for your API key, validates it, saves it to `~/.config/omnidim/credentials`, then installs the server in any detected MCP client (Claude Code, Claude Desktop, Cursor, Windsurf). Get an API key at [omnidim.io/api-management](https://omnidim.io/api-management).
+
+## Manual install
+
 ### Claude Code
 
 ```bash
 claude mcp add omnidim -- npx -y @omnidim-ai/mcp-server
 ```
-
-Set your API key when prompted, or export `OMNIDIM_API_KEY` in your shell.
 
 ### Claude Desktop, Cursor, Windsurf
 
@@ -71,6 +77,10 @@ Inspect tools and call them interactively:
 ```bash
 OMNIDIM_API_KEY=sk_... npx @modelcontextprotocol/inspector node build/index.js
 ```
+
+## Reporting issues
+
+See [ISSUES.md](./ISSUES.md) for how to file bug reports, request features, or get help.
 
 ## License
 
