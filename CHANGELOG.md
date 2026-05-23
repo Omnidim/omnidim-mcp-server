@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-05-23
+
+### Fixed
+
+- Auto-install for Claude Code. The server name was placed after the `-e` flag, which made Claude Code's CLI parser treat it as a second env-var value (`Invalid environment variable format: omnidim`). Name is now passed immediately after `mcp add`, before any flags, so the variadic `-e` no longer swallows it.
+
 ## [0.2.2] - 2026-05-23
 
 ### Changed

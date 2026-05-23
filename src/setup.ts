@@ -71,12 +71,14 @@ function installClaudeCode(apiKey: string): void {
         // not registered, fine
     }
     try {
+        // Name before the variadic -e so commander doesn't gobble it as an env value.
         execFileSync(
             "claude",
             [
-                "mcp", "add", "--scope", "user",
+                "mcp", "add", "omnidim",
+                "--scope", "user",
                 "-e", `OMNIDIM_API_KEY=${apiKey}`,
-                "omnidim", "--", "npx", "-y", "@omnidim-ai/mcp-server",
+                "--", "npx", "-y", "@omnidim-ai/mcp-server",
             ],
             { stdio: ["ignore", "pipe", "pipe"] },
         );
