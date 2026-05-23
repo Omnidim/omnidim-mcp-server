@@ -12,8 +12,21 @@ import { printAnimatedSetupBanner } from "./helpers.js";
 const PROD_API = "https://backend.omnidim.io/api/v1";
 
 const dim = (s: string): string => `\x1b[2m${s}\x1b[0m`;
+const italicDim = (s: string): string => `\x1b[2;3m${s}\x1b[0m`;
 const teal = (s: string): string => `\x1b[38;5;30m${s}\x1b[0m`;
 const red = (s: string): string => `\x1b[31m${s}\x1b[0m`;
+
+const CLOSING_LINES = [
+    "happy voice AI building",
+    "let your agents do the talking",
+    "time to ship some voice AI",
+    "you're set. time to build.",
+    "setup done. ready to ship your first voice AI agent?",
+];
+
+export function pickClosingLine(): string {
+    return CLOSING_LINES[Math.floor(Math.random() * CLOSING_LINES.length)];
+}
 
 interface ClientTarget {
     name: string;
@@ -159,7 +172,7 @@ export async function runSetup(): Promise<number> {
                 );
             }
         }
-        process.stdout.write("\n");
+        process.stdout.write(`\n     ${italicDim(pickClosingLine())}\n\n`);
         return 0;
     } finally {
         rl.close();

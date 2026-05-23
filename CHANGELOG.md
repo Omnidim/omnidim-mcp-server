@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-05-23
+
+### Added
+
+- A small rotating closing line at the end of `setup`, shown in faded italic. Picked from a short curated list each run.
+
+### Tests
+
+- Binary entrypoint test that spawns the built `setup` subcommand and asserts the banner appears, catching regressions where the dispatch branch is missing from `src/index.ts` after regeneration (the bug that shipped silently in 0.2.0).
+
 ## [0.2.3] - 2026-05-23
 
 ### Fixed
