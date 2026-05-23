@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-05-23
+
 ### Changed
 
 - `setup` masks the API key as you type or paste it. Each character renders as `*` so the key never appears in terminal scrollback.
