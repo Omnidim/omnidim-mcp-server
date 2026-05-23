@@ -51,6 +51,7 @@ Every release gets an entry in `CHANGELOG.md` before its tag is pushed.
 - The `[Unreleased]` section collects entries as work lands on `main`. When tagging `vX.Y.Z`, rename that section to `[X.Y.Z] - YYYY-MM-DD` and start a fresh `[Unreleased]` above it.
 - **Diff against what's on npm, not against the last local checkpoint.** The entry describes what changes for a customer upgrading from the previous published version to this one. WIP iterations between tags (re-tries, design changes that never shipped, debug logs that were added and removed) do not appear in the changelog.
 - Entries describe user-visible behaviour, not commit-by-commit history. Group related commits into a single bullet.
+- **No test work in the changelog.** New tests, test refactors, CI tweaks, coverage bumps, fixture changes, etc. are invisible to customers and do not belong in `CHANGELOG.md` or in GitHub Release notes. If a fix is shipped alongside its test, the entry describes the fix, not the test. Same rule applies to the release notes posted on `omnidim.io/releases`.
 - Breaking changes go under `### Changed` with a **BREAKING** prefix and a migration note.
 - Security fixes belong in `### Security` with a CVE reference if one exists.
 - If a tag goes out without a clean entry, that's a release process bug — edit the GitHub Release notes after the fact and fix the local CHANGELOG.md for future tags.
