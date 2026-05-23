@@ -21,8 +21,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test
       - run: npm run build
+      - run: npm test
 
   publish:
     needs: test
@@ -40,8 +40,8 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
       - run: npm ci
-      - run: npm test
       - run: npm run build
+      - run: npm test
       # `--provenance` requires the source repo to be public. Add it back
       # once `Omnidim/omnidim-mcp-server` is flipped to public visibility.
       - run: npm publish --access public
