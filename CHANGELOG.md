@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-23
+
+### Added
+
+- `npx @omnidim-ai/mcp-server setup` interactive command. Prompts for an API key, validates it against the OmniDimension API, saves it to `~/.config/omnidim/credentials` (mode 0600), then offers to install the server in any detected MCP client (Claude Code, Claude Desktop, Cursor, Windsurf).
+- Credentials file fallback. The server now reads the API key from `~/.config/omnidim/credentials` when `OMNIDIM_API_KEY` is not set in the env block, so customers no longer need to paste a key into every client's config separately.
+
 ## [0.1.2] - 2026-05-22
 
 ### Added
