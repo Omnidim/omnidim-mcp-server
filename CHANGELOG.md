@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-23
+
+### Changed
+
+- `setup` shows the real error from `claude mcp add` when the install step fails, and prints the exact manual command to run instead. Previously the failure surfaced as a generic "Command failed" line.
+- Dropped the "restart your MCP client" trailing line. The setup runs in its own terminal; the next time the user opens their MCP client they will pick up the new server.
+
 ## [0.2.1] - 2026-05-23
 
 ### Fixed

@@ -66,19 +66,25 @@ function upsertJsonConfig(configPath: string, apiKey: string): void {
 
 function installClaudeCode(apiKey: string): void {
     try {
-        execFileSync("claude", ["mcp", "remove", "--scope", "user", "omnidim"], { stdio: "ignore" });
+        execFileSync("claude", ["mcp", "remove", "omnidim"], { stdio: "ignore" });
     } catch {
         // not registered, fine
     }
-    execFileSync(
-        "claude",
-        [
-            "mcp", "add", "--scope", "user",
-            "-e", `OMNIDIM_API_KEY=${apiKey}`,
-            "omnidim", "--", "npx", "-y", "@omnidim-ai/mcp-server",
-        ],
-        { stdio: "ignore" },
-    );
+    try {
+        execFileSync(
+            "claude",
+            [
+                "mcp", "add", "--scope", "user",
+                "-e", `OMNIDIM_API_KEY=${apiKey}`,
+                "omnidim", "--", "npx", "-y", "@omnidim-ai/mcp-server",
+            ],
+            { stdio: ["ignore", "pipe", "pipe"] },
+        );
+    } catch (e) {
+        const err = e as { stderr?: Buffer; stdout?: Buffer; message: string };
+        const detail = (err.stderr ?? err.stdout ?? Buffer.from("")).toString().trim();
+        throw new Error(detail || err.message);
+    }
 }
 
 async function validateApiKey(apiKey: string): Promise<string | null> {
@@ -146,9 +152,12 @@ export async function runSetup(): Promise<number> {
             } catch (e) {
                 const msg = e instanceof Error ? e.message : String(e);
                 process.stdout.write(red(`  failed for ${t.name}: ${msg}\n`));
+                process.stdout.write(
+                    dim(`    add manually: claude mcp add omnidim -- npx -y @omnidim-ai/mcp-server\n`),
+                );
             }
         }
-        process.stdout.write(`\n  ${dim("restart your MCP client to start using OmniDim.")}\n\n`);
+        process.stdout.write("\n");
         return 0;
     } finally {
         rl.close();
