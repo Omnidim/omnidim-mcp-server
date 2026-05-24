@@ -6,7 +6,7 @@ import { createInterface, Interface as ReadlineInterface } from "node:readline/p
 
 import axios from "axios";
 
-import { writeApiKey } from "./credentials.js";
+import { CREDENTIALS_PATH, readApiKey, writeApiKey } from "./credentials.js";
 import { printAnimatedSetupBanner } from "./helpers.js";
 import { emitInstall, isTelemetryDisabled } from "./telemetry.js";
 
@@ -80,7 +80,7 @@ function upsertJsonConfig(configPath: string, apiKey: string): void {
 
 function installClaudeCode(apiKey: string): void {
     try {
-        execFileSync("claude", ["mcp", "remove", "omnidim"], { stdio: "ignore" });
+        execFileSync("claude", ["mcp", "remove", "omnidim", "--scope", "user"], { stdio: "ignore" });
     } catch {
         // not registered, fine
     }
@@ -182,32 +182,55 @@ async function validateApiKey(apiKey: string): Promise<string | null> {
 
 export async function runSetup(): Promise<number> {
     await printAnimatedSetupBanner();
-    process.stdout.write(`  Get a key at ${dim("omnidim.io/api-management")}\n`);
 
     let rl: ReadlineInterface | null = null;
     try {
         let apiKey = "";
-        for (let i = 0; i < 3 && !apiKey; i++) {
-            const input = (await readMaskedLine("  API key: ")).trim();
-            if (!input) {
-                process.stdout.write(red("  empty input, try again\n"));
-                continue;
-            }
+
+        // If we already have a saved key, validate it and offer to reuse.
+        const saved = readApiKey();
+        if (saved) {
+            process.stdout.write(`  Saved key found at ${dim(CREDENTIALS_PATH)}\n`);
             process.stdout.write(`  ${dim("checking...")}\n`);
-            const err = await validateApiKey(input);
+            const err = await validateApiKey(saved);
             if (err === null) {
-                apiKey = input;
-                break;
+                rl = createInterface({ input: process.stdin, output: process.stdout });
+                const ans = (await rl.question("  Reuse this key? [Y/n] ")).trim().toLowerCase();
+                rl.close();
+                rl = null;
+                if (ans !== "n" && ans !== "no") {
+                    apiKey = saved;
+                    process.stdout.write(`  ${teal("●")} using saved key\n\n`);
+                }
+            } else {
+                process.stdout.write(red(`  saved key: ${err}\n`));
             }
-            process.stdout.write(red(`  ${err}, try again\n`));
-        }
-        if (!apiKey) {
-            process.stdout.write(red("\n  three failed attempts, aborting.\n"));
-            return 1;
         }
 
-        const path = writeApiKey(apiKey);
-        process.stdout.write(`  ${teal("●")} key saved to ${dim(path)}\n\n`);
+        if (!apiKey) {
+            process.stdout.write(`  Get a key at ${dim("omnidim.io/api-management")}\n`);
+            for (let i = 0; i < 3 && !apiKey; i++) {
+                const input = (await readMaskedLine("  API key: ")).trim();
+                if (!input) {
+                    process.stdout.write(red("  empty input, try again\n"));
+                    continue;
+                }
+                process.stdout.write(`  ${dim("checking...")}\n`);
+                const err = await validateApiKey(input);
+                if (err === null) {
+                    apiKey = input;
+                    break;
+                }
+                process.stdout.write(red(`  ${err}, try again\n`));
+            }
+            if (!apiKey) {
+                process.stdout.write(red("\n  three failed attempts, aborting.\n"));
+                return 1;
+            }
+
+            const path = writeApiKey(apiKey);
+            process.stdout.write(`  ${teal("●")} key saved to ${dim(path)}\n\n`);
+        }
 
         const detected = TARGETS.filter((t) => existsSync(t.configPath));
         if (detected.length === 0) {

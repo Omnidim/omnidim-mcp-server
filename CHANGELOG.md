@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-05-25
+
+### Changed
+
+- `setup` detects a saved key at `~/.config/omnidim/credentials`, validates it, and offers to reuse instead of asking again every time.
+
+### Fixed
+
+- `claude mcp remove omnidim` now passes `--scope user` to match the scope `claude mcp add` uses, preventing the "already exists in user config" error on re-running setup.
+
 ## [0.2.8] - 2026-05-25
 
 ### Changed
