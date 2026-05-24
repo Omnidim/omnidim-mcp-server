@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-05-25
+
 ### Added
 
 - Anonymous usage telemetry: `install`, `session_start`, `session_end` events with package version, Node version, OS family + arch, and per-tool counts. Full field list in [TELEMETRY.md](./TELEMETRY.md).
