@@ -12,6 +12,16 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # zod 4 reshaped error types + renamed `.errors` → `.issues`. The
+      # affected code lives in the auto-generated src/index.ts; revisit
+      # once openapi-mcp-generator emits zod-4-compatible output.
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 6 drops auto-included node types. Trivial fix in
+      # tsconfig but the upgrade gains nothing right now.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
