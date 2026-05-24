@@ -69,16 +69,16 @@ Any of these will silence telemetry permanently:
 
 ```bash
 # Subcommand (recommended)
-omnidim-mcp-server telemetry disable
+npx -y @omnidim-ai/mcp-server telemetry disable
 
-# Standard environment variable
+# Standard environment variable (W3C)
 export DO_NOT_TRACK=1
 
 # Project-specific environment variable
 export OMNIDIM_TELEMETRY=0
 ```
 
-Re-enable with `omnidim-mcp-server telemetry enable`, or unset the env var. Check current state with `omnidim-mcp-server telemetry status`.
+Re-enable with `npx -y @omnidim-ai/mcp-server telemetry enable`, or unset the env var. Check current state with `npx -y @omnidim-ai/mcp-server telemetry status`.
 
 When disabled, no events are sent, period. There is no "we still ping once to mark them as opted out" loophole — the request is never built.
 

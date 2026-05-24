@@ -242,7 +242,7 @@ export async function runSetup(): Promise<number> {
                 `\n  ${dim("Anonymous usage data helps us improve the package.")}\n`,
             );
             process.stdout.write(
-                `  ${dim("Disable: omnidim-mcp-server telemetry disable")} ${dim("·")} ${dim("omnidim.io/privacy-policy#telemetry")}\n`,
+                `  ${dim("Disable: npx -y @omnidim-ai/mcp-server telemetry disable")} ${dim("·")} ${dim("omnidim.io/privacy-policy#telemetry")}\n`,
             );
             void emitInstall();
         }
