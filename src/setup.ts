@@ -8,6 +8,7 @@ import axios from "axios";
 
 import { writeApiKey } from "./credentials.js";
 import { printAnimatedSetupBanner } from "./helpers.js";
+import { emitInstall, isTelemetryDisabled } from "./telemetry.js";
 
 const PROD_API = "https://backend.omnidim.io/api/v1";
 
@@ -233,6 +234,17 @@ export async function runSetup(): Promise<number> {
                     dim(`    add manually: claude mcp add omnidim -- npx -y @omnidim-ai/mcp-server\n`),
                 );
             }
+        }
+        if (isTelemetryDisabled()) {
+            process.stdout.write(`\n  ${dim("Telemetry off")}\n`);
+        } else {
+            process.stdout.write(
+                `\n  ${dim("Anonymous usage data helps us improve the package.")}\n`,
+            );
+            process.stdout.write(
+                `  ${dim("Disable: omnidim-mcp-server telemetry disable")} ${dim("·")} ${dim("omnidim.io/privacy-policy#telemetry")}\n`,
+            );
+            void emitInstall();
         }
         process.stdout.write(`\n     ${italicDim(pickClosingLine())}\n\n`);
         return 0;

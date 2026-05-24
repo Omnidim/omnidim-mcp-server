@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Anonymous usage telemetry: `install`, `session_start`, `session_end` events with package version, Node version, OS family + arch, and per-tool counts. Full field list in [TELEMETRY.md](./TELEMETRY.md).
+- `omnidim-mcp-server telemetry {enable | disable | status}` subcommand. `DO_NOT_TRACK=1` and `OMNIDIM_TELEMETRY=0` are also respected silently.
+
 ## [0.2.5] - 2026-05-23
 
 ### Changed

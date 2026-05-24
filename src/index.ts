@@ -8,6 +8,7 @@ import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse }
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { beginSession, endSession, emitSessionEnd, recordToolCall } from "./telemetry.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -1068,6 +1069,10 @@ async function main() {
     const { runSetup } = await import("./setup.js");
     process.exit(await runSetup());
   }
+  if (process.argv[2] === "telemetry") {
+    const { runTelemetryCommand } = await import("./telemetry-cli.js");
+    process.exit(await runTelemetryCommand(process.argv[3]));
+  }
   if (isInteractive()) {
     printInteractiveHelp(SERVER_VERSION);
     process.exit(0);
@@ -1076,6 +1081,7 @@ async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));
+    beginSession();
   } catch (error) {
     console.error("Error during server startup:", error);
     process.exit(1);
@@ -1086,6 +1092,11 @@ async function main() {
  * Cleanup function for graceful shutdown
  */
 async function cleanup() {
+    try {
+        await emitSessionEnd(endSession());
+    } catch {
+        // telemetry must never block shutdown
+    }
     console.error("Shutting down MCP server...");
     process.exit(0);
 }

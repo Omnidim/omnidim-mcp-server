@@ -165,7 +165,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, endSession, emitSessionEnd } from "./telemetry.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -247,6 +247,10 @@ src = src.replace(
     const { runSetup } = await import("./setup.js");
     process.exit(await runSetup());
   }
+  if (process.argv[2] === "telemetry") {
+    const { runTelemetryCommand } = await import("./telemetry-cli.js");
+    process.exit(await runTelemetryCommand(process.argv[3]));
+  }
   if (isInteractive()) {
     printInteractiveHelp(SERVER_VERSION);
     process.exit(0);
@@ -258,7 +262,22 @@ $2`
 // Line-anchored to avoid the nested-backtick parse problem.
 src = src.replace(
   /^.*console\.error\(`\$\{SERVER_NAME\} MCP Server.*$/m,
-  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));`
+  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();`
+);
+
+// Flush the session-end event during graceful shutdown, before the generator's
+// console.error + process.exit. Best-effort: telemetry must never block shutdown.
+src = src.replace(
+  /async function cleanup\(\) \{\s*\n\s*console\.error\("Shutting down MCP server\.\.\.\"\);\s*\n\s*process\.exit\(0\);\s*\n\}/,
+  `async function cleanup() {
+    try {
+        await emitSessionEnd(endSession());
+    } catch {
+        // telemetry must never block shutdown
+    }
+    console.error("Shutting down MCP server...");
+    process.exit(0);
+}`
 );
 
 // Gate the per-request log behind OMNIDIM_DEBUG.

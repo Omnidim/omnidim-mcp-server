@@ -78,6 +78,10 @@ Inspect tools and call them interactively:
 OMNIDIM_API_KEY=sk_... npx @modelcontextprotocol/inspector node build/index.js
 ```
 
+## Telemetry
+
+Anonymous usage data is collected to help us improve the package. See [TELEMETRY.md](./TELEMETRY.md) for the exact fields, opt-out commands, and how to verify against the source.
+
 ## Reporting issues
 
 See [ISSUES.md](./ISSUES.md) for how to file bug reports, request features, or get help.
