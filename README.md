@@ -10,13 +10,6 @@ npx -y @omnidim-ai/mcp-server setup
 
 Reuses a saved API key from `~/.config/omnidim/credentials` if one exists, otherwise prompts for a new one and validates it. Then installs the server in any detected MCP client (Claude Code, Claude Desktop, Cursor, Windsurf). Get an API key at [omnidim.io/api-management](https://omnidim.io/api-management).
 
-## Commands
-
-| Command | What it does |
-|---|---|
-| `setup` | Validates an API key (reuses the saved one if present) and installs the server in detected MCP clients |
-| `telemetry enable` / `telemetry disable` / `telemetry status` | Manage anonymous usage telemetry |
-
 ## Manual install
 
 ### Claude Code
