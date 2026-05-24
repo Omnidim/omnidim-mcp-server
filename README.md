@@ -8,7 +8,14 @@ Model Context Protocol server for [OmniDimension](https://omnidim.io). Drive voi
 npx -y @omnidim-ai/mcp-server setup
 ```
 
-Prompts for your API key, validates it, saves it to `~/.config/omnidim/credentials`, then installs the server in any detected MCP client (Claude Code, Claude Desktop, Cursor, Windsurf). Get an API key at [omnidim.io/api-management](https://omnidim.io/api-management).
+Reuses a saved API key from `~/.config/omnidim/credentials` if one exists, otherwise prompts for a new one and validates it. Then installs the server in any detected MCP client (Claude Code, Claude Desktop, Cursor, Windsurf). Get an API key at [omnidim.io/api-management](https://omnidim.io/api-management).
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `setup` | Validates an API key (reuses the saved one if present) and installs the server in detected MCP clients |
+| `telemetry enable` / `telemetry disable` / `telemetry status` | Manage anonymous usage telemetry |
 
 ## Manual install
 
@@ -80,7 +87,15 @@ OMNIDIM_API_KEY=sk_... npx @modelcontextprotocol/inspector node build/index.js
 
 ## Telemetry
 
-Anonymous usage data is collected to help us improve the package. See [TELEMETRY.md](./TELEMETRY.md) for the exact fields, opt-out commands, and how to verify against the source.
+Anonymous usage data is sent to help us improve the package: package version, Node version, OS family, install count, session boots, and tool names. **No API keys, no tool inputs/outputs, no personal info.**
+
+Disable with:
+
+```bash
+npx -y @omnidim-ai/mcp-server telemetry disable
+```
+
+Full field-by-field breakdown and other opt-out options in [TELEMETRY.md](./TELEMETRY.md).
 
 ## Reporting issues
 
