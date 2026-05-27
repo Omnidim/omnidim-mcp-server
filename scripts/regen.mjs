@@ -165,7 +165,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { classifyToolError, isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolResult } from "./telemetry.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -252,6 +252,10 @@ src = src.replace(
     const { runTelemetryCommand } = await import("./telemetry-cli.js");
     process.exit(await runTelemetryCommand(process.argv[3]));
   }
+  if (process.argv[2] === "doctor") {
+    const { runDoctor } = await import("./doctor.js");
+    process.exit(await runDoctor());
+  }
   if (isInteractive()) {
     printInteractiveHelp(SERVER_VERSION);
     process.exit(0);
@@ -327,7 +331,7 @@ src = src.replace(
 );
 src = src.replace(
   /(\} catch \(error: unknown\) \{\n)(\s*\/\/ Handle errors during execution)/,
-  `$1    recordToolResult(toolName, classifyToolError(error));\n$2`
+  `$1    recordToolError(toolName, error);\n$2`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash

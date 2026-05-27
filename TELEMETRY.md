@@ -92,6 +92,7 @@ Emitted by `npx ... setup` so a setup that fails partway is still visible:
 - **No tool inputs or outputs.** Only the tool *name* and an aggregated *count* per session.
 - **No exact OS version, kernel build, or CPU model.** Only family (`darwin`/`linux`/`win32`) and arch (`x64`/`arm64`).
 - **No marketing analytics SDKs.** Pure HTTP POST. No fingerprinting library, no cookies.
+- **The local diagnostics log is never sent.** `~/.config/omnidim/logs/mcp.log` (written for the `doctor` command) stays on your machine. It holds more detail than telemetry — including real error messages — precisely because it is local and only shared if you choose to paste it into a bug report.
 
 ## How to disable
 

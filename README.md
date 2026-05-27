@@ -90,9 +90,19 @@ npx -y @omnidim-ai/mcp-server telemetry disable
 
 Full field-by-field breakdown and other opt-out options in [TELEMETRY.md](./TELEMETRY.md).
 
+## Troubleshooting
+
+Run the diagnostics command to see versions, detected clients, backend reachability, and recent errors:
+
+```bash
+npx -y @omnidim-ai/mcp-server doctor
+```
+
+It never prints your API key. A local log of errors is kept at `~/.config/omnidim/logs/mcp.log` (stays on your machine, never sent).
+
 ## Reporting issues
 
-See [ISSUES.md](./ISSUES.md) for how to file bug reports, request features, or get help.
+See [ISSUES.md](./ISSUES.md) for how to file bug reports, request features, or get help. Paste the `doctor` output into your report.
 
 ## License
 

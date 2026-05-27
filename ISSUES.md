@@ -4,13 +4,21 @@ Found a bug, a performance problem, or unexpected behaviour with `@omnidim-ai/mc
 
 ## What to include
 
-- Operating system and version
-- Node.js version (`node --version`)
-- Package version (printed when the server starts, or `npm view @omnidim-ai/mcp-server version`)
+Run the diagnostics command and paste its output:
+
+```bash
+npx -y @omnidim-ai/mcp-server doctor
+```
+
+It reports your package/Node/OS versions, which MCP clients are detected, whether the backend is reachable, and the most recent errors from the local log. It never prints your API key. Review the output before posting.
+
+Then add:
+
 - Your MCP client (Claude Code, Claude Desktop, Cursor, Windsurf, MCP Inspector, etc.)
 - Steps to reproduce
 - What you expected vs. what happened
-- Relevant logs from your MCP client. Set `OMNIDIM_DEBUG=1` in the env block to get verbose stderr logs from the server.
+
+For deeper detail, set `OMNIDIM_DEBUG=1` in the env block for verbose stderr from the server, and check the full local log at `~/.config/omnidim/logs/mcp.log`.
 
 ## Security issues
 

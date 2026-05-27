@@ -1,0 +1,35 @@
+name: Bug report
+description: Something isn't working with @omnidim-ai/mcp-server
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The fastest path to a fix is the diagnostics output below.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Diagnostics
+      description: "Output of `npx -y @omnidim-ai/mcp-server doctor`. It never includes your API key, but review it before posting."
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      placeholder: Claude Desktop / Cursor / Windsurf / Claude Code / MCP Inspector
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual
+    validations:
+      required: true

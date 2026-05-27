@@ -3,12 +3,12 @@
  * OmniDimension MCP server.
  */
 import { readApiKey } from "./credentials.js";
-import { classifyToolError, isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
+import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
 
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolResult } from "./telemetry.js";
+import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -1039,7 +1039,7 @@ async function executeApiTool(
     };
 
   } catch (error: unknown) {
-    recordToolResult(toolName, classifyToolError(error));
+    recordToolError(toolName, error);
     // Handle errors during execution
     let errorMessage: string;
     
@@ -1076,6 +1076,10 @@ async function main() {
   if (process.argv[2] === "telemetry") {
     const { runTelemetryCommand } = await import("./telemetry-cli.js");
     process.exit(await runTelemetryCommand(process.argv[3]));
+  }
+  if (process.argv[2] === "doctor") {
+    const { runDoctor } = await import("./doctor.js");
+    process.exit(await runDoctor());
   }
   if (isInteractive()) {
     printInteractiveHelp(SERVER_VERSION);

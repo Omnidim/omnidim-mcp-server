@@ -5,6 +5,7 @@ import axios from "axios";
 import { buildTargets, describeInstallError } from "./clients.js";
 import { CREDENTIALS_PATH, readApiKey, writeApiKey } from "./credentials.js";
 import { printAnimatedSetupBanner } from "./helpers.js";
+import { appendLog } from "./logger.js";
 import {
     emitInstall,
     emitSetupClientResult,
@@ -216,8 +217,10 @@ export async function runSetup(): Promise<number> {
                 process.stdout.write(`  ${teal("●")} installed for ${t.name}\n`);
             } catch (e) {
                 failed++;
-                void emitSetupClientResult(t.id, "failed", describeInstallError(e));
+                const detail = describeInstallError(e);
+                void emitSetupClientResult(t.id, "failed", detail);
                 const msg = e instanceof Error ? e.message : String(e);
+                appendLog({ kind: "setup", step: "client_install", client: t.id, code: detail.error_code, message: msg });
                 process.stdout.write(red(`  failed for ${t.name}: ${msg}\n`));
                 process.stdout.write(
                     dim(`    add manually: claude mcp add omnidim -- npx -y @omnidim-ai/mcp-server\n`),

@@ -3,6 +3,9 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 
+import { classifyToolError } from "./helpers.js";
+import { appendLog } from "./logger.js";
+
 const ENDPOINT = "https://mcp.omnidim.io/api/telemetry/event";
 const CONFIG_DIR = join(homedir(), ".config", "omnidim");
 const INSTALL_ID_PATH = join(CONFIG_DIR, "install-id");
@@ -207,6 +210,19 @@ export function recordToolResult(name: string, outcome: string): void {
     }
 }
 
+// Catch-path helper: classify the error, count it in the session summary,
+// and append the real (local-only) message to the diagnostics log.
+export function recordToolError(name: string, error: unknown): void {
+    const code = classifyToolError(error);
+    recordToolResult(name, code);
+    appendLog({
+        kind: "tool_error",
+        tool: name,
+        code,
+        message: error instanceof Error ? error.message : String(error),
+    });
+}
+
 export function beginSession(): void {
     sessionStartMs = Date.now();
     terminated = false;
@@ -245,9 +261,12 @@ export async function emitSessionCrash(error: unknown): Promise<void> {
     terminated = true;
     const active = sessionStartMs !== null;
     const summary = drainSession();
-    await send("session_crash", {
-        phase: active ? "runtime" : "startup",
+    const phase = active ? "runtime" : "startup";
+    appendLog({
+        kind: "crash",
+        phase,
         ...sanitizeError(error),
-        ...summary,
+        message: error instanceof Error ? error.message : String(error),
     });
+    await send("session_crash", { phase, ...sanitizeError(error), ...summary });
 }

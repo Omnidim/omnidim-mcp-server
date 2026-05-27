@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `doctor` command (`npx -y @omnidim-ai/mcp-server doctor`) that prints a paste-ready diagnostics report — package/Node/OS versions, detected MCP clients, backend reachability, and recent errors — for bug reports. It never prints your API key.
+- A local diagnostics log at `~/.config/omnidim/logs/mcp.log` recording tool-call errors, setup failures, and crashes. It stays on your machine, is never transmitted, and redacts anything token-shaped.
+
 ## [0.3.1] - 2026-05-27
 
 ### Added
