@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-27
+
 ### Added
 
 - `doctor` command (`npx -y @omnidim-ai/mcp-server doctor`) that prints a paste-ready diagnostics report — package/Node/OS versions, detected MCP clients, backend reachability, and recent errors — for bug reports. It never prints your API key.
