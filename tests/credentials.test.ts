@@ -31,7 +31,8 @@ describe("credentials", () => {
         expect(readApiKey()).toBe("sk_test_abc");
     });
 
-    it("writes with 0600 permissions", () => {
+    // POSIX-only: Windows does not honor Unix permission bits.
+    it.skipIf(process.platform === "win32")("writes with 0600 permissions", () => {
         writeApiKey("sk_secret");
         const mode = statSync(CREDENTIALS_PATH).mode & 0o777;
         expect(mode).toBe(0o600);
