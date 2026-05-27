@@ -62,3 +62,6 @@ web_modules/
 # OS specific
 .DS_Store
 Thumbs.db
+
+*.local.md
+CLAUDE.local.md

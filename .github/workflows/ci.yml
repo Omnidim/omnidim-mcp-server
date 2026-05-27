@@ -47,9 +47,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      # `--provenance` requires the source repo to be public. Add it back
-      # once `Omnidim/omnidim-mcp-server` is flipped to public visibility.
-      - run: npm publish --access public
+      - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Extract changelog entry for this release
