@@ -80,7 +80,7 @@ OMNIDIM_API_KEY=sk_... npx @modelcontextprotocol/inspector node build/index.js
 
 ## Telemetry
 
-Anonymous usage data is sent to help us improve the package: package version, Node version, OS family, install count, session boots, and tool names. **No API keys, no tool inputs/outputs, no personal info.**
+Anonymous usage data is sent to help us improve the package: package version, Node version, OS family, install count, session boots, tool names, and setup or crash outcomes as short error *categories* (e.g. `config_write_error`, `http_500`). **No API keys, no tool inputs/outputs, no error messages, no file paths, no personal info.**
 
 Disable with:
 

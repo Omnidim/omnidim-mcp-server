@@ -4,7 +4,16 @@
 
 ## What is sent
 
-Three event types, each posted to `https://mcp.omnidim.io/api/telemetry/event` as a JSON POST.
+Each event is a JSON POST to `https://mcp.omnidim.io/api/telemetry/event`. Every event carries the base fields below; some add a few more, listed per event.
+
+Base fields on every event: `event`, `install_id`, `package`, `package_version`, `node_version`, `os_platform`, `os_arch`.
+
+**Errors are categories, never messages.** Failure events carry a short
+`error_code` (e.g. `config_write_error`, `claude_cli_not_found`, `http_500`,
+`timeout`) and `error_class` (e.g. `Error`, `TypeError`). The raw error
+message, stack trace, and any file path are never sent. This is how we learn
+*that* an install or tool call failed, and *what kind* of failure, without
+collecting anything that identifies you or your machine.
 
 ### `install` (once, after `npx ... setup` completes)
 
@@ -46,12 +55,33 @@ Three event types, each posted to `https://mcp.omnidim.io/api/telemetry/event` a
   "os_platform": "darwin",
   "os_arch": "arm64",
   "duration_s": 245,
+  "tool_errors_total": 1,
   "tools_called": [
-    { "tool": "listAgents", "count": 12 },
-    { "tool": "dispatchCall", "count": 3 }
+    { "tool": "listAgents", "count": 12, "ok": 12, "errors": [] },
+    { "tool": "dispatchCall", "count": 3, "ok": 2, "errors": [{ "code": "http_500", "count": 1 }] }
   ]
 }
 ```
+
+`tools_called` groups the session's calls by tool: how many ran, how many
+succeeded, and a count per error category. Only the tool *name* and counts,
+never inputs or outputs.
+
+### `session_crash` (server exits on an uncaught error)
+
+A clean `session_end` can't run on a crash, so this event terminates the
+session instead, carrying the same `duration_s` and `tools_called` summary
+plus `phase` (`startup` or `runtime`) and the sanitized `error_class` /
+`error_code`. This is how a crash becomes a signal we can see.
+
+### Setup funnel (`setup_started`, `setup_key_result`, `setup_client_result`, `setup_finished`)
+
+Emitted by `npx ... setup` so a setup that fails partway is still visible:
+
+- `setup_started` once at the start.
+- `setup_key_result` with `outcome` (`reused`, `entered`, `rejected_401`, `network_error`, `aborted`).
+- `setup_client_result` once per detected client, with `client` (e.g. `claude_desktop`), `outcome` (`installed` or `failed`), and on failure an `error_code` / `error_class`.
+- `setup_finished` with `clients_installed` and `clients_failed` counts.
 
 ## What is NOT sent
 

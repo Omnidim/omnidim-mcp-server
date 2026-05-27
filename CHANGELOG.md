@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-27
+
+### Added
+
+- `setup` now detects and installs for VS Code, alongside Claude Code, Claude Desktop, Cursor, and Windsurf.
+- `setup` resolves the correct config path per operating system (macOS, Windows, Linux).
+- `setup` shows the OmniDimension wordmark on wide terminals, falling back to a compact banner on narrow ones.
+
+### Fixed
+
+- `setup` now detects an installed app directly and creates its MCP config file if one doesn't exist yet. Previously it only configured clients that already had a config file, so Claude Desktop was skipped on a machine that had never set up an MCP server before.
+- `setup` treats an empty or whitespace-only client config file as a fresh config instead of failing with "Unexpected end of JSON input".
+
+### Changed
+
+- Anonymous telemetry now records setup-step and crash outcomes as short error *categories* (e.g. `config_write_error`, `http_500`), never error messages or file paths, so failed installs and tool calls are diagnosable. Full field list in [TELEMETRY.md](./TELEMETRY.md).
+
 ## [0.2.9] - 2026-05-25
 
 ### Changed

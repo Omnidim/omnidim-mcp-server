@@ -3,12 +3,12 @@
  * OmniDimension MCP server.
  */
 import { readApiKey } from "./credentials.js";
-import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
+import { classifyToolError, isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
 
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { beginSession, endSession, emitSessionEnd, recordToolCall } from "./telemetry.js";
+import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolResult } from "./telemetry.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -783,6 +783,7 @@ async function executeApiTool(
         const argsToParse = (typeof toolArgs === 'object' && toolArgs !== null) ? toolArgs : {};
         validatedArgs = zodSchema.parse(argsToParse);
     } catch (error: unknown) {
+        recordToolResult(toolName, 'validation');
         if (error instanceof ZodError) {
             const validationErrorMessage = `Invalid arguments for tool '${toolName}': ${error.errors.map(e => `${e.path.join('.')} (${e.code}): ${e.message}`).join(', ')}`;
             return { content: [{ type: 'text', text: validationErrorMessage }] };
@@ -964,6 +965,7 @@ async function executeApiTool(
         }
     } 
     else if (definition.securityRequirements?.length > 0) {
+        recordToolResult(toolName, 'no_api_key');
         return {
             content: [{
                 type: 'text',
@@ -1026,16 +1028,18 @@ async function executeApiTool(
     }
     
     // Return formatted response
-    return { 
-        content: [ 
-            { 
-                type: "text", 
-                text: `API Response (Status: ${response.status}):\n${responseText}` 
-            } 
-        ], 
+    recordToolResult(toolName, 'ok');
+    return {
+        content: [
+            {
+                type: "text",
+                text: `API Response (Status: ${response.status}):\n${responseText}`
+            }
+        ],
     };
 
   } catch (error: unknown) {
+    recordToolResult(toolName, classifyToolError(error));
     // Handle errors during execution
     let errorMessage: string;
     
@@ -1083,6 +1087,7 @@ async function main() {
     console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));
     beginSession();
   } catch (error) {
+    try { await emitSessionCrash(error); } catch { /* telemetry must never mask the crash */ }
     console.error("Error during server startup:", error);
     process.exit(1);
   }
@@ -1105,8 +1110,22 @@ async function cleanup() {
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
 
+// A crash never runs the graceful-shutdown path, so flush a session_crash
+// (with the session's tool-call summary) before exiting.
+process.on('uncaughtException', async (error) => {
+    try { await emitSessionCrash(error); } catch { /* never mask the crash */ }
+    console.error("Uncaught exception:", error);
+    process.exit(1);
+});
+process.on('unhandledRejection', async (reason) => {
+    try { await emitSessionCrash(reason); } catch { /* never mask the crash */ }
+    console.error("Unhandled rejection:", reason);
+    process.exit(1);
+});
+
 // Start the server
-main().catch((error) => {
+main().catch(async (error) => {
+  try { await emitSessionCrash(error); } catch { /* never mask the crash */ }
   console.error("Fatal error in main execution:", error);
   process.exit(1);
 });

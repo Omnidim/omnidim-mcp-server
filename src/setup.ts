@@ -1,14 +1,19 @@
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { createInterface, Interface as ReadlineInterface } from "node:readline/promises";
 
 import axios from "axios";
 
+import { buildTargets, describeInstallError } from "./clients.js";
 import { CREDENTIALS_PATH, readApiKey, writeApiKey } from "./credentials.js";
 import { printAnimatedSetupBanner } from "./helpers.js";
-import { emitInstall, isTelemetryDisabled } from "./telemetry.js";
+import {
+    emitInstall,
+    emitSetupClientResult,
+    emitSetupFinished,
+    emitSetupKeyResult,
+    emitSetupStarted,
+    isTelemetryDisabled,
+    type SetupKeyOutcome,
+} from "./telemetry.js";
 
 const PROD_API = "https://backend.omnidim.io/api/v1";
 
@@ -27,80 +32,6 @@ const CLOSING_LINES = [
 
 export function pickClosingLine(): string {
     return CLOSING_LINES[Math.floor(Math.random() * CLOSING_LINES.length)];
-}
-
-interface ClientTarget {
-    name: string;
-    configPath: string;
-    install: (apiKey: string) => void;
-}
-
-const TARGETS: ClientTarget[] = [
-    {
-        name: "Claude Code",
-        configPath: join(homedir(), ".claude.json"),
-        install: installClaudeCode,
-    },
-    {
-        name: "Claude Desktop",
-        configPath: join(
-            homedir(),
-            "Library",
-            "Application Support",
-            "Claude",
-            "claude_desktop_config.json",
-        ),
-        install: (key) => upsertJsonConfig(TARGETS[1].configPath, key),
-    },
-    {
-        name: "Cursor",
-        configPath: join(homedir(), ".cursor", "mcp.json"),
-        install: (key) => upsertJsonConfig(TARGETS[2].configPath, key),
-    },
-    {
-        name: "Windsurf",
-        configPath: join(homedir(), ".codeium", "windsurf", "mcp_config.json"),
-        install: (key) => upsertJsonConfig(TARGETS[3].configPath, key),
-    },
-];
-
-function upsertJsonConfig(configPath: string, apiKey: string): void {
-    const config = existsSync(configPath)
-        ? (JSON.parse(readFileSync(configPath, "utf8")) as Record<string, unknown>)
-        : {};
-    const servers = ((config.mcpServers as Record<string, unknown>) ?? {}) as Record<string, unknown>;
-    servers.omnidim = {
-        command: "npx",
-        args: ["-y", "@omnidim-ai/mcp-server"],
-        env: { OMNIDIM_API_KEY: apiKey },
-    };
-    config.mcpServers = servers;
-    writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
-}
-
-function installClaudeCode(apiKey: string): void {
-    try {
-        execFileSync("claude", ["mcp", "remove", "omnidim", "--scope", "user"], { stdio: "ignore" });
-    } catch {
-        // not registered, fine
-    }
-    try {
-        // Name before the variadic -e so commander doesn't gobble it as an env value.
-        execFileSync(
-            "claude",
-            [
-                "mcp", "add", "omnidim",
-                "--scope", "user",
-                "-e", `OMNIDIM_API_KEY=${apiKey}`,
-                "--", "npx", "-y", "@omnidim-ai/mcp-server",
-            ],
-            { stdio: ["ignore", "pipe", "pipe"] },
-        );
-    } catch (e) {
-        const err = e as { stderr?: Buffer; stdout?: Buffer; message: string };
-        const detail = (err.stderr ?? err.stdout ?? Buffer.from("")).toString().trim();
-        throw new Error(detail || err.message);
-    }
 }
 
 // Echoes `*` per input char so pasted keys never land in scrollback.
@@ -164,7 +95,26 @@ function readMaskedLine(prompt: string): Promise<string> {
     });
 }
 
-async function validateApiKey(apiKey: string): Promise<string | null> {
+type KeyFailureReason = "rejected_401" | "network_error" | "unexpected";
+
+type KeyCheck = { ok: true } | { ok: false; reason: KeyFailureReason; message: string };
+
+// Maps the last key-check failure to the telemetry outcome. `null` means the
+// user never submitted a key (only empty input), i.e. a genuine abort.
+export function keyOutcomeFromReason(reason: KeyFailureReason | null): SetupKeyOutcome {
+    switch (reason) {
+        case "rejected_401":
+            return "rejected_401";
+        case "network_error":
+            return "network_error";
+        case "unexpected":
+            return "server_error";
+        default:
+            return "aborted";
+    }
+}
+
+async function validateApiKey(apiKey: string): Promise<KeyCheck> {
     try {
         const res = await axios.get(`${PROD_API}/agents`, {
             params: { pagesize: 1 },
@@ -172,16 +122,17 @@ async function validateApiKey(apiKey: string): Promise<string | null> {
             timeout: 10_000,
             validateStatus: () => true,
         });
-        if (res.status === 200) return null;
-        if (res.status === 401) return "Uh oh! Key rejected";
-        return `unexpected status ${res.status}`;
+        if (res.status === 200) return { ok: true };
+        if (res.status === 401) return { ok: false, reason: "rejected_401", message: "Uh oh! Key rejected" };
+        return { ok: false, reason: "unexpected", message: `unexpected status ${res.status}` };
     } catch (e) {
-        return e instanceof Error ? e.message : "network error";
+        return { ok: false, reason: "network_error", message: e instanceof Error ? e.message : "network error" };
     }
 }
 
 export async function runSetup(): Promise<number> {
     await printAnimatedSetupBanner();
+    void emitSetupStarted();
 
     let rl: ReadlineInterface | null = null;
     try {
@@ -192,23 +143,25 @@ export async function runSetup(): Promise<number> {
         if (saved) {
             process.stdout.write(`  Saved key found at ${dim(CREDENTIALS_PATH)}\n`);
             process.stdout.write(`  ${dim("checking...")}\n`);
-            const err = await validateApiKey(saved);
-            if (err === null) {
+            const check = await validateApiKey(saved);
+            if (check.ok) {
                 rl = createInterface({ input: process.stdin, output: process.stdout });
                 const ans = (await rl.question("  Reuse this key? [Y/n] ")).trim().toLowerCase();
                 rl.close();
                 rl = null;
                 if (ans !== "n" && ans !== "no") {
                     apiKey = saved;
+                    void emitSetupKeyResult("reused");
                     process.stdout.write(`  ${teal("●")} using saved key\n\n`);
                 }
             } else {
-                process.stdout.write(red(`  saved key: ${err}\n`));
+                process.stdout.write(red(`  saved key: ${check.message}\n`));
             }
         }
 
         if (!apiKey) {
             process.stdout.write(`  Get a key at ${dim("omnidim.io/api-management")}\n`);
+            let lastReason: KeyFailureReason | null = null;
             for (let i = 0; i < 3 && !apiKey; i++) {
                 const input = (await readMaskedLine("  API key: ")).trim();
                 if (!input) {
@@ -216,24 +169,28 @@ export async function runSetup(): Promise<number> {
                     continue;
                 }
                 process.stdout.write(`  ${dim("checking...")}\n`);
-                const err = await validateApiKey(input);
-                if (err === null) {
+                const check = await validateApiKey(input);
+                if (check.ok) {
                     apiKey = input;
                     break;
                 }
-                process.stdout.write(red(`  ${err}, try again\n`));
+                lastReason = check.reason;
+                process.stdout.write(red(`  ${check.message}, try again\n`));
             }
             if (!apiKey) {
+                void emitSetupKeyResult(keyOutcomeFromReason(lastReason));
                 process.stdout.write(red("\n  three failed attempts, aborting.\n"));
                 return 1;
             }
 
+            void emitSetupKeyResult("entered");
             const path = writeApiKey(apiKey);
             process.stdout.write(`  ${teal("●")} key saved to ${dim(path)}\n\n`);
         }
 
-        const detected = TARGETS.filter((t) => existsSync(t.configPath));
+        const detected = buildTargets().filter((t) => t.detect());
         if (detected.length === 0) {
+            void emitSetupFinished(0, 0);
             process.stdout.write(`  ${dim("no MCP clients detected. Add manually:")}\n`);
             process.stdout.write(`    claude mcp add omnidim -- npx -y @omnidim-ai/mcp-server\n\n`);
             return 0;
@@ -244,13 +201,22 @@ export async function runSetup(): Promise<number> {
 
         rl = createInterface({ input: process.stdin, output: process.stdout });
         const ans = (await rl.question("\n  Install for all? [Y/n] ")).trim().toLowerCase();
-        if (ans === "n" || ans === "no") return 0;
+        if (ans === "n" || ans === "no") {
+            void emitSetupFinished(0, 0);
+            return 0;
+        }
 
+        let installed = 0;
+        let failed = 0;
         for (const t of detected) {
             try {
                 t.install(apiKey);
+                installed++;
+                void emitSetupClientResult(t.id, "installed");
                 process.stdout.write(`  ${teal("●")} installed for ${t.name}\n`);
             } catch (e) {
+                failed++;
+                void emitSetupClientResult(t.id, "failed", describeInstallError(e));
                 const msg = e instanceof Error ? e.message : String(e);
                 process.stdout.write(red(`  failed for ${t.name}: ${msg}\n`));
                 process.stdout.write(
@@ -258,6 +224,7 @@ export async function runSetup(): Promise<number> {
                 );
             }
         }
+        void emitSetupFinished(installed, failed);
         if (isTelemetryDisabled()) {
             process.stdout.write(`\n  ${dim("Telemetry off")}\n`);
         } else {

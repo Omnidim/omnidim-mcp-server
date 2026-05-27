@@ -101,6 +101,28 @@ async function send(event: string, extra: Record<string, unknown> = {}): Promise
     }
 }
 
+export interface SanitizedError {
+    error_class: string;
+    error_code: string;
+}
+
+// Reduce any thrown value to two low-cardinality, non-identifying fields.
+// Never returns a message, stack, path, or payload, since those can carry
+// usernames and file paths. Node's documented errno strings (ENOENT,
+// EACCES, ...) and the error constructor name are safe to keep.
+export function sanitizeError(error: unknown): SanitizedError {
+    if (error && typeof error === "object") {
+        const e = error as { name?: unknown; code?: unknown; constructor?: { name?: string } };
+        const rawName =
+            typeof e.name === "string" && e.name ? e.name : e.constructor?.name ?? "Error";
+        const error_class = /^[A-Za-z][A-Za-z0-9]{0,39}$/.test(rawName) ? rawName : "Error";
+        const error_code =
+            typeof e.code === "string" && /^[A-Z][A-Z0-9_]{1,31}$/.test(e.code) ? e.code : "unknown";
+        return { error_class, error_code };
+    }
+    return { error_class: "Error", error_code: "unknown" };
+}
+
 export async function emitInstall(): Promise<void> {
     await send("install");
 }
@@ -109,31 +131,123 @@ export async function emitSessionStart(): Promise<void> {
     await send("session_start");
 }
 
-interface SessionEndPayload {
+export type SetupKeyOutcome =
+    | "reused"
+    | "entered"
+    | "rejected_401"
+    | "network_error"
+    | "server_error"
+    | "aborted";
+
+export async function emitSetupStarted(): Promise<void> {
+    await send("setup_started");
+}
+
+export async function emitSetupKeyResult(outcome: SetupKeyOutcome): Promise<void> {
+    await send("setup_key_result", { outcome });
+}
+
+export async function emitSetupClientResult(
+    client: string,
+    outcome: "installed" | "failed",
+    error?: SanitizedError & { exit_code?: number },
+): Promise<void> {
+    await send("setup_client_result", { client, outcome, ...(error ?? {}) });
+}
+
+export async function emitSetupFinished(
+    clientsInstalled: number,
+    clientsFailed: number,
+): Promise<void> {
+    await send("setup_finished", {
+        clients_installed: clientsInstalled,
+        clients_failed: clientsFailed,
+    });
+}
+
+interface ToolUsage {
+    tool: string;
+    count: number;
+    ok: number;
+    errors: Array<{ code: string; count: number }>;
+}
+
+export interface SessionSummary {
     duration_s: number;
-    tools_called: Array<{ tool: string; count: number }>;
+    tools_called: ToolUsage[];
+    tool_errors_total: number;
 }
 
-export async function emitSessionEnd(payload: SessionEndPayload): Promise<void> {
-    await send("session_end", { ...payload });
+interface ToolStat {
+    count: number;
+    ok: number;
+    errors: Map<string, number>;
 }
 
-const toolCounts = new Map<string, number>();
+const toolStats = new Map<string, ToolStat>();
 let sessionStartMs: number | null = null;
+// Guards against one session reporting twice (a crash racing graceful
+// shutdown), which would otherwise log an empty ghost event.
+let terminated = false;
 
-export function recordToolCall(name: string): void {
-    toolCounts.set(name, (toolCounts.get(name) ?? 0) + 1);
+// outcome is "ok" for a successful call, otherwise a category code
+// ("http_401", "network", "timeout", "validation", "upstream_html",
+// "no_api_key", "unknown"). Never a tool's input or output.
+export function recordToolResult(name: string, outcome: string): void {
+    let stat = toolStats.get(name);
+    if (!stat) {
+        stat = { count: 0, ok: 0, errors: new Map() };
+        toolStats.set(name, stat);
+    }
+    stat.count += 1;
+    if (outcome === "ok") {
+        stat.ok += 1;
+    } else {
+        stat.errors.set(outcome, (stat.errors.get(outcome) ?? 0) + 1);
+    }
 }
 
 export function beginSession(): void {
     sessionStartMs = Date.now();
+    terminated = false;
     void emitSessionStart();
 }
 
-export function endSession(): SessionEndPayload {
+function drainSession(): SessionSummary {
     const duration_s = sessionStartMs ? Math.round((Date.now() - sessionStartMs) / 1000) : 0;
-    const tools_called = Array.from(toolCounts.entries()).map(([tool, count]) => ({ tool, count }));
+    let tool_errors_total = 0;
+    const tools_called: ToolUsage[] = Array.from(toolStats.entries()).map(([tool, stat]) => {
+        const errors = Array.from(stat.errors.entries()).map(([code, count]) => {
+            tool_errors_total += count;
+            return { code, count };
+        });
+        return { tool, count: stat.count, ok: stat.ok, errors };
+    });
     sessionStartMs = null;
-    toolCounts.clear();
-    return { duration_s, tools_called };
+    toolStats.clear();
+    return { duration_s, tools_called, tool_errors_total };
+}
+
+export function endSession(): SessionSummary {
+    return drainSession();
+}
+
+export async function emitSessionEnd(payload: SessionSummary): Promise<void> {
+    if (terminated) return;
+    terminated = true;
+    await send("session_end", { ...payload });
+}
+
+// Fires on a crash so the session still terminates with a record carrying
+// its tool-call summary; a clean session_end never runs on a crash path.
+export async function emitSessionCrash(error: unknown): Promise<void> {
+    if (terminated) return;
+    terminated = true;
+    const active = sessionStartMs !== null;
+    const summary = drainSession();
+    await send("session_crash", {
+        phase: active ? "runtime" : "startup",
+        ...sanitizeError(error),
+        ...summary,
+    });
 }

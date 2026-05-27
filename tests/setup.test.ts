@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { pickClosingLine } from "../src/setup.js";
+import { keyOutcomeFromReason, pickClosingLine } from "../src/setup.js";
 
 const BINARY = resolve(__dirname, "..", "build", "index.js");
 
@@ -18,6 +18,18 @@ describe("pickClosingLine", () => {
         for (let i = 0; i < 30; i++) {
             expect(known.has(pickClosingLine())).toBe(true);
         }
+    });
+});
+
+describe("keyOutcomeFromReason", () => {
+    it("maps each failure reason to a distinct outcome", () => {
+        expect(keyOutcomeFromReason("rejected_401")).toBe("rejected_401");
+        expect(keyOutcomeFromReason("network_error")).toBe("network_error");
+        expect(keyOutcomeFromReason("unexpected")).toBe("server_error");
+    });
+
+    it("treats no submitted key as an abort", () => {
+        expect(keyOutcomeFromReason(null)).toBe("aborted");
     });
 });
 

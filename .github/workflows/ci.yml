@@ -12,7 +12,12 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Setup writes per-OS client config paths, so prove them on each real OS.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4

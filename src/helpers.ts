@@ -1,3 +1,5 @@
+import { renderWordmark } from "./banner.js";
+
 export const PACKAGE_NAME = "@omnidim-ai/mcp-server";
 
 const bold = (s: string): string => `\x1b[1m${s}\x1b[0m`;
@@ -52,6 +54,14 @@ const SUBTITLE = `     ${dim("MCP server setup")} ${dim("·")} ${dim("omnidim.io
 export async function printAnimatedSetupBanner(): Promise<void> {
     if (!process.stdout.isTTY) {
         printSetupBanner();
+        return;
+    }
+    // Wide TTY: show the full branded wordmark instead of the spinner line.
+    const wordmark = renderWordmark(process.stdout.columns);
+    if (wordmark) {
+        process.stdout.write("\n" + wordmark + "\n\n");
+        process.stdout.write(`  ${bold("OmniDimension")} ${dim("·")} ${italic("Voice AI")}\n`);
+        process.stdout.write(SUBTITLE + "\n\n");
         return;
     }
     process.stdout.write("\n");
@@ -148,4 +158,33 @@ export function trimLargeResponse(data: unknown): { text: string; note?: string 
         text: full.slice(0, MAX_LIST_CHARS),
         note: `[Response truncated. Full size: ${full.length} chars.]`,
     };
+}
+
+const NAMED_STATUSES = new Set([400, 401, 403, 404, 409, 422, 429, 500, 502, 503]);
+
+// Map a thrown tool-call error to a low-cardinality category for telemetry.
+// Duck-typed on the axios error shape so this stays testable without axios.
+// Returns a status/network/timeout category, never a URL, body, or input.
+export function classifyToolError(error: unknown): string {
+    if (error && typeof error === "object") {
+        const e = error as {
+            isAxiosError?: boolean;
+            code?: unknown;
+            name?: unknown;
+            response?: { status?: unknown };
+        };
+        if (e.name === "ZodError") return "validation";
+        if (e.isAxiosError) {
+            const status = e.response?.status;
+            if (typeof status === "number") {
+                if (NAMED_STATUSES.has(status)) return `http_${status}`;
+                if (status >= 500) return "http_5xx";
+                if (status >= 400) return "http_4xx";
+                return `http_${status}`;
+            }
+            if (e.code === "ECONNABORTED" || e.code === "ETIMEDOUT") return "timeout";
+            return "network";
+        }
+    }
+    return "unknown";
 }

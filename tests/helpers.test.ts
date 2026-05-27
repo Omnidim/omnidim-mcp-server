@@ -3,10 +3,34 @@ import { describe, expect, it } from "vitest";
 import {
     LIST_KEYS,
     MAX_LIST_CHARS,
+    classifyToolError,
     findList,
     redactSensitive,
     trimLargeResponse,
 } from "../src/helpers.js";
+
+describe("classifyToolError", () => {
+    it("maps known HTTP statuses to their own code", () => {
+        expect(classifyToolError({ isAxiosError: true, response: { status: 401 } })).toBe("http_401");
+        expect(classifyToolError({ isAxiosError: true, response: { status: 404 } })).toBe("http_404");
+        expect(classifyToolError({ isAxiosError: true, response: { status: 500 } })).toBe("http_500");
+    });
+
+    it("buckets uncommon statuses by class", () => {
+        expect(classifyToolError({ isAxiosError: true, response: { status: 418 } })).toBe("http_4xx");
+        expect(classifyToolError({ isAxiosError: true, response: { status: 504 } })).toBe("http_5xx");
+    });
+
+    it("separates timeout from generic network errors", () => {
+        expect(classifyToolError({ isAxiosError: true, code: "ECONNABORTED" })).toBe("timeout");
+        expect(classifyToolError({ isAxiosError: true, code: "ECONNREFUSED" })).toBe("network");
+    });
+
+    it("recognizes zod validation and falls back to unknown", () => {
+        expect(classifyToolError({ name: "ZodError" })).toBe("validation");
+        expect(classifyToolError(new Error("boom"))).toBe("unknown");
+    });
+});
 
 describe("redactSensitive", () => {
     it("replaces api_key field values with [redacted]", () => {

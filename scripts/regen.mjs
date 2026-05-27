@@ -165,7 +165,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, endSession, emitSessionEnd } from "./telemetry.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { classifyToolError, isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolResult } from "./telemetry.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -229,6 +229,7 @@ src = src.replaceAll('"page_size":{"type":"number","default":30', '"page_size":{
 src = src.replace(
   / {4}\/\/ Log warning if security is required but not available\n[\s\S]*?\n {4}\}\n/,
   `    else if (definition.securityRequirements?.length > 0) {
+        recordToolResult(toolName, 'no_api_key');
         return {
             content: [{
                 type: 'text',
@@ -311,6 +312,53 @@ src = src.replace(
     else if (typeof response.data === 'string') {
          responseText = response.data;
     }`
+);
+
+// Record a per-tool outcome for the session summary at each result branch:
+// validation reject, missing key, success, and the catch-all error path.
+// Categories only (never inputs/outputs) so telemetry stays free of PII.
+src = src.replace(
+  /(\} catch \(error: unknown\) \{\n)(\s*if \(error instanceof ZodError\) \{)/,
+  `$1        recordToolResult(toolName, 'validation');\n$2`
+);
+src = src.replace(
+  /(\/\/ Return formatted response\n\s*)(return \{)/,
+  `$1recordToolResult(toolName, 'ok');\n    $2`
+);
+src = src.replace(
+  /(\} catch \(error: unknown\) \{\n)(\s*\/\/ Handle errors during execution)/,
+  `$1    recordToolResult(toolName, classifyToolError(error));\n$2`
+);
+
+// A crash never runs the graceful-shutdown path, so flush a session_crash
+// (carrying the session's tool-call summary) from every uncaught exit.
+src = src.replace(
+  /(\} catch \(error\) \{\n)(\s*console\.error\("Error during server startup:", error\);)/,
+  `$1    try { await emitSessionCrash(error); } catch { /* telemetry must never mask the crash */ }\n$2`
+);
+src = src.replace(
+  /process\.on\('SIGTERM', cleanup\);\n/,
+  `process.on('SIGTERM', cleanup);
+
+process.on('uncaughtException', async (error) => {
+    try { await emitSessionCrash(error); } catch { /* never mask the crash */ }
+    console.error("Uncaught exception:", error);
+    process.exit(1);
+});
+process.on('unhandledRejection', async (reason) => {
+    try { await emitSessionCrash(reason); } catch { /* never mask the crash */ }
+    console.error("Unhandled rejection:", reason);
+    process.exit(1);
+});
+`
+);
+src = src.replace(
+  /main\(\)\.catch\(\(error\) => \{\n  console\.error\("Fatal error in main execution:", error\);\n  process\.exit\(1\);\n\}\);/,
+  `main().catch(async (error) => {
+  try { await emitSessionCrash(error); } catch { /* never mask the crash */ }
+  console.error("Fatal error in main execution:", error);
+  process.exit(1);
+});`
 );
 
 writeFileSync(indexPath, src);
