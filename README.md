@@ -1,6 +1,8 @@
 # @omnidim-ai/mcp-server
 
-Model Context Protocol server for [OmniDimension](https://omnidim.io). Drive voice agents, dispatch calls, manage knowledge bases, and run simulations from Claude, Cursor, Windsurf, or any MCP-compatible client.
+Local stdio Model Context Protocol server for [OmniDimension](https://omnidim.io). Drive voice agents, dispatch calls, and manage knowledge bases from Claude, Cursor, Windsurf, or any MCP-compatible client.
+
+Looking for the hosted OAuth variant? Use [`https://mcp.omnidim.io/mcp`](https://docs.omnidim.io/docs/mcp) instead. The hosted server is the recommended path for Claude Desktop, Claude.ai, and any client that supports HTTP MCP.
 
 ## Quick start
 
@@ -57,7 +59,6 @@ Get your API key from [omnidim.io/api-management](https://omnidim.io/api-managem
 | Knowledge base | list, upload, attach, detach, delete |
 | Phone numbers | list, attach, detach, import (Twilio, Exotel, SIP) |
 | Providers | list LLMs, list voices, list STT, list TTS |
-| Simulations | create, list, get, update, delete, start, stop, enhance prompt |
 | Reseller | child orgs, users, credits (reseller accounts only) |
 
 Full API reference: [docs.omnidim.io](https://docs.omnidim.io).
