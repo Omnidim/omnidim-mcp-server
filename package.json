@@ -1,6 +1,7 @@
 {
   "name": "@omnidim-ai/mcp-server",
   "version": "0.4.0",
+  "mcpName": "io.github.omnidim/omnidim-mcp-server",
   "description": "Official MCP server for OmniDimension. Drive voice agents, dispatch calls, and manage knowledge bases from Claude, Cursor, Windsurf, and any MCP client.",
   "type": "module",
   "main": "build/index.js",

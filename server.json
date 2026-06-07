@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.omnidim/omnidim-mcp-server",
+  "description": "Official MCP server for OmniDimension. Drive voice agents, dispatch calls, run bulk call campaigns, and manage knowledge bases, phone numbers, and simulations.",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/Omnidim/omnidim-mcp-server",
+    "source": "github"
+  },
+  "version": "0.4.1",
+  "websiteUrl": "https://omnidim.io",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@omnidim-ai/mcp-server",
+      "version": "0.4.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "OMNIDIM_API_KEY",
+          "description": "OmniDimension API key. Generate one at https://omnidim.io/api-management",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.omnidim.io/mcp"
+    }
+  ]
+}
