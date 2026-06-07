@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-07
+
+### Fixed
+
+- MCP Registry name corrected to `io.github.Omnidim/omnidim-mcp-server` (capital O, matching the GitHub org login).
+
 ## [0.4.1] - 2026-06-07
 
 ### Added
