@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-07
+
+### Added
+
+- Listed on the official MCP Registry as `io.github.omnidim/omnidim-mcp-server`, covering both this npm package and the hosted server at `mcp.omnidim.io`.
+
 ## [0.4.0] - 2026-05-27
 
 ### Added
