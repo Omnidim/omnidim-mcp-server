@@ -17,11 +17,14 @@ import { createHash } from 'node:crypto';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import yaml from 'js-yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const DEFAULT_SPEC = resolve(ROOT, '../omnidim-docs/openapi/omnidim.yaml');
 const SPEC = process.env.SPEC ? resolve(process.env.SPEC) : DEFAULT_SPEC;
+const DEFAULT_CONFIG = resolve(ROOT, '../omnidim-docs/openapi/mcp-config.yaml');
+const CONFIG = process.env.MCP_CONFIG ? resolve(process.env.MCP_CONFIG) : DEFAULT_CONFIG;
 
 if (!existsSync(SPEC)) {
   console.error(`spec not found: ${SPEC}`);
@@ -34,12 +37,40 @@ const TMP = mkdtempSync(join(tmpdir(), 'omnidim-mcp-regen-'));
 console.log(`regenerating from ${SPEC}`);
 console.log(`tmp output: ${TMP}`);
 
+// Drop endpoints the shared MCP exposure config excludes, before the
+// generator runs, so excluded operations never become tools.
+const METHODS = ['get', 'post', 'put', 'patch', 'delete'];
+const excludeCfg = existsSync(CONFIG)
+  ? (yaml.load(readFileSync(CONFIG, 'utf8'))?.exclude ?? {})
+  : {};
+const excludedPaths = new Set(excludeCfg.paths ?? []);
+const excludedOps = new Set(excludeCfg.operation_ids ?? []);
+const spec = yaml.load(readFileSync(SPEC, 'utf8'));
+let removed = 0;
+for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
+  if (excludedPaths.has(specPath)) {
+    delete spec.paths[specPath];
+    removed += METHODS.filter((m) => item[m]).length;
+    continue;
+  }
+  for (const m of METHODS) {
+    if (item[m] && excludedOps.has(item[m].operationId)) {
+      delete item[m];
+      removed += 1;
+    }
+  }
+  if (!METHODS.some((m) => item[m])) delete spec.paths[specPath];
+}
+const FILTERED_SPEC = `${TMP}-filtered-spec.yaml`;
+writeFileSync(FILTERED_SPEC, yaml.dump(spec, { noRefs: true }));
+console.log(`excluded ${removed} operations via ${CONFIG}`);
+
 const result = spawnSync(
   'npx',
   [
     '-y',
     'openapi-mcp-generator@latest',
-    '--input', SPEC,
+    '--input', FILTERED_SPEC,
     '--output', TMP,
     '--server-name', pkg.name,
     '--server-version', pkg.version,
@@ -51,12 +82,14 @@ const result = spawnSync(
 );
 if (result.status !== 0) {
   rmSync(TMP, { recursive: true, force: true });
+  rmSync(FILTERED_SPEC, { force: true });
   process.exit(result.status ?? 1);
 }
 
 const indexPath = resolve(ROOT, 'src/index.ts');
 copyFileSync(join(TMP, 'src/index.ts'), indexPath);
 rmSync(TMP, { recursive: true, force: true });
+rmSync(FILTERED_SPEC, { force: true });
 
 let src = readFileSync(indexPath, 'utf8');
 
@@ -186,12 +219,12 @@ Surfaces:
 - Knowledge base: upload PDFs and attach to agents.
 - Phone numbers: list, attach to agents, import from Twilio, Exotel, or SIP.
 - Providers: discover available LLMs, voices, STT, and TTS engines.
-- Simulations: run scripted test scenarios against an agent.
 - Reseller: child organization management (requires partner-level credentials; non-reseller keys get 403).
 
 Conventions:
 - List endpoints accept pageno (>= 1) and pagesize (1-150). Use name to filter.
 - For details on one item, call get<Resource>(id) after listing.
+- Dispatching calls: run listPhoneNumbers first. If the account has numbers, pass the chosen one as from_number_id. If it has none, omit from_number_id and the platform's default number is used. Never guess a from_number_id.
 - Configure OMNIDIM_API_KEY in your MCP client config to authenticate.
 - API reference: https://docs.omnidim.io\`;
 
@@ -368,9 +401,13 @@ src = src.replace(
 writeFileSync(indexPath, src);
 
 const specHash = createHash('sha256').update(readFileSync(SPEC)).digest('hex');
+const configHash = existsSync(CONFIG)
+  ? createHash('sha256').update(readFileSync(CONFIG)).digest('hex')
+  : 'none';
 const endpoints = (src.match(/^  \["/gm) ?? []).length;
 const specYml = `openapi_spec_url: https://docs.omnidim.io/openapi.yaml
 openapi_spec_hash: ${specHash}
+mcp_config_hash: ${configHash}
 configured_endpoints: ${endpoints}
 generator: openapi-mcp-generator
 `;
