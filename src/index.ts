@@ -44,7 +44,7 @@ interface McpToolDefinition {
  * Server configuration
  */
 export const SERVER_NAME = "OmniDimension";
-export const SERVER_VERSION = "0.4.2";
+export const SERVER_VERSION = "0.5.0";
 // Base URL for the API, can be set via environment variable or determined from OpenAPI spec
 export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
 if (process.env.API_BASE_URL) {

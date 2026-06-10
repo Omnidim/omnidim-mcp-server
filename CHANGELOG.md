@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-11
+
+### Changed
+
+- Simulation tools are removed from the catalogue.
+- Model and voice provider options match the live catalog, so current models are selectable and stale entries are gone.
+- Voice selection documents that `voice_id` is the `name` value from the voices list, and language names follow the dashboard's language picker.
+- Server instructions explain how an outbound call picks the number it is placed from.
+
 ## [0.4.2] - 2026-06-07
 
 ### Fixed
