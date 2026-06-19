@@ -21,20 +21,36 @@ import yaml from 'js-yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const DEFAULT_SPEC = resolve(ROOT, '../omnidim-docs/openapi/omnidim.yaml');
-const SPEC = process.env.SPEC ? resolve(process.env.SPEC) : DEFAULT_SPEC;
-const DEFAULT_CONFIG = resolve(ROOT, '../omnidim-docs/openapi/mcp-config.yaml');
+
+// The spec is fetched from the published docs site so regen runs from a
+// clean checkout. Set SPEC to a local file to override.
+const SPEC_URL = 'https://docs.omnidim.io/openapi.yaml';
+const SPEC_OVERRIDE = process.env.SPEC ? resolve(process.env.SPEC) : null;
+const DEFAULT_CONFIG = resolve(ROOT, 'mcp-config.yaml');
 const CONFIG = process.env.MCP_CONFIG ? resolve(process.env.MCP_CONFIG) : DEFAULT_CONFIG;
 
-if (!existsSync(SPEC)) {
-  console.error(`spec not found: ${SPEC}`);
-  process.exit(1);
+async function loadSpecBytes() {
+  if (SPEC_OVERRIDE) {
+    if (!existsSync(SPEC_OVERRIDE)) {
+      console.error(`spec not found: ${SPEC_OVERRIDE}`);
+      process.exit(1);
+    }
+    return { bytes: readFileSync(SPEC_OVERRIDE), label: SPEC_OVERRIDE };
+  }
+  const res = await fetch(SPEC_URL);
+  if (!res.ok) {
+    console.error(`failed to fetch spec: ${res.status} ${SPEC_URL}`);
+    process.exit(1);
+  }
+  return { bytes: Buffer.from(await res.arrayBuffer()), label: SPEC_URL };
 }
+
+const { bytes: specBytes, label: specLabel } = await loadSpecBytes();
 
 const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
 const TMP = mkdtempSync(join(tmpdir(), 'omnidim-mcp-regen-'));
 
-console.log(`regenerating from ${SPEC}`);
+console.log(`regenerating from ${specLabel}`);
 console.log(`tmp output: ${TMP}`);
 
 // Drop endpoints the shared MCP exposure config excludes, before the
@@ -45,7 +61,7 @@ const excludeCfg = existsSync(CONFIG)
   : {};
 const excludedPaths = new Set(excludeCfg.paths ?? []);
 const excludedOps = new Set(excludeCfg.operation_ids ?? []);
-const spec = yaml.load(readFileSync(SPEC, 'utf8'));
+const spec = yaml.load(specBytes.toString('utf8'));
 let removed = 0;
 for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
   if (excludedPaths.has(specPath)) {
@@ -400,7 +416,7 @@ src = src.replace(
 
 writeFileSync(indexPath, src);
 
-const specHash = createHash('sha256').update(readFileSync(SPEC)).digest('hex');
+const specHash = createHash('sha256').update(specBytes).digest('hex');
 const configHash = existsSync(CONFIG)
   ? createHash('sha256').update(readFileSync(CONFIG)).digest('hex')
   : 'none';
