@@ -1,0 +1,26 @@
+# MCP tool exposure config
+#
+# Lists OpenAPI operations that exist in the REST API but should not be
+# exposed as MCP tools. Anything not listed here is emitted as a tool by
+# the regen script.
+#
+# Add an operationId (or an exact path) under `exclude` with a short
+# reason when an endpoint is admin-only, deprecated, or not safe to put
+# behind an LLM.
+exclude:
+  # Match by exact path string.
+  paths: []
+
+  # Match by OpenAPI operationId.
+  operation_ids:
+    # Simulations are an under-supported, undocumented feature. Kept off
+    # the MCP surface until they are documented and stable.
+    - listSimulations
+    - createSimulation
+    - getSimulation
+    - updateSimulation
+    - deleteSimulation
+    - startSimulation
+    - stopSimulation
+    # Authoring helper, not a runtime action for an agent to call.
+    - enhancePrompt
