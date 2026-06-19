@@ -47,5 +47,8 @@ describe("binary entrypoint", () => {
         expect(out).toContain("OmniDimension");
         expect(out).toContain("MCP server setup");
         expect(out).not.toContain("Claude Desktop · Cursor · Windsurf");
-    });
+        // Test timeout must exceed the spawnSync budget above, or a slow
+        // cold child-process spawn on CI trips vitest's default 5s timeout
+        // before spawnSync's own guard can fire.
+    }, 15000);
 });
