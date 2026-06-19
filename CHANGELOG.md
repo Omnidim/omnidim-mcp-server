@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-19
+
+### Fixed
+
+- Avoid check-then-act file races when trimming the log file and reading the install id.
+
+### Changed
+
+- The type-regeneration script fetches the spec from the public docs site, so it runs from a clean checkout.
+- Updated dependencies (axios and dev tooling).
+
 ## [0.5.0] - 2026-06-11
 
 ### Changed
