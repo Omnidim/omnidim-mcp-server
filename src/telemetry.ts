@@ -37,10 +37,10 @@ export function telemetryStatus(): { disabled: boolean; reason: string } {
 
 function loadOrCreateInstallId(): string {
     try {
-        if (existsSync(INSTALL_ID_PATH)) {
-            const v = readFileSync(INSTALL_ID_PATH, "utf8").trim();
-            if (v.length >= 8 && v.length <= 64) return v;
-        }
+        // Read directly and let a missing file throw, rather than
+        // exists-then-read, which races against a concurrent write.
+        const v = readFileSync(INSTALL_ID_PATH, "utf8").trim();
+        if (v.length >= 8 && v.length <= 64) return v;
     } catch {
         // fall through to create a fresh one
     }

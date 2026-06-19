@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -39,19 +39,22 @@ export function appendLog(fields: LogFields): void {
 // grow without bound on a long-lived or repeatedly-failing install.
 function trimIfLarge(): void {
     try {
-        if (!existsSync(LOG_PATH) || statSync(LOG_PATH).size <= MAX_BYTES) return;
-        const lines = readFileSync(LOG_PATH, "utf8").split("\n");
+        // Read once and act on the result rather than stat-then-read, which
+        // races (the file can change between the two syscalls).
+        const data = readFileSync(LOG_PATH, "utf8");
+        if (Buffer.byteLength(data) <= MAX_BYTES) return;
+        const lines = data.split("\n");
         writeFileSync(LOG_PATH, lines.slice(Math.floor(lines.length / 2)).join("\n"), { mode: 0o600 });
     } catch {
-        // ignore
+        // ignore (file missing or unreadable)
     }
 }
 
 export function readLogTail(maxLines = 25): string[] {
     try {
-        if (!existsSync(LOG_PATH)) return [];
         return readFileSync(LOG_PATH, "utf8").trimEnd().split("\n").filter(Boolean).slice(-maxLines);
     } catch {
+        // missing or unreadable log
         return [];
     }
 }
