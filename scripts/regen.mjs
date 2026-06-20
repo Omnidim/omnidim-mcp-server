@@ -130,13 +130,14 @@ src = src.replace(
   ''
 );
 
-// Silence the startup log unless API_BASE_URL is explicitly overridden.
+// Pin the backend to production. The base URL never changes, and an
+// env-overridable base URL is a credential-exfiltration surface: the
+// server attaches the user's bearer key to every request to whatever
+// the URL points at. No override, no startup log.
 src = src.replace(
-  /export const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
-  `export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
-if (process.env.API_BASE_URL) {
-    console.error(\`API_BASE_URL override: \${API_BASE_URL}\`);
-}`
+  /\/\/ Base URL for the API, can be set via environment variable or determined from OpenAPI spec\nexport const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
+  `// Base URL for the API. Pinned to production; not env-overridable.
+export const API_BASE_URL = "https://backend.omnidim.io/api/v1";`
 );
 
 // Add User-Agent + 60s timeout to every backend request.

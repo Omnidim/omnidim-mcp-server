@@ -45,11 +45,8 @@ interface McpToolDefinition {
  */
 export const SERVER_NAME = "OmniDimension";
 export const SERVER_VERSION = "0.5.0";
-// Base URL for the API, can be set via environment variable or determined from OpenAPI spec
-export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
-if (process.env.API_BASE_URL) {
-    console.error(`API_BASE_URL override: ${API_BASE_URL}`);
-}
+// Base URL for the API. Pinned to production; not env-overridable.
+export const API_BASE_URL = "https://backend.omnidim.io/api/v1";
 
 /**
  * MCP Server instance

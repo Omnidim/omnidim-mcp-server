@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- The API base URL is pinned to production and can no longer be overridden by the `API_BASE_URL` environment variable, so the bearer key is never sent to a different host.
+
 ## [0.5.1] - 2026-06-19
 
 ### Fixed
