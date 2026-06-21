@@ -5,6 +5,7 @@
 import { readApiKey } from "./credentials.js";
 import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
 import { registerProcedures } from "./procedures.js";
+import { notifyUpdates } from "./update_notifier.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 
 
@@ -1041,6 +1042,7 @@ async function main() {
     await server.connect(transport);
     console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));
     beginSession();
+    notifyUpdates(SERVER_VERSION);
   } catch (error) {
     try { await emitSessionCrash(error); } catch { /* telemetry must never mask the crash */ }
     console.error("Error during server startup:", error);

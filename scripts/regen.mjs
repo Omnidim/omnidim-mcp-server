@@ -215,7 +215,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -320,7 +320,7 @@ $2`
 // Line-anchored to avoid the nested-backtick parse problem.
 src = src.replace(
   /^.*console\.error\(`\$\{SERVER_NAME\} MCP Server.*$/m,
-  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();`
+  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();\n    notifyUpdates(SERVER_VERSION);`
 );
 
 // Flush the session-end event during graceful shutdown, before the generator's
