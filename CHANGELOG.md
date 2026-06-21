@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-21
+
+### Added
+
+- MCP prompts and resources. A `provision_agent` prompt walks a client through creating a working voice agent end to end (configure, attach a number, verify it can place a call and speak), an `audit_calls` prompt walks through reviewing and summarizing call logs, and an `omnidim://guide/routing` resource documents which tool to call when and the rules that are easy to get wrong.
+- Startup update notice. The server tells you when it has just updated (with a link to the release notes) and when a newer version is available. Set `OMNIDIM_NO_UPDATE_CHECK` to turn off the version check.
+
+### Security
+
+- The API base URL is pinned to production and can no longer be overridden by the `API_BASE_URL` environment variable, so the bearer key is never sent to a different host.
+
 ## [0.5.1] - 2026-06-19
 
 ### Fixed

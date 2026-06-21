@@ -130,13 +130,14 @@ src = src.replace(
   ''
 );
 
-// Silence the startup log unless API_BASE_URL is explicitly overridden.
+// Pin the backend to production. The base URL never changes, and an
+// env-overridable base URL is a credential-exfiltration surface: the
+// server attaches the user's bearer key to every request to whatever
+// the URL points at. No override, no startup log.
 src = src.replace(
-  /export const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
-  `export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
-if (process.env.API_BASE_URL) {
-    console.error(\`API_BASE_URL override: \${API_BASE_URL}\`);
-}`
+  /\/\/ Base URL for the API, can be set via environment variable or determined from OpenAPI spec\nexport const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
+  `// Base URL for the API. Pinned to production; not env-overridable.
+export const API_BASE_URL = "https://backend.omnidim.io/api/v1";`
 );
 
 // Add User-Agent + 60s timeout to every backend request.
@@ -214,7 +215,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -249,8 +250,11 @@ src = src.replace(
   /const server = new Server\(\s*\{ name: SERVER_NAME, version: SERVER_VERSION \},\s*\{ capabilities: \{ tools: \{\} \} \}\s*\);/,
   `${INSTRUCTIONS_BLOCK}const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS }
-);`
+    { capabilities: { tools: {}, prompts: {}, resources: {} }, instructions: SERVER_INSTRUCTIONS }
+);
+
+// Prompts (procedures) and resources (reference) layered on top of the tools.
+registerProcedures(server);`
 );
 
 // Route JSON responses through the trimmer.
@@ -316,7 +320,7 @@ $2`
 // Line-anchored to avoid the nested-backtick parse problem.
 src = src.replace(
   /^.*console\.error\(`\$\{SERVER_NAME\} MCP Server.*$/m,
-  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();`
+  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();\n    notifyUpdates(SERVER_VERSION);`
 );
 
 // Flush the session-end event during graceful shutdown, before the generator's

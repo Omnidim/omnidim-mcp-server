@@ -4,6 +4,8 @@
  */
 import { readApiKey } from "./credentials.js";
 import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
+import { registerProcedures } from "./procedures.js";
+import { notifyUpdates } from "./update_notifier.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 
 
@@ -44,12 +46,9 @@ interface McpToolDefinition {
  * Server configuration
  */
 export const SERVER_NAME = "OmniDimension";
-export const SERVER_VERSION = "0.5.0";
-// Base URL for the API, can be set via environment variable or determined from OpenAPI spec
-export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
-if (process.env.API_BASE_URL) {
-    console.error(`API_BASE_URL override: ${API_BASE_URL}`);
-}
+export const SERVER_VERSION = "0.6.0";
+// Base URL for the API. Pinned to production; not env-overridable.
+export const API_BASE_URL = "https://backend.omnidim.io/api/v1";
 
 /**
  * MCP Server instance
@@ -74,8 +73,11 @@ Conventions:
 
 const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS }
+    { capabilities: { tools: {}, prompts: {}, resources: {} }, instructions: SERVER_INSTRUCTIONS }
 );
+
+// Prompts (procedures) and resources (reference) layered on top of the tools.
+registerProcedures(server);
 
 /**
  * Map of tool definitions by name
@@ -1040,6 +1042,7 @@ async function main() {
     await server.connect(transport);
     console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));
     beginSession();
+    notifyUpdates(SERVER_VERSION);
   } catch (error) {
     try { await emitSessionCrash(error); } catch { /* telemetry must never mask the crash */ }
     console.error("Error during server startup:", error);
