@@ -215,7 +215,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -250,8 +250,11 @@ src = src.replace(
   /const server = new Server\(\s*\{ name: SERVER_NAME, version: SERVER_VERSION \},\s*\{ capabilities: \{ tools: \{\} \} \}\s*\);/,
   `${INSTRUCTIONS_BLOCK}const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS }
-);`
+    { capabilities: { tools: {}, prompts: {}, resources: {} }, instructions: SERVER_INSTRUCTIONS }
+);
+
+// Prompts (procedures) and resources (reference) layered on top of the tools.
+registerProcedures(server);`
 );
 
 // Route JSON responses through the trimmer.

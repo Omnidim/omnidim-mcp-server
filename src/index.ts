@@ -4,6 +4,7 @@
  */
 import { readApiKey } from "./credentials.js";
 import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
+import { registerProcedures } from "./procedures.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 
 
@@ -71,8 +72,11 @@ Conventions:
 
 const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS }
+    { capabilities: { tools: {}, prompts: {}, resources: {} }, instructions: SERVER_INSTRUCTIONS }
 );
+
+// Prompts (procedures) and resources (reference) layered on top of the tools.
+registerProcedures(server);
 
 /**
  * Map of tool definitions by name
