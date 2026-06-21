@@ -132,6 +132,43 @@ ${testLine}
 Throughout: phone numbers are E.164 with a leading \`+\`. See the \`omnidim://guide/routing\` resource for the full gotcha list.`;
         },
     },
+    {
+        name: "audit_calls",
+        description: "Review and summarize call logs: find failures, inspect transcripts and sentiment, or audit a specific agent or campaign.",
+        arguments: [
+            { name: "focus", description: "What to look into, in plain language (e.g. 'why are calls failing', 'summarize today's calls for agent 123').", required: true },
+            { name: "agent_id", description: "Optional agent id to filter to (the listAgents / createAgent id).", required: false },
+            { name: "call_status", description: "Optional status filter. Note the enum uses a hyphen for no-answer: completed | busy | failed | no-answer.", required: false },
+        ],
+        build: (a) => {
+            const focus = a.focus || "(describe what to look into)";
+            const filters: string[] = ["\"pagesize\": 3"];
+            if (a.agent_id) filters.push(`"agentid": ${a.agent_id}`);
+            if (a.call_status) filters.push(`"call_status": "${a.call_status}"`);
+            return `Audit OmniDimension call logs for this question:
+
+"${focus}"
+
+1. List recent calls with \`listCallLogs\` { ${filters.join(", ")} }.
+   - Keep \`pagesize\` small (1-3). Each row is large and the response is
+     trimmed past a size cap, so a big page comes back truncated and unparseable.
+   - Filters: \`agentid\` (note: no underscore) for one agent, \`bulk_call_id\`
+     for one campaign, \`call_status\` for triage. The status enum uses a hyphen:
+     completed | busy | failed | no-answer.
+   - Each row carries \`id\`, \`call_status\`, \`sentiment_score\`, cost, and a
+     summary. There is no date-range filter; filter by \`time_of_call\`
+     (MM/DD/YYYY HH:MM:SS) yourself if needed.
+2. For each call of interest, call \`getCallLog\` { call_log_id: <row id> } for
+   the full transcript (\`call_conversation\`), \`interactions\`,
+   \`extracted_variables\`, \`recording_url\`, and per-turn latency/cost.
+   Note: an empty \`call_conversation\` means the agent never spoke (a silent
+   call), not that the call is missing.
+3. Summarize the answer to "${focus}": group by status or agent, surface failure
+   reasons and low-sentiment calls, and cite specific \`call_log_id\`s.
+
+See the \`omnidim://guide/routing\` resource for the full gotcha list.`;
+        },
+    },
 ];
 
 export function getPromptText(name: string, args: Record<string, string> = {}): string | null {

@@ -8,8 +8,9 @@ import {
 } from "../src/procedures.js";
 
 describe("procedure layer registry", () => {
-    it("exposes the provision_agent prompt and the routing resource", () => {
+    it("exposes the provision_agent and audit_calls prompts and the routing resource", () => {
         expect(PROMPT_NAMES).toContain("provision_agent");
+        expect(PROMPT_NAMES).toContain("audit_calls");
         expect(RESOURCE_URIS).toContain("omnidim://guide/routing");
     });
 
@@ -44,5 +45,21 @@ describe("provision_agent prompt", () => {
         expect(withNum).toContain("call_conversation");
         const without = getPromptText("provision_agent", { purpose: "x" }) ?? "";
         expect(without).not.toContain("dispatchCall { requestBody: { agent_id, to_number:");
+    });
+});
+
+describe("audit_calls prompt", () => {
+    it("weaves the focus in and applies filters", () => {
+        const t = getPromptText("audit_calls", { focus: "why are calls failing", agent_id: "123", call_status: "failed" }) ?? "";
+        expect(t).toContain("why are calls failing");
+        expect(t).toContain("listCallLogs");
+        expect(t).toContain('"agentid": 123');
+        expect(t).toContain('"call_status": "failed"');
+        expect(t).toContain("getCallLog");
+    });
+
+    it("keeps a small page size to avoid truncation", () => {
+        const t = getPromptText("audit_calls", { focus: "summarize today" }) ?? "";
+        expect(t).toContain('"pagesize": 3');
     });
 });

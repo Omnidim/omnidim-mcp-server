@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- MCP prompts and resources. A `provision_agent` prompt walks a client through creating a working voice agent end to end (configure, attach a number, verify it can place a call and speak), and an `omnidim://guide/routing` resource documents which tool to call when and the rules that are easy to get wrong.
+- MCP prompts and resources. A `provision_agent` prompt walks a client through creating a working voice agent end to end (configure, attach a number, verify it can place a call and speak), an `audit_calls` prompt walks through reviewing and summarizing call logs, and an `omnidim://guide/routing` resource documents which tool to call when and the rules that are easy to get wrong.
 
 ### Security
 
