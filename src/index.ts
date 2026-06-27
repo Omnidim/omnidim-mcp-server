@@ -5,6 +5,7 @@
 import { readApiKey } from "./credentials.js";
 import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
 import { registerProcedures } from "./procedures.js";
+import { toolAnnotations } from "./tool-annotations.js";
 import { notifyUpdates } from "./update_notifier.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 
@@ -585,7 +586,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   const toolsForClient: Tool[] = Array.from(toolDefinitionMap.values()).map(def => ({
     name: def.name,
     description: def.description,
-    inputSchema: def.inputSchema
+    inputSchema: def.inputSchema,
+    annotations: toolAnnotations(def)
   }));
   return { tools: toolsForClient };
 });
