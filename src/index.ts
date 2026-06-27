@@ -738,10 +738,10 @@ async function executeApiTool(
         recordToolResult(toolName, 'validation');
         if (error instanceof ZodError) {
             const validationErrorMessage = `Invalid arguments for tool '${toolName}': ${error.errors.map(e => `${e.path.join('.')} (${e.code}): ${e.message}`).join(', ')}`;
-            return { content: [{ type: 'text', text: validationErrorMessage }] };
+            return { isError: true, content: [{ type: 'text', text: validationErrorMessage }] };
         } else {
              const errorMessage = error instanceof Error ? error.message : String(error);
-             return { content: [{ type: 'text', text: `Internal error during validation setup: ${errorMessage}` }] };
+             return { isError: true, content: [{ type: 'text', text: `Internal error during validation setup: ${errorMessage}` }] };
         }
     }
 
@@ -919,6 +919,7 @@ async function executeApiTool(
     else if (definition.securityRequirements?.length > 0) {
         recordToolResult(toolName, 'no_api_key');
         return {
+            isError: true,
             content: [{
                 type: 'text',
                 text: `OMNIDIM_API_KEY is not set. Configure it in your MCP client's "env" block, then restart the client. Get a key at https://omnidim.io/api-management.`,
@@ -1012,7 +1013,7 @@ async function executeApiTool(
     console.error(`Error during execution of tool '${toolName}':`, errorMessage);
     
     // Return error message to client
-    return { content: [{ type: "text", text: errorMessage }] };
+    return { isError: true, content: [{ type: "text", text: errorMessage }] };
   }
 }
 
