@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-27
+
 ### Added
 
 - Tool annotations. Each tool now reports a display title and read-only / destructive / open-world hints. Clients can run read-only tools (listing, fetching) in parallel and prompt for confirmation before destructive actions (deletes) or actions that place real outbound calls (dispatch and bulk campaigns).
