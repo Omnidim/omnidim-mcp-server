@@ -284,6 +284,7 @@ src = src.replace(
   `    else if (definition.securityRequirements?.length > 0) {
         recordToolResult(toolName, 'no_api_key');
         return {
+            isError: true,
             content: [{
                 type: 'text',
                 text: \`OMNIDIM_API_KEY is not set. Configure it in your MCP client's "env" block, then restart the client. Get a key at https://omnidim.io/api-management.\`,
@@ -385,6 +386,23 @@ src = src.replace(
 src = src.replace(
   /(\} catch \(error: unknown\) \{\n)(\s*\/\/ Handle errors during execution)/,
   `$1    recordToolError(toolName, error);\n$2`
+);
+
+// Mark every error return with isError:true so clients can distinguish a
+// failed call from a success. The success return (after "Return formatted
+// response") is intentionally left without it. Anchored on each error's
+// unique text so the success branch is never matched.
+src = src.replace(
+  /return \{ content: \[\{ type: 'text', text: validationErrorMessage \}\] \};/,
+  `return { isError: true, content: [{ type: 'text', text: validationErrorMessage }] };`
+);
+src = src.replace(
+  /return \{ content: \[\{ type: 'text', text: `Internal error during validation setup: \$\{errorMessage\}` \}\] \};/,
+  `return { isError: true, content: [{ type: 'text', text: \`Internal error during validation setup: \${errorMessage}\` }] };`
+);
+src = src.replace(
+  /(\/\/ Return error message to client\n\s*)return \{ content: \[\{ type: "text", text: errorMessage \}\] \};/,
+  `$1return { isError: true, content: [{ type: "text", text: errorMessage }] };`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash

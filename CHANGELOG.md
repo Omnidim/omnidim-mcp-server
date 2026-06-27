@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Tool calls that fail now set `isError` on the result, so MCP clients can tell a failed call from a successful one. This covers invalid arguments, a missing API key, and backend errors.
+
 ## [0.6.0] - 2026-06-21
 
 ### Added
