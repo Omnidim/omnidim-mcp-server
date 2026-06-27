@@ -215,7 +215,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -403,6 +403,14 @@ src = src.replace(
 src = src.replace(
   /(\/\/ Return error message to client\n\s*)return \{ content: \[\{ type: "text", text: errorMessage \}\] \};/,
   `$1return { isError: true, content: [{ type: "text", text: errorMessage }] };`
+);
+
+// Attach MCP tool annotations (title + read-only/destructive/open-world hints,
+// from ./tool-annotations.ts) in the tools/list handler so clients can
+// parallelize reads and confirm before destructive or real-world actions.
+src = src.replace(
+  /(server\.setRequestHandler\(ListToolsRequestSchema, async \(\) => \{\n\s*const toolsForClient: Tool\[\] = Array\.from\(toolDefinitionMap\.values\(\)\)\.map\(def => \(\{\n\s*name: def\.name,\n\s*description: def\.description,\n\s*inputSchema: def\.inputSchema)(\n\s*\}\)\);)/,
+  `$1,\n    annotations: toolAnnotations(def)$2`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash

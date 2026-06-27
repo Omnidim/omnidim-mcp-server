@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Tool annotations. Each tool now reports a display title and read-only / destructive / open-world hints. Clients can run read-only tools (listing, fetching) in parallel and prompt for confirmation before destructive actions (deletes) or actions that place real outbound calls (dispatch and bulk campaigns).
+
 ### Fixed
 
 - Tool calls that fail now set `isError` on the result, so MCP clients can tell a failed call from a successful one. This covers invalid arguments, a missing API key, and backend errors.
