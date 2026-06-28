@@ -7,14 +7,14 @@
     "url": "https://github.com/Omnidim/omnidim-mcp-server",
     "source": "github"
   },
-  "version": "0.7.0",
+  "version": "0.8.0",
   "websiteUrl": "https://omnidim.io",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@omnidim-ai/mcp-server",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "transport": {
         "type": "stdio"
       },

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-28
+
 ### Added
 
 - Reference resources for building agents: `omnidim://reference/recommended-stack` (which transcriber, voice, and model to choose by caller language), `omnidim://reference/voices` (choosing and verifying a voice), and `omnidim://reference/agent-config` (the createAgent field shape with copy-ready examples).
