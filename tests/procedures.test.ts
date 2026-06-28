@@ -63,3 +63,34 @@ describe("audit_calls prompt", () => {
         expect(t).toContain('"pagesize": 3');
     });
 });
+
+describe("reference resources", () => {
+    it("lists the recommended-stack, voices, and agent-config resources", () => {
+        expect(RESOURCE_URIS).toContain("omnidim://reference/recommended-stack");
+        expect(RESOURCE_URIS).toContain("omnidim://reference/voices");
+        expect(RESOURCE_URIS).toContain("omnidim://reference/agent-config");
+    });
+
+    it("recommends providers by language using the createAgent enum values", () => {
+        const t = getResourceText("omnidim://reference/recommended-stack") ?? "";
+        expect(t).toContain("azure_stream");
+        expect(t).toContain("soniox");
+        expect(t).toContain("sarvam");
+        expect(t).toContain("cartesia");
+        expect(t).toContain("gpt-4.1-mini");
+    });
+
+    it("gives a copy-ready createAgent example with the requestBody wrapper", () => {
+        const t = getResourceText("omnidim://reference/agent-config") ?? "";
+        expect(t).toContain("requestBody");
+        expect(t).toContain('"transcriber": { "provider": "azure_stream" }');
+    });
+
+    it("never exposes internal infra in any customer-facing resource", () => {
+        for (const uri of RESOURCE_URIS) {
+            const t = (getResourceText(uri) ?? "").toLowerCase();
+            expect(t, `${uri} must not mention failover`).not.toContain("failover");
+            expect(t, `${uri} must not mention the welcome model`).not.toContain("gpt-5.4");
+        }
+    });
+});
