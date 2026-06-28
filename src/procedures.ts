@@ -75,6 +75,123 @@ give it a **phone number** and optionally a **knowledge base**, then place
 10. **Phone numbers are E.164 with a leading \`+\`** everywhere.
 `;
 
+// Provider recommendations by caller language, grounded in what works in
+// production. Names match the createAgent enums (transcriber/voice/model).
+const RECOMMENDED_STACK = `# Recommended provider stacks
+
+Each agent uses a transcriber (speech-to-text), a voice (text-to-speech), and a
+language model, all set on \`createAgent\`. The pairings below work well in
+production, grouped by the language your callers speak. Use \`listSTTProviders\`,
+\`listTTSProviders\`, \`listLLMProviders\`, and \`listVoices\` for the live catalog.
+
+## Language model
+
+- Default: \`gpt-4.1-mini\` — fast and accurate across languages, a good first
+  choice for almost any agent.
+- Alternatives: \`gemini-2.5-flash\`, \`gpt-4o\` (premium), \`gpt-4.1-nano\` (lighter).
+
+## By caller language
+
+- **Indian English (en-IN):** transcriber \`azure_stream\`; voice \`cartesia\`
+  (default), \`eleven_labs\`, or \`google\`.
+- **Hindi / Hinglish (mixed Hindi and English):** transcriber \`soniox\`
+  (handles code-mixed speech in one stream); voice \`cartesia\` or \`eleven_labs\`.
+- **Other Indian languages (Telugu, Bengali, etc.):** transcriber \`soniox\` or
+  \`sarvam\` (tuned for Indian languages); voice \`cartesia\` or \`sarvam\`.
+- **US / UK English:** transcriber \`azure_stream\` or \`deepgram_stream\`; voice
+  \`cartesia\` or \`eleven_labs\`.
+
+## Field notes
+
+- \`transcriber.provider\` is one of \`deepgram_stream\`, \`azure_stream\`,
+  \`soniox\`, \`sarvam\`, \`cartesia\`. \`deepgram_stream\` also needs a \`model\`
+  (\`nova-3\` or \`nova-2\`); the others do not.
+- \`voice.provider\` is one of \`cartesia\`, \`eleven_labs\`, \`google\`,
+  \`sarvam\`. \`cartesia\` voices need a \`model\` such as \`sonic-3.5\`; for
+  \`eleven_labs\` the model is implied by the voice.
+
+## Responsiveness
+
+- Keep the system prompt focused. Long prompts add latency to every turn.
+- Verify your chosen voice on a short test call before launch (see
+  \`omnidim://reference/voices\`).
+`;
+
+// How to choose a voice, with the synthesizable-voice gotcha and per-provider notes.
+const VOICES_GUIDE = `# Choosing a voice
+
+\`listVoices\` returns the catalog. Use a voice's \`name\` field as the
+\`voice_id\` you pass to \`createAgent\`. Quality varies by language and not every
+voice synthesizes cleanly, so always place a short test call and listen before
+launch.
+
+Filter \`listVoices\` by \`provider\` (\`cartesia\`, \`eleven_labs\`, \`google\`,
+\`sarvam\`). ElevenLabs also supports \`language\`, \`accent\`, and \`gender\`.
+
+By provider:
+
+- **\`cartesia\`** — low-latency multilingual voices; the platform default. Pass a
+  \`model\` such as \`sonic-3.5\`. Example voice_id
+  \`bf0a246a-8642-498a-9950-80c35e9276b5\` ("Sophie", English female).
+- **\`eleven_labs\`** — premium, expressive voices; the model is implied by the
+  voice. Example voice_id \`JBFqnCBsd6RMkjVDRZzb\` ("George").
+- **\`sarvam\`** — natural prosody for Indian languages.
+- **\`google\`** — broad language coverage.
+`;
+
+// The createAgent field shape with two complete, copy-ready examples.
+const AGENT_CONFIG_GUIDE = `# Building an agent with createAgent
+
+On this server \`createAgent\` wraps its payload in \`requestBody\` (see the
+routing guide). The fields inside:
+
+- \`name\` — agent name.
+- \`welcome_message\` — the first line the agent speaks.
+- \`context_breakdown\` — a list of \`{ title, body }\` sections that form the
+  agent's instructions.
+- \`call_type\` — "Incoming" or "Outgoing".
+- \`model\` — \`{ model, temperature? }\`, e.g. \`{ "model": "gpt-4.1-mini" }\`.
+- \`voice\` — \`{ provider, voice_id, model? }\`. \`model\` (e.g. \`sonic-3.5\`)
+  is only needed for \`cartesia\`.
+- \`transcriber\` — \`{ provider, model?, language? }\`. \`model\` (\`nova-3\` /
+  \`nova-2\`) is only needed for \`deepgram_stream\`.
+
+## Example: Indian-English support agent (inbound)
+
+{
+  "requestBody": {
+    "name": "Support agent",
+    "welcome_message": "Hi, thanks for calling. How can I help you today?",
+    "context_breakdown": [
+      { "title": "Role", "body": "You are a friendly customer-support agent. Answer questions, and if you cannot help, offer to connect the caller to a human." }
+    ],
+    "call_type": "Incoming",
+    "model": { "model": "gpt-4.1-mini" },
+    "voice": { "provider": "cartesia", "model": "sonic-3.5", "voice_id": "bf0a246a-8642-498a-9950-80c35e9276b5" },
+    "transcriber": { "provider": "azure_stream" }
+  }
+}
+
+## Example: Hindi / Hinglish appointment reminder (outbound)
+
+{
+  "requestBody": {
+    "name": "Appointment reminder",
+    "welcome_message": "Namaste, main aapke appointment ke baare mein baat karne ke liye call kar rahi hoon.",
+    "context_breakdown": [
+      { "title": "Role", "body": "You remind customers about an upcoming appointment and confirm whether they can attend. Speak naturally in the caller's language, Hindi or English." }
+    ],
+    "call_type": "Outgoing",
+    "model": { "model": "gpt-4.1-mini" },
+    "voice": { "provider": "cartesia", "model": "sonic-3.5", "voice_id": "<pick one from listVoices>" },
+    "transcriber": { "provider": "soniox" }
+  }
+}
+
+Then give the agent a phone number and verify with a test call (the
+\`provision_agent\` prompt walks through this end to end).
+`;
+
 const RESOURCES: ResourceDef[] = [
     {
         uri: "omnidim://guide/routing",
@@ -82,6 +199,27 @@ const RESOURCES: ResourceDef[] = [
         description: "Which tool to call when, ID flow between calls, and the non-obvious rules proven against the live API.",
         mimeType: "text/markdown",
         text: ROUTING_GUIDE,
+    },
+    {
+        uri: "omnidim://reference/recommended-stack",
+        name: "Recommended provider stacks by language",
+        description: "Which transcriber (STT), voice (TTS), and language model to choose, grouped by the caller's language. Reflects what works in production.",
+        mimeType: "text/markdown",
+        text: RECOMMENDED_STACK,
+    },
+    {
+        uri: "omnidim://reference/voices",
+        name: "Choosing a voice",
+        description: "How to pick a voice from listVoices (use the name as voice_id), per-provider notes, and the verify-on-a-test-call rule.",
+        mimeType: "text/markdown",
+        text: VOICES_GUIDE,
+    },
+    {
+        uri: "omnidim://reference/agent-config",
+        name: "Building an agent with createAgent",
+        description: "The createAgent field shape with two complete, copy-ready example configurations (Indian-English support, Hindi/Hinglish reminder).",
+        mimeType: "text/markdown",
+        text: AGENT_CONFIG_GUIDE,
     },
 ];
 
