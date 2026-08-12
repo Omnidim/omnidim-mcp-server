@@ -10,6 +10,13 @@ const TOOL_TITLES: Record<string, string> = {
   getAgent: "Get agent",
   updateAgent: "Update agent",
   deleteAgent: "Delete agent",
+  listAgentVersions: "List agent versions",
+  createAgentVersion: "Save agent version",
+  diffAgentVersion: "Diff agent version",
+  restoreAgentVersion: "Restore agent version",
+  renameAgentVersion: "Rename agent version",
+  deleteAgentVersion: "Delete agent version",
+  createSession: "Create voice session",
   dispatchCall: "Dispatch call",
   listCallLogs: "List call logs",
   getCallLog: "Get call log",
@@ -52,9 +59,11 @@ const TOOL_TITLES: Record<string, string> = {
 // POST tools that only validate or preview, with no state change.
 const READ_ONLY_TOOLS = new Set(["canUploadFile", "calculateCreditOperation"]);
 
-// Irreversible removals plus tools that place real outbound calls.
+// Irreversible removals, overwrites of live config, plus tools that place
+// real outbound calls.
 const DESTRUCTIVE_TOOLS = new Set([
-  "deleteAgent", "deleteKnowledgeBaseFile", "detachKnowledgeBaseFiles", "detachPhoneNumber",
+  "deleteAgent", "deleteAgentVersion", "restoreAgentVersion",
+  "deleteKnowledgeBaseFile", "detachKnowledgeBaseFiles", "detachPhoneNumber",
   "cancelBulkCall", "revertCreditsFromChild", "dispatchCall", "createBulkCall", "addBulkCallContact",
 ]);
 
