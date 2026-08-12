@@ -36,6 +36,19 @@ describe("generated tool catalogue", () => {
         expect(src).toContain('"required":["title","body"]');
     });
 
+    // Three places carry the version: package.json, the registry manifest,
+    // and SERVER_VERSION (what initialize, the banner, and telemetry report).
+    // Each has drifted before when a release bumped only package.json.
+    it("keeps every declared version in step with the package version", () => {
+        const pkg = JSON.parse(readFileSync(resolve(__dirname, "../package.json"), "utf8"));
+        const manifest = JSON.parse(readFileSync(resolve(__dirname, "../server.json"), "utf8"));
+        expect(manifest.version).toBe(pkg.version);
+        for (const entry of manifest.packages) {
+            expect(entry.version, entry.identifier).toBe(pkg.version);
+        }
+        expect(src).toContain(`export const SERVER_VERSION = "${pkg.version}";`);
+    });
+
     it("keeps the instructions in sync with the exposed surface", () => {
         expect(src).toContain("Dispatching calls: run listPhoneNumbers first.");
         expect(src).not.toContain("Simulations: run scripted test scenarios");
