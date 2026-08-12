@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Updated dependencies. Clears every known advisory in the dependency tree, including three rated high.
+
 ### Fixed
 - The agent-version tools and `createSession` now report a display title, and restoring or deleting a version is flagged as destructive so clients confirm before overwriting or removing a saved configuration.
 - The server reports its own version again. 0.9.0 identified itself as 0.8.0 on connect, in the startup banner, and to the MCP registry.
