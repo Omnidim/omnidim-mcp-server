@@ -192,6 +192,76 @@ Then give the agent a phone number and verify with a test call (the
 \`provision_agent\` prompt walks through this end to end).
 `;
 
+const VERSIONING_GUIDE = `# Agent version history
+
+A **version** is a frozen snapshot of an agent's configuration at a point in
+time. Use it to save a known-good setup before a risky change, and to roll back
+if a change makes the agent worse.
+
+## The tools
+
+- \`listAgentVersions\` { agent_id } - the timeline, newest first. Each entry has
+  a \`version_number\`, a \`kind\`, who saved it, and a \`change_summary\` (a
+  one-line "what changed in this version vs the one before it").
+- \`createAgentVersion\` { agent_id, requestBody: { name, note? } } - save the
+  agent's CURRENT config as a named version.
+- \`diffAgentVersion\` { agent_id, version_number, against? } - what changed (see
+  below).
+- \`restoreAgentVersion\` { agent_id, version_number } - write a version back onto
+  the live agent.
+- \`renameAgentVersion\` / \`deleteAgentVersion\` - tidy the timeline.
+
+\`kind\` is \`manual\` (a person saved it), \`auto\` (saved automatically a few
+minutes after editing settles - you do NOT trigger these), or \`system\` (a
+safety backup taken automatically right before a restore).
+
+## When to snapshot
+
+Call \`createAgentVersion\` right BEFORE you make a change you might want to undo
+(swapping the model/voice, rewriting the prompt, changing transfer rules). Give
+it a clear \`name\` ("before pricing-flow rewrite"). You do not need to snapshot
+after routine edits - the platform auto-saves settled states on its own.
+
+## How to read a diff
+
+\`diffAgentVersion\` compares two snapshots and returns \`{ changed, groups }\`,
+where each group is an area (Settings, Prompt, Transfer rules, Post-call actions,
+Knowledge, Integrations, Web widget, Conversation flow, Other settings) with the
+specific old -> new changes. Pick the comparison with \`against\`:
+
+- **omit / \`against=previous\`** (default): what changed IN this version vs the
+  one before it. This matches the \`change_summary\` in the list.
+- **\`against=current\`**: what restoring this version WOULD change vs the agent's
+  live config right now. Read this before a restore to preview the effect.
+- **\`against=<number>\`**: compare with a specific other version.
+
+## How to decide and perform a restore
+
+1. \`listAgentVersions\` and scan \`change_summary\` to find the version you want.
+2. \`diffAgentVersion\` { version_number, against: "current" } to preview exactly
+   what restoring changes. If it says nothing meaningful changed, there is
+   nothing to restore.
+3. \`restoreAgentVersion\` { agent_id, version_number }. This first saves the
+   current state as a \`system\` "Backup before restore" version (so the restore
+   is itself undoable), then writes the chosen config back. The response
+   includes a \`skipped\` list: references (knowledge files, integrations) that no
+   longer exist are dropped and reported rather than failing the restore.
+4. Confirm with \`listAgentVersions\` (a new \`system\` backup should appear) or
+   \`getAgent\` to see the live config.
+
+## Gotchas
+
+- Version history is enabled per organization. If it is off for the caller's
+  org, these endpoints return 403 (\`feature_disabled\`).
+- \`createAgentVersion\` refuses a no-op: if nothing changed since the latest
+  version it returns 409 (\`no_changes\`). Make (or intend) a real change first.
+- There is a per-agent cap on versions created through the API; at the cap
+  \`createAgentVersion\` returns 409 (\`version_limit_reached\`) - delete an old
+  version to make room.
+- \`listAgentVersions\` and \`diffAgentVersion\` are read-only and safe to call
+  freely. Restore and delete mutate the live agent - confirm intent first.
+`;
+
 const RESOURCES: ResourceDef[] = [
     {
         uri: "omnidim://guide/routing",
@@ -220,6 +290,13 @@ const RESOURCES: ResourceDef[] = [
         description: "The createAgent field shape with two complete, copy-ready example configurations (Indian-English support, Hindi/Hinglish reminder).",
         mimeType: "text/markdown",
         text: AGENT_CONFIG_GUIDE,
+    },
+    {
+        uri: "omnidim://guide/agent-versioning",
+        name: "Agent version history",
+        description: "How to save, diff, and restore agent config snapshots: which tool to call, what the diff `against` modes mean, how to decide on a restore, and the 403/409 gotchas.",
+        mimeType: "text/markdown",
+        text: VERSIONING_GUIDE,
     },
 ];
 
@@ -305,6 +382,45 @@ Throughout: phone numbers are E.164 with a leading \`+\`. See the \`omnidim://gu
    reasons and low-sentiment calls, and cite specific \`call_log_id\`s.
 
 See the \`omnidim://guide/routing\` resource for the full gotcha list.`;
+        },
+    },
+    {
+        name: "restore_agent_version",
+        description: "Safely roll an agent back to an earlier saved version: find the right snapshot, preview exactly what restoring changes, then restore.",
+        arguments: [
+            { name: "agent_id", description: "The agent to roll back (the listAgents / createAgent id).", required: true },
+            { name: "goal", description: "What you want to get back to, in plain language (e.g. 'the version before I broke the transfer flow').", required: false },
+        ],
+        build: (a) => {
+            const agentId = a.agent_id || "<agent_id>";
+            const goal = a.goal || "(describe which earlier state you want back)";
+            return `Roll agent ${agentId} back to an earlier version.
+
+Goal: "${goal}"
+
+Follow these steps in order. Do NOT restore blindly, preview first.
+
+1. \`listAgentVersions\` { agent_id: ${agentId} }. Versions come newest first;
+   each has a \`version_number\`, \`kind\` (manual / auto / system), who saved it,
+   when, and a \`change_summary\` (what changed in that version). Use the names,
+   timestamps, and change summaries to find the one that matches the goal above.
+   If the feature is off for this org these calls return 403 (feature_disabled);
+   report that and stop.
+2. Preview the effect: \`diffAgentVersion\` { agent_id: ${agentId}, version_number: <chosen>, against: "current" }.
+   This shows exactly what restoring that version WOULD change vs the agent's
+   live config, grouped by area (Settings, Prompt, Transfer rules, etc.). If it
+   reports no meaningful change, tell the user there is nothing to restore and
+   stop. Show the user this preview and confirm before the next step.
+3. Restore: \`restoreAgentVersion\` { agent_id: ${agentId}, version_number: <chosen> }.
+   This automatically saves the current state as a "Backup before restore"
+   version first (so the restore is itself undoable), then writes the chosen
+   config back. Check the response's \`skipped\` list: knowledge files or
+   integrations that no longer exist are dropped and reported, not restored.
+4. Confirm: \`listAgentVersions\` again (a new system "Backup before restore"
+   entry should be at the top) and tell the user they can undo by restoring it.
+
+See the \`omnidim://guide/agent-versioning\` resource for the full tool list and
+the diff \`against\` modes.`;
         },
     },
 ];

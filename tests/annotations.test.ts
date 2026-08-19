@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { toolAnnotations } from "../src/tool-annotations.js";
@@ -43,5 +46,23 @@ describe("toolAnnotations", () => {
     it("gives every tool a human title", () => {
         expect(toolAnnotations({ name: "dispatchCall", method: "post" }).title).toBe("Dispatch call");
         expect(toolAnnotations({ name: "listLLMProviders", method: "get" }).title).toBe("List LLM providers");
+    });
+
+    it("marks restoring or deleting a saved version destructive", () => {
+        for (const name of ["deleteAgentVersion", "restoreAgentVersion"]) {
+            const a = toolAnnotations({ name, method: "post" });
+            expect(a.destructiveHint, name).toBe(true);
+            expect(a.openWorldHint, name).toBe(false);
+        }
+    });
+
+    // Regen adds tools; titles are hand-authored. Without this guard a new
+    // tool ships with no display name (the version-history tools did).
+    it("titles every tool in the generated catalogue", () => {
+        const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
+        const names = [...src.matchAll(/^\s{2}\["(\w+)", \{$/gm)].map((m) => m[1]);
+        expect(names.length).toBeGreaterThan(40);
+        const untitled = names.filter((name) => !toolAnnotations({ name, method: "get" }).title);
+        expect(untitled).toEqual([]);
     });
 });

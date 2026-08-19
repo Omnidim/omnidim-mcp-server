@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-08-12
+
+### Security
+- Updated dependencies. Clears every known advisory in the dependency tree, including three rated high.
+
+### Fixed
+- The agent-version tools and `createSession` now report a display title, and restoring or deleting a version is flagged as destructive so clients confirm before overwriting or removing a saved configuration.
+- The server reports its own version again. 0.9.0 identified itself as 0.8.0 on connect, in the startup banner, and to the MCP registry.
+
+## [0.9.0] - 2026-07-29
+
+### Added
+- Agent version-history tools: list, save, diff, restore, rename, and delete an agent's configuration snapshots (generated from the OpenAPI spec).
+- `omnidim://guide/agent-versioning` resource and `restore_agent_version` prompt: when to snapshot, how to read a version diff (the `against` modes), and how to safely preview-then-restore an earlier version.
+
 ## [0.8.0] - 2026-06-28
 
 ### Added
