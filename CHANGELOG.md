@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-08-20
+
+### Changed
+- The `createAgent` and `updateAgent` tools now spell out how `transfer_options` behaves on an update: sending the list replaces every saved transfer option, omitting it leaves them as they are, and an empty array clears them. A client that sent a single option to add one could previously drop the rest without warning.
+- `voice.provider` and `voice.voice_id` are now marked as a pair. A provider sent on its own is rejected, and a voice id on its own leaves the voice unchanged.
+
 ## [0.9.1] - 2026-08-12
 
 ### Security
