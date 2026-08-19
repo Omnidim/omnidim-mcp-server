@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-08-12
+
+### Security
+- Updated dependencies. Clears every known advisory in the dependency tree, including three rated high.
+
+### Fixed
+- The agent-version tools and `createSession` now report a display title, and restoring or deleting a version is flagged as destructive so clients confirm before overwriting or removing a saved configuration.
+- The server reports its own version again. 0.9.0 identified itself as 0.8.0 on connect, in the startup banner, and to the MCP registry.
+
+## [0.9.0] - 2026-07-29
+
+### Added
+- Agent version-history tools: list, save, diff, restore, rename, and delete an agent's configuration snapshots (generated from the OpenAPI spec).
+- `omnidim://guide/agent-versioning` resource and `restore_agent_version` prompt: when to snapshot, how to read a version diff (the `against` modes), and how to safely preview-then-restore an earlier version.
+
+## [0.8.0] - 2026-06-28
+
+### Added
+
+- Reference resources for building agents: `omnidim://reference/recommended-stack` (which transcriber, voice, and model to choose by caller language), `omnidim://reference/voices` (choosing and verifying a voice), and `omnidim://reference/agent-config` (the createAgent field shape with copy-ready examples).
+
+## [0.7.0] - 2026-06-27
+
+### Added
+
+- Tool annotations. Each tool now reports a display title and read-only / destructive / open-world hints. Clients can run read-only tools (listing, fetching) in parallel and prompt for confirmation before destructive actions (deletes) or actions that place real outbound calls (dispatch and bulk campaigns).
+
+### Fixed
+
+- Tool calls that fail now set `isError` on the result, so MCP clients can tell a failed call from a successful one. This covers invalid arguments, a missing API key, and backend errors.
+
+## [0.6.0] - 2026-06-21
+
+### Added
+
+- MCP prompts and resources. A `provision_agent` prompt walks a client through creating a working voice agent end to end (configure, attach a number, verify it can place a call and speak), an `audit_calls` prompt walks through reviewing and summarizing call logs, and an `omnidim://guide/routing` resource documents which tool to call when and the rules that are easy to get wrong.
+- Startup update notice. The server tells you when it has just updated (with a link to the release notes) and when a newer version is available. Set `OMNIDIM_NO_UPDATE_CHECK` to turn off the version check.
+
+### Security
+
+- The API base URL is pinned to production and can no longer be overridden by the `API_BASE_URL` environment variable, so the bearer key is never sent to a different host.
+
 ## [0.5.1] - 2026-06-19
 
 ### Fixed

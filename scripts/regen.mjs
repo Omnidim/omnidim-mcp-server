@@ -130,13 +130,14 @@ src = src.replace(
   ''
 );
 
-// Silence the startup log unless API_BASE_URL is explicitly overridden.
+// Pin the backend to production. The base URL never changes, and an
+// env-overridable base URL is a credential-exfiltration surface: the
+// server attaches the user's bearer key to every request to whatever
+// the URL points at. No override, no startup log.
 src = src.replace(
-  /export const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
-  `export const API_BASE_URL = process.env.API_BASE_URL || "https://backend.omnidim.io/api/v1";
-if (process.env.API_BASE_URL) {
-    console.error(\`API_BASE_URL override: \${API_BASE_URL}\`);
-}`
+  /\/\/ Base URL for the API, can be set via environment variable or determined from OpenAPI spec\nexport const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
+  `// Base URL for the API. Pinned to production; not env-overridable.
+export const API_BASE_URL = "https://backend.omnidim.io/api/v1";`
 );
 
 // Add User-Agent + 60s timeout to every backend request.
@@ -214,7 +215,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -249,8 +250,11 @@ src = src.replace(
   /const server = new Server\(\s*\{ name: SERVER_NAME, version: SERVER_VERSION \},\s*\{ capabilities: \{ tools: \{\} \} \}\s*\);/,
   `${INSTRUCTIONS_BLOCK}const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS }
-);`
+    { capabilities: { tools: {}, prompts: {}, resources: {} }, instructions: SERVER_INSTRUCTIONS }
+);
+
+// Prompts (procedures) and resources (reference) layered on top of the tools.
+registerProcedures(server);`
 );
 
 // Route JSON responses through the trimmer.
@@ -280,6 +284,7 @@ src = src.replace(
   `    else if (definition.securityRequirements?.length > 0) {
         recordToolResult(toolName, 'no_api_key');
         return {
+            isError: true,
             content: [{
                 type: 'text',
                 text: \`OMNIDIM_API_KEY is not set. Configure it in your MCP client's "env" block, then restart the client. Get a key at https://omnidim.io/api-management.\`,
@@ -316,7 +321,7 @@ $2`
 // Line-anchored to avoid the nested-backtick parse problem.
 src = src.replace(
   /^.*console\.error\(`\$\{SERVER_NAME\} MCP Server.*$/m,
-  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();`
+  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();\n    notifyUpdates(SERVER_VERSION);`
 );
 
 // Flush the session-end event during graceful shutdown, before the generator's
@@ -381,6 +386,31 @@ src = src.replace(
 src = src.replace(
   /(\} catch \(error: unknown\) \{\n)(\s*\/\/ Handle errors during execution)/,
   `$1    recordToolError(toolName, error);\n$2`
+);
+
+// Mark every error return with isError:true so clients can distinguish a
+// failed call from a success. The success return (after "Return formatted
+// response") is intentionally left without it. Anchored on each error's
+// unique text so the success branch is never matched.
+src = src.replace(
+  /return \{ content: \[\{ type: 'text', text: validationErrorMessage \}\] \};/,
+  `return { isError: true, content: [{ type: 'text', text: validationErrorMessage }] };`
+);
+src = src.replace(
+  /return \{ content: \[\{ type: 'text', text: `Internal error during validation setup: \$\{errorMessage\}` \}\] \};/,
+  `return { isError: true, content: [{ type: 'text', text: \`Internal error during validation setup: \${errorMessage}\` }] };`
+);
+src = src.replace(
+  /(\/\/ Return error message to client\n\s*)return \{ content: \[\{ type: "text", text: errorMessage \}\] \};/,
+  `$1return { isError: true, content: [{ type: "text", text: errorMessage }] };`
+);
+
+// Attach MCP tool annotations (title + read-only/destructive/open-world hints,
+// from ./tool-annotations.ts) in the tools/list handler so clients can
+// parallelize reads and confirm before destructive or real-world actions.
+src = src.replace(
+  /(server\.setRequestHandler\(ListToolsRequestSchema, async \(\) => \{\n\s*const toolsForClient: Tool\[\] = Array\.from\(toolDefinitionMap\.values\(\)\)\.map\(def => \(\{\n\s*name: def\.name,\n\s*description: def\.description,\n\s*inputSchema: def\.inputSchema)(\n\s*\}\)\);)/,
+  `$1,\n    annotations: toolAnnotations(def)$2`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash

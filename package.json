@@ -1,6 +1,6 @@
 {
   "name": "@omnidim-ai/mcp-server",
-  "version": "0.5.1",
+  "version": "0.9.1",
   "mcpName": "io.github.Omnidim/omnidim-mcp-server",
   "description": "Official MCP server for OmniDimension. Drive voice agents, dispatch calls, and manage knowledge bases from Claude, Cursor, Windsurf, and any MCP client.",
   "type": "module",
@@ -23,6 +23,7 @@
     "test:coverage": "vitest run --coverage",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
     "regen": "node scripts/regen.mjs && npm run build",
+    "check:spec": "node scripts/check-spec.mjs",
     "prestart": "npm run build",
     "preinspect": "npm run build",
     "prepublishOnly": "npm run build && npm test"
