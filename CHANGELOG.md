@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-26
+
+### Removed
+
+- Reseller tools are no longer exposed: `listChildOrganizations`, `addUser`, `setUserAccessControl`, `setUserExpiry`, `setChildConcurrency`, `calculateCreditOperation`, `transferCreditsToChild`, `revertCreditsFromChild`, `getResellerCreditLogs`. These act on other people's accounts, several move money, and they are not safe behind a model. Use the REST API or an SDK for them.
+
+### Added
+
+- Phone number provisioning: `searchPhoneNumbers`, `purchasePhoneNumber`, `releasePhoneNumber`. Purchase and release are marked destructive and open-world, so a client can confirm before either runs.
+- `provision_agent` and the routing guide now tell you a number can be bought, not only imported, and to confirm the price with the user first.
+
+### Security
+
+- The phone number tools no longer accept `user_id`, the reseller "act on a client" switch. They only ever act on the account the key belongs to, so a reseller key cannot spend a client's balance or release their number from a model.
+
 ## [0.9.2] - 2026-08-20
 
 ### Changed
