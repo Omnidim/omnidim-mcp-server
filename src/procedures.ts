@@ -40,6 +40,10 @@ give it a **phone number** and optionally a **knowledge base**, then place
   \`audit_calls\` prompt, then \`listCallLogs\` + \`getCallLog\`.
 - "List / inspect what exists" -> \`listAgents\`, \`listPhoneNumbers\`,
   \`listVoices\`, \`listKnowledgeBaseFiles\`.
+- "Get me a number / buy a number" -> \`searchPhoneNumbers\` { region } then
+  \`purchasePhoneNumber\`. This spends the account's balance, so confirm the
+  exact number and price with the user before buying. \`releasePhoneNumber\`
+  gives one up and cannot be undone.
 - "Place one call now" -> \`dispatchCall\`. "Call many contacts" -> the bulk
   call tools.
 
@@ -340,7 +344,10 @@ Follow these steps in order. Each write tool wraps its payload in \`requestBody\
    Capture the returned \`id\` as agent_id. (\`status\` is always "Completed"; it is not a build signal.)
 3. Give it a number: \`listPhoneNumbers\` -> pick a number \`id\`. Attach it with
    \`attachPhoneNumber\` { requestBody: { phone_number_id, agent_id } }. If no
-   number exists, import one first (importTwilioNumber / importExotelNumber / importSipTrunk).
+   number exists, either buy one (\`searchPhoneNumbers\` { region } then
+   \`purchasePhoneNumber\`, which charges the account, so confirm with the user
+   first and never pick for them) or import one you already own
+   (importTwilioNumber / importExotelNumber / importSipTrunk).
 4. Optional knowledge base: \`uploadKnowledgeBaseFile\` then \`attachKnowledgeBaseFiles\` { requestBody: { file_ids, agent_id } }.
 ${testLine}
 
