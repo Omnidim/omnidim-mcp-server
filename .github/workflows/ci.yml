@@ -37,11 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       # Trusted publishing authenticates with the job's OIDC identity, so no
-      # npm token is involved. It needs Node >= 22.14 and npm >= 11.5.1, both
-      # above what .nvmrc pins for development, so this job sets its own.
+      # npm token is involved. It needs Node >= 22.14, which .nvmrc now meets,
+      # and npm >= 11.5.1, which no Node line bundles yet.
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - run: npm install -g npm@latest
