@@ -65,7 +65,6 @@ Surfaces:
 - Knowledge base: upload PDFs and attach to agents.
 - Phone numbers: list, attach to agents, import from Twilio, Exotel, or SIP.
 - Providers: discover available LLMs, voices, STT, and TTS engines.
-- Reseller: child organization management (requires partner-level credentials; non-reseller keys get 403).
 
 Conventions:
 - List endpoints accept pageno (>= 1) and pagesize (1-150). Use name to filter.
