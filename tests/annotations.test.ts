@@ -14,9 +14,8 @@ describe("toolAnnotations", () => {
         expect(a.title).toBe("List agents");
     });
 
-    it("treats preview/validate POSTs (canUploadFile, calculateCreditOperation) as read-only", () => {
+    it("treats preview/validate POSTs (canUploadFile) as read-only", () => {
         expect(toolAnnotations({ name: "canUploadFile", method: "post" }).readOnlyHint).toBe(true);
-        expect(toolAnnotations({ name: "calculateCreditOperation", method: "post" }).readOnlyHint).toBe(true);
     });
 
     it("marks plain writes as non-destructive and not open-world", () => {
@@ -27,7 +26,7 @@ describe("toolAnnotations", () => {
     });
 
     it("marks deletes and removals destructive but not open-world", () => {
-        for (const name of ["deleteAgent", "cancelBulkCall", "detachPhoneNumber", "revertCreditsFromChild"]) {
+        for (const name of ["deleteAgent", "cancelBulkCall", "detachPhoneNumber"]) {
             const a = toolAnnotations({ name, method: "post" });
             expect(a.destructiveHint, name).toBe(true);
             expect(a.openWorldHint, name).toBe(false);
@@ -41,6 +40,22 @@ describe("toolAnnotations", () => {
             expect(a.destructiveHint, name).toBe(true);
             expect(a.openWorldHint, name).toBe(true);
         }
+    });
+
+    it("marks phone number purchase and release destructive AND open-world", () => {
+        for (const name of ["purchasePhoneNumber", "releasePhoneNumber"]) {
+            const a = toolAnnotations({ name, method: "post" });
+            expect(a.readOnlyHint, name).toBe(false);
+            expect(a.destructiveHint, name).toBe(true);
+            expect(a.openWorldHint, name).toBe(true);
+        }
+    });
+
+    it("marks phone number search read-only", () => {
+        const a = toolAnnotations({ name: "searchPhoneNumbers", method: "get" });
+        expect(a.readOnlyHint).toBe(true);
+        expect(a.openWorldHint).toBe(false);
+        expect(a.title).toBe("Search available phone numbers");
     });
 
     it("gives every tool a human title", () => {
