@@ -39,3 +39,15 @@ exclude:
     - getResellerKycStatus
     - getResellerKycRequirements
     - submitResellerKycStep
+
+  # Parameters to strip from operations that are otherwise exposed.
+  # `user_id` on the phone number tools is the reseller "act on a client"
+  # switch. The reseller tools themselves are excluded above, so leaving it
+  # here would be the one remaining way to spend another account's balance,
+  # or release their number, from an LLM. Callers keep it on the REST API
+  # and in both SDKs.
+  parameters:
+    listPhoneNumbers: [user_id]
+    searchPhoneNumbers: [user_id]
+    purchasePhoneNumber: [user_id]
+    releasePhoneNumber: [user_id]

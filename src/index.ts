@@ -501,10 +501,10 @@ operating hours.
 from the OmniDimension number shop or imported your own.
 
 (Tags: Phone numbers)`,
-    inputSchema: {"type":"object","properties":{"pageno":{"type":"integer","minimum":1,"default":1,"description":"Page number for pagination."},"pagesize":{"type":"integer","minimum":1,"default":30,"maximum":150,"description":"Items per page (max 150)."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}}},
+    inputSchema: {"type":"object","properties":{"pageno":{"type":"integer","minimum":1,"default":1,"description":"Page number for pagination."},"pagesize":{"type":"integer","minimum":1,"default":30,"maximum":150,"description":"Items per page (max 150)."}}},
     method: "get",
     pathTemplate: "/phone_number/list",
-    executionParameters: [{"name":"pageno","in":"query"},{"name":"pagesize","in":"query"},{"name":"user_id","in":"query"}],
+    executionParameters: [{"name":"pageno","in":"query"},{"name":"pagesize","in":"query"}],
     requestBodyContentType: undefined,
     securityRequirements: [{"BearerAuth":[]}],
     tags: ["Phone numbers"],
@@ -518,10 +518,10 @@ shows the same \`monthly_rental_usd\` and \`validity_days\`, and that is the
 exact amount a purchase will charge.
 
 (Tags: Phone numbers)`,
-    inputSchema: {"type":"object","properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region to search in."},"pattern":{"type":"string","description":"Digits or prefix to match within the number."},"page":{"type":"number","minimum":1,"default":1,"description":"Page of results to return."},"limit":{"type":"number","minimum":1,"maximum":150,"default":20,"description":"Results per page."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}},"required":["region"]},
+    inputSchema: {"type":"object","properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region to search in."},"pattern":{"type":"string","description":"Digits or prefix to match within the number."},"page":{"type":"number","minimum":1,"default":1,"description":"Page of results to return."},"limit":{"type":"number","minimum":1,"maximum":150,"default":20,"description":"Results per page."}},"required":["region"]},
     method: "get",
     pathTemplate: "/phone_number/search",
-    executionParameters: [{"name":"region","in":"query"},{"name":"pattern","in":"query"},{"name":"page","in":"query"},{"name":"limit","in":"query"},{"name":"user_id","in":"query"}],
+    executionParameters: [{"name":"region","in":"query"},{"name":"pattern","in":"query"},{"name":"page","in":"query"},{"name":"limit","in":"query"}],
     requestBodyContentType: undefined,
     securityRequirements: [{"BearerAuth":[]}],
     tags: ["Phone numbers"],
@@ -534,7 +534,7 @@ rental comes out of your wallet and the number is added to your
 account, ready to attach to an agent.
 
 (Tags: Phone numbers)`,
-    inputSchema: {"type":"object","properties":{"Idempotency-Key":{"type":"string","description":"Your own unique key for this purchase, for example a\nfresh UUID. Strongly recommended: it is what makes a\nretry safe.\n"},"requestBody":{"type":"object","required":["region","phone_number"],"properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region the number belongs to."},"phone_number":{"type":"string","description":"The number to buy, as returned by the search operation."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}},"description":"The JSON request body."}},"required":["requestBody"]},
+    inputSchema: {"type":"object","properties":{"Idempotency-Key":{"type":"string","description":"Your own unique key for this purchase, for example a\nfresh UUID. Strongly recommended: it is what makes a\nretry safe.\n"},"requestBody":{"type":"object","required":["region","phone_number"],"properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region the number belongs to."},"phone_number":{"type":"string","description":"The number to buy, as returned by the search operation."}},"description":"The JSON request body."}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/phone_number/purchase",
     executionParameters: [{"name":"Idempotency-Key","in":"header"}],
@@ -550,7 +550,7 @@ next renewal. Only a number currently allocated to the account can be
 released.
 
 (Tags: Phone numbers)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["phone_number"],"properties":{"phone_number":{"type":"string","description":"The number to release."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}},"description":"The JSON request body."}},"required":["requestBody"]},
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["phone_number"],"properties":{"phone_number":{"type":"string","description":"The number to release."}},"description":"The JSON request body."}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/phone_number/release",
     executionParameters: [],
