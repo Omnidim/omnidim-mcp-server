@@ -24,3 +24,18 @@ exclude:
     - stopSimulation
     # Authoring helper, not a runtime action for an agent to call.
     - enhancePrompt
+    # Reseller operations: admin-level actions on other people's accounts.
+    # Several move money and the KYC ones relay identity documents. Not
+    # safe to put behind an LLM.
+    - listChildOrganizations
+    - addUser
+    - setUserAccessControl
+    - setUserExpiry
+    - setChildConcurrency
+    - calculateCreditOperation
+    - transferCreditsToChild
+    - revertCreditsFromChild
+    - getResellerCreditLogs
+    - getResellerKycStatus
+    - getResellerKycRequirements
+    - submitResellerKycStep
