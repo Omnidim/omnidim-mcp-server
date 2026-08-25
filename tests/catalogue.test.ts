@@ -16,6 +16,20 @@ const EXCLUDED_TOOLS = [
     "startSimulation",
     "stopSimulation",
     "enhancePrompt",
+    // Reseller operations: admin-level, several move money, KYC ones relay
+    // identity documents. See mcp-config.yaml.
+    "listChildOrganizations",
+    "addUser",
+    "setUserAccessControl",
+    "setUserExpiry",
+    "setChildConcurrency",
+    "calculateCreditOperation",
+    "transferCreditsToChild",
+    "revertCreditsFromChild",
+    "getResellerCreditLogs",
+    "getResellerKycStatus",
+    "getResellerKycRequirements",
+    "submitResellerKycStep",
 ];
 
 describe("generated tool catalogue", () => {
@@ -27,6 +41,12 @@ describe("generated tool catalogue", () => {
 
     it("keeps the core agent and call tools", () => {
         for (const name of ["createAgent", "updateAgent", "dispatchCall", "listPhoneNumbers"]) {
+            expect(src).toContain(`["${name}"`);
+        }
+    });
+
+    it("exposes the phone number search, purchase, and release tools", () => {
+        for (const name of ["searchPhoneNumbers", "purchasePhoneNumber", "releasePhoneNumber"]) {
             expect(src).toContain(`["${name}"`);
         }
     });

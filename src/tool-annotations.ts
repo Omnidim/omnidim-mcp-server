@@ -45,30 +45,28 @@ const TOOL_TITLES: Record<string, string> = {
   listTTSProviders: "List text-to-speech providers",
   listAllProviders: "List all providers",
   getVoice: "Get voice",
-  listChildOrganizations: "List child organizations",
-  addUser: "Add child user",
-  setUserAccessControl: "Set user access control",
-  setUserExpiry: "Set user expiry",
-  setChildConcurrency: "Set child concurrency limit",
-  calculateCreditOperation: "Preview credit operation",
-  transferCreditsToChild: "Transfer credits to child",
-  revertCreditsFromChild: "Revert credits from child",
-  getResellerCreditLogs: "Get reseller credit logs",
+  searchPhoneNumbers: "Search available phone numbers",
+  purchasePhoneNumber: "Buy phone number",
+  releasePhoneNumber: "Release phone number",
 };
 
 // POST tools that only validate or preview, with no state change.
-const READ_ONLY_TOOLS = new Set(["canUploadFile", "calculateCreditOperation"]);
+const READ_ONLY_TOOLS = new Set(["canUploadFile"]);
 
 // Irreversible removals, overwrites of live config, plus tools that place
 // real outbound calls.
 const DESTRUCTIVE_TOOLS = new Set([
   "deleteAgent", "deleteAgentVersion", "restoreAgentVersion",
   "deleteKnowledgeBaseFile", "detachKnowledgeBaseFiles", "detachPhoneNumber",
-  "cancelBulkCall", "revertCreditsFromChild", "dispatchCall", "createBulkCall", "addBulkCallContact",
+  "cancelBulkCall", "dispatchCall", "createBulkCall", "addBulkCallContact",
+  "purchasePhoneNumber", "releasePhoneNumber",
 ]);
 
-// Tools that reach the external phone network.
-const OPEN_WORLD_TOOLS = new Set(["dispatchCall", "createBulkCall", "addBulkCallContact"]);
+// Tools that reach the external phone network (a carrier, not just our API).
+const OPEN_WORLD_TOOLS = new Set([
+  "dispatchCall", "createBulkCall", "addBulkCallContact",
+  "purchasePhoneNumber", "releasePhoneNumber",
+]);
 
 export interface ToolAnnotations {
   title?: string;
