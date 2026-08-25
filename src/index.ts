@@ -103,7 +103,7 @@ connect and talk, see "Connect the client and talk" below the
 request details.
 
 (Tags: Sessions)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["agent_id","type"],"properties":{"agent_id":{"type":"number","description":"ID of the agent the session talks to."},"type":{"type":"string","enum":["voice"],"description":"The session type. Only `voice` is supported."},"custom_variables":{"type":"object","additionalProperties":true,"description":"Per-session variables that personalize the conversation.\nSet server-side, so visitors cannot tamper with them.\n"}},"description":"The JSON request body."}},"required":["requestBody"]},
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["agent_id","type"],"properties":{"agent_id":{"type":"number","description":"ID of the agent the session talks to."},"type":{"type":"string","enum":["voice"],"description":"The session type. Only `voice` is supported."},"custom_variables":{"type":"object","additionalProperties":true,"description":"Per-session variables that personalize the conversation.\nSet server-side, so visitors cannot tamper with them.\n"},"metadata":{"type":"object","additionalProperties":true,"description":"Key-value pairs stored on the session for your own\ntracking (e.g. CRM or lead IDs). Not shared with the\nagent; echoed back as `metadata` in the post-call\nwebhook so you can correlate results with your records.\n"}},"description":"The JSON request body."}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/sessions/create",
     executionParameters: [],
@@ -149,7 +149,7 @@ before configuring the \`voicemail\` object.
   }],
   ["getAgent", {
     name: "getAgent",
-    description: `Get details of a specific agent by ID. The response also includes a \`version_history_enabled\` boolean showing whether [version history](/docs/api-reference/agent-versions) is turned on for the agent's organization.
+    description: `Get details of a specific agent by ID. The response also includes a \`version_history_enabled\` boolean showing whether [version history](/docs/api-reference/agents/listAgentVersions) is turned on for the agent's organization.
 (Tags: Agents)`,
     inputSchema: {"type":"object","properties":{"agent_id":{"type":"number","description":"The ID of the agent."}},"required":["agent_id"]},
     method: "get",
@@ -272,7 +272,7 @@ before configuring the \`voicemail\` object.
 phone number must include a country code with a leading plus.
 
 (Tags: Calls)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["agent_id","to_number"],"properties":{"agent_id":{"type":"number","description":"The ID of the agent that will handle the call."},"to_number":{"type":"string","description":"The phone number to call. Must include country code (e.g., +15551234567)."},"from_number_id":{"type":"number","description":"Id of a phone number on your account to place the call from (see the phone number list endpoint). Omit to use the platform's default number."},"call_context":{"type":"object","description":"Optional context information as key-value pairs to be passed to the agent during the call. Can contain any custom fields relevant to your use case.","additionalProperties":true}},"description":"The JSON request body."}},"required":["requestBody"]},
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["agent_id","to_number"],"properties":{"agent_id":{"type":"number","description":"The ID of the agent that will handle the call."},"to_number":{"type":"string","description":"The phone number to call. Must include country code (e.g., +15551234567)."},"from_number_id":{"type":"number","description":"Id of a phone number on your account to place the call from (see the phone number list endpoint). Omit to use the platform's default number."},"call_context":{"type":"object","description":"Optional context information as key-value pairs to be passed to the agent during the call. Can contain any custom fields relevant to your use case.","additionalProperties":true},"metadata":{"type":"object","additionalProperties":true,"description":"Key-value pairs stored on the call for your own tracking\n(e.g. CRM or lead IDs). Not shared with the agent; echoed\nback as `metadata` in the post-call webhook so you can\ncorrelate results with your records.\n"}},"description":"The JSON request body."}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/calls/dispatch",
     executionParameters: [],
@@ -498,13 +498,64 @@ operating hours.
   }],
   ["listPhoneNumbers", {
     name: "listPhoneNumbers",
-    description: `Retrieve all phone numbers associated with your account.
+    description: `Retrieve the phone numbers on your account, whether you bought them
+from the OmniDimension number shop or imported your own.
+
 (Tags: Phone numbers)`,
-    inputSchema: {"type":"object","properties":{"pageno":{"type":"integer","minimum":1,"default":1,"description":"Page number for pagination."},"pagesize":{"type":"integer","minimum":1,"default":30,"maximum":150,"description":"Items per page (max 150)."}}},
+    inputSchema: {"type":"object","properties":{"pageno":{"type":"integer","minimum":1,"default":1,"description":"Page number for pagination."},"pagesize":{"type":"integer","minimum":1,"default":30,"maximum":150,"description":"Items per page (max 150)."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}}},
     method: "get",
     pathTemplate: "/phone_number/list",
-    executionParameters: [{"name":"pageno","in":"query"},{"name":"pagesize","in":"query"}],
+    executionParameters: [{"name":"pageno","in":"query"},{"name":"pagesize","in":"query"},{"name":"user_id","in":"query"}],
     requestBodyContentType: undefined,
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Phone numbers"],
+    deprecated: false
+  }],
+  ["searchPhoneNumbers", {
+    name: "searchPhoneNumbers",
+    description: `Search the OmniDimension number shop for phone numbers available to buy
+in a region. Price and validity are flat per region, so every result
+shows the same \`monthly_rental_usd\` and \`validity_days\`, and that is the
+exact amount a purchase will charge.
+
+(Tags: Phone numbers)`,
+    inputSchema: {"type":"object","properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region to search in."},"pattern":{"type":"string","description":"Digits or prefix to match within the number."},"page":{"type":"number","minimum":1,"default":1,"description":"Page of results to return."},"limit":{"type":"number","minimum":1,"maximum":150,"default":20,"description":"Results per page."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}},"required":["region"]},
+    method: "get",
+    pathTemplate: "/phone_number/search",
+    executionParameters: [{"name":"region","in":"query"},{"name":"pattern","in":"query"},{"name":"page","in":"query"},{"name":"limit","in":"query"},{"name":"user_id","in":"query"}],
+    requestBodyContentType: undefined,
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Phone numbers"],
+    deprecated: false
+  }],
+  ["purchasePhoneNumber", {
+    name: "purchasePhoneNumber",
+    description: `Buy a phone number from the OmniDimension number shop. The monthly
+rental comes out of your wallet and the number is added to your
+account, ready to attach to an agent.
+
+(Tags: Phone numbers)`,
+    inputSchema: {"type":"object","properties":{"Idempotency-Key":{"type":"string","description":"Your own unique key for this purchase, for example a\nfresh UUID. Strongly recommended: it is what makes a\nretry safe.\n"},"requestBody":{"type":"object","required":["region","phone_number"],"properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region the number belongs to."},"phone_number":{"type":"string","description":"The number to buy, as returned by the search operation."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}},"description":"The JSON request body."}},"required":["requestBody"]},
+    method: "post",
+    pathTemplate: "/phone_number/purchase",
+    executionParameters: [{"name":"Idempotency-Key","in":"header"}],
+    requestBodyContentType: "application/json",
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Phone numbers"],
+    deprecated: false
+  }],
+  ["releasePhoneNumber", {
+    name: "releasePhoneNumber",
+    description: `Give up a phone number and stop its rental, so it is not charged at the
+next renewal. Only a number currently allocated to the account can be
+released.
+
+(Tags: Phone numbers)`,
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["phone_number"],"properties":{"phone_number":{"type":"string","description":"The number to release."},"user_id":{"type":"number","description":"Reseller accounts only: the client to act on. Omit it to act on your own account."}},"description":"The JSON request body."}},"required":["requestBody"]},
+    method: "post",
+    pathTemplate: "/phone_number/release",
+    executionParameters: [],
+    requestBodyContentType: "application/json",
     securityRequirements: [{"BearerAuth":[]}],
     tags: ["Phone numbers"],
     deprecated: false
@@ -653,157 +704,6 @@ Other providers support basic pagination only.
     requestBodyContentType: undefined,
     securityRequirements: [{"BearerAuth":[]}],
     tags: ["Providers"],
-    deprecated: false
-  }],
-  ["listChildOrganizations", {
-    name: "listChildOrganizations",
-    description: `List all child organizations and their users under the reseller
-account. Returns each organization's balance, cost-per-minute
-rate, and concurrency limit, plus the dashboard menu access
-flags scoped to your reseller's permissions for every user.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{}},
-    method: "get",
-    pathTemplate: "/reseller/organizations",
-    executionParameters: [],
-    requestBodyContentType: undefined,
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["addUser", {
-    name: "addUser",
-    description: `Create a new child user and organization under the reseller.
-The new organization is linked to your reseller account
-automatically.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["name","email","phone","password"],"properties":{"name":{"type":"string","description":"Full name of the new user."},"email":{"type":"string","format":"email","description":"Email address. Also used as the login."},"phone":{"type":"string","description":"Phone number including country code (e.g. `+15551234567`)."},"password":{"type":"string","format":"password","description":"Account password for the new user."},"welcome_minutes_to_credit":{"type":"number","description":"Minutes to credit to the new account on signup."},"cost_per_min":{"type":"number","description":"Cost per minute charged to this user (e.g. `0.20`). Must be at least the reseller's premium model rate."},"concurrent_call_limit":{"type":"number","description":"Maximum number of concurrent calls allowed for this account."},"expiry_date":{"type":"string","format":"date","description":"Account expiry date in `YYYY-MM-DD` format (e.g. `2026-12-31`)."},"user_currency":{"type":"string","description":"ISO 4217 currency code for the account (e.g. `USD`, `INR`). Defaults to the reseller's currency."}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/reseller/users/add",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["setUserAccessControl", {
-    name: "setUserAccessControl",
-    description: `Enable or disable dashboard menu access flags for a child user.
-Only the flags you pass are changed. Flags outside your
-reseller's permissions are silently ignored.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["user_id","dashboard_menu_access"],"properties":{"user_id":{"type":"number","description":"ID of the child user to update."},"dashboard_menu_access":{"allOf":[{"type":"object","description":"Reseller-managed dashboard menu access flags. Each property is\na boolean toggle for a feature area in the child user's\ndashboard. On read endpoints, only flags the reseller\nthemselves has enabled are returned (so a child cannot have a\nflag the reseller doesn't have).\n","properties":{"is_bots_menu_access":{"type":"boolean"},"is_leads_access":{"type":"boolean"},"is_voice_cloning_access":{"type":"boolean"},"is_workflow_access":{"type":"boolean"},"is_asr_evaluation_menu_access":{"type":"boolean"},"is_train_with_call_recording_menu_access":{"type":"boolean"},"is_call_logs_menu_access":{"type":"boolean"},"is_call_simulation_menu_access":{"type":"boolean"},"is_omni_crm_access":{"type":"boolean"},"access_to_monitor_live_call":{"type":"boolean"},"is_whatsapp_flow_enabled":{"type":"boolean"},"is_billing_menu_access":{"type":"boolean"},"is_knowledge_base_access":{"type":"boolean"},"is_integration_access":{"type":"boolean"},"is_phone_number_access":{"type":"boolean"},"is_bulk_call_access":{"type":"boolean"},"is_analytics_access":{"type":"boolean"}}}],"description":"Flags to update. Only pass the flags you want to\nchange. Others are left untouched. Flags outside\nyour reseller's permissions are silently dropped.\n"}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/reseller/users/access-control",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["setUserExpiry", {
-    name: "setUserExpiry",
-    description: `Set or remove the expiry date on a child user. The user must
-belong to a child organization of your reseller.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["user_id"],"properties":{"user_id":{"type":"number","description":"ID of the child user to update."},"expiry_date":{"type":["string","null"],"format":"date","description":"Expiry date in `YYYY-MM-DD` format. Omit or pass `null` to remove the expiry."}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/reseller/users/expiry",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["setChildConcurrency", {
-    name: "setChildConcurrency",
-    description: `Set the maximum number of simultaneous calls a child
-organization can run. Slots come from the reseller's shared
-pool. Increasing the limit deducts the delta from your pool
-and fails if you don't have enough slots. Decreasing the
-limit returns the delta to your pool immediately.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["child_organization_id","new_limit"],"properties":{"child_organization_id":{"type":"number","description":"ID of the child organization to update."},"new_limit":{"type":"number","description":"The desired absolute concurrent call limit (must be `>= 0`)."}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/reseller/concurrency",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["calculateCreditOperation", {
-    name: "calculateCreditOperation",
-    description: `Preview the cost of a transfer or revert without moving any
-credits. Use this to confirm amounts before calling the
-transfer or revert endpoints. The response shape differs
-between forward transfers and reverts. See the examples.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["minutes"],"properties":{"minutes":{"type":"number","description":"Number of minutes to calculate for."},"cost_per_min":{"type":"number","description":"Rate per minute for a forward transfer (e.g. `0.20`). Not required when `is_revert` is `true`."},"is_revert":{"type":"boolean","description":"Set to `true` to calculate a revert instead of a forward transfer.","default":false},"child_organization_id":{"type":"number","description":"ID of the child organization to revert credits from. Required when `is_revert` is `true`."}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/reseller/credits/calculate",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["transferCreditsToChild", {
-    name: "transferCreditsToChild",
-    description: `Transfer minutes from the reseller balance to a child
-organization. Credits are deducted from your balance
-immediately on success. The target organization must be a
-direct child of your reseller. Use the calculate endpoint
-first to preview the cost.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["to_organization_id","minutes","cost_per_min"],"properties":{"to_organization_id":{"type":"number","description":"ID of the child organization to transfer credits to."},"minutes":{"type":"number","description":"Number of minutes to transfer."},"cost_per_min":{"type":"number","description":"Rate per minute to charge the child organization (e.g. `0.20`)."}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/reseller/credits/transfer",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["revertCreditsFromChild", {
-    name: "revertCreditsFromChild",
-    description: `Take back unused minutes from a child organization to the
-reseller balance. The refund is calculated at the child's
-current rate, so you don't pass one. This matches exactly
-what was originally charged. Use the calculate endpoint
-first to preview the refund.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["from_organization_id","minutes"],"properties":{"from_organization_id":{"type":"number","description":"ID of the child organization to revert credits from."},"minutes":{"type":"number","description":"Number of minutes to revert."}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/reseller/credits/revert",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
-    deprecated: false
-  }],
-  ["getResellerCreditLogs", {
-    name: "getResellerCreditLogs",
-    description: `Paginated history of all credit transfers and reverts for the
-reseller account. Returns reverse-chronological order by
-default. Date filters are inclusive.
-
-(Tags: Reseller)`,
-    inputSchema: {"type":"object","properties":{"page":{"type":"integer","minimum":1,"default":1,"description":"Page number for pagination."},"page_size":{"type":"number","default":20,"description":"Number of records per page (max 100)."},"date_from":{"type":"string","format":"date","description":"Filter logs from this date in `YYYY-MM-DD` format (e.g. `2026-01-01`)."},"date_to":{"type":"string","format":"date","description":"Filter logs up to and including this date in `YYYY-MM-DD` format (e.g. `2026-03-31`)."}}},
-    method: "get",
-    pathTemplate: "/reseller/credits/logs",
-    executionParameters: [{"name":"page","in":"query"},{"name":"page_size","in":"query"},{"name":"date_from","in":"query"},{"name":"date_to","in":"query"}],
-    requestBodyContentType: undefined,
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Reseller"],
     deprecated: false
   }],
 ]);
