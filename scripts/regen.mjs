@@ -61,8 +61,37 @@ const excludeCfg = existsSync(CONFIG)
   : {};
 const excludedPaths = new Set(excludeCfg.paths ?? []);
 const excludedOps = new Set(excludeCfg.operation_ids ?? []);
+const excludedParams = excludeCfg.parameters ?? {};
+
+// Strip a named parameter from an operation that is otherwise exposed. Done on
+// the spec object, so the generator never sees the field and it disappears from
+// inputSchema and executionParameters together.
+function stripParams(op) {
+  const names = excludedParams[op?.operationId];
+  if (!names?.length) return 0;
+  let n = 0;
+  if (Array.isArray(op.parameters)) {
+    const before = op.parameters.length;
+    op.parameters = op.parameters.filter((p) => !names.includes(p?.name));
+    n += before - op.parameters.length;
+  }
+  const schema = op.requestBody?.content?.['application/json']?.schema;
+  if (schema?.properties) {
+    for (const name of names) {
+      if (name in schema.properties) {
+        delete schema.properties[name];
+        n += 1;
+      }
+      if (Array.isArray(schema.required)) {
+        schema.required = schema.required.filter((r) => r !== name);
+      }
+    }
+  }
+  return n;
+}
 const spec = yaml.load(specBytes.toString('utf8'));
 let removed = 0;
+let strippedParams = 0;
 for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
   if (excludedPaths.has(specPath)) {
     delete spec.paths[specPath];
@@ -75,11 +104,14 @@ for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
       removed += 1;
     }
   }
+  for (const m of METHODS) {
+    if (item[m]) strippedParams += stripParams(item[m]);
+  }
   if (!METHODS.some((m) => item[m])) delete spec.paths[specPath];
 }
 const FILTERED_SPEC = `${TMP}-filtered-spec.yaml`;
 writeFileSync(FILTERED_SPEC, yaml.dump(spec, { noRefs: true }));
-console.log(`excluded ${removed} operations via ${CONFIG}`);
+console.log(`excluded ${removed} operations and ${strippedParams} parameters via ${CONFIG}`);
 
 const result = spawnSync(
   'npx',
