@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-08-28
+
+### Changed
+
+- The campaign prompt sticks to the common flow: contact filtering is no longer suggested in the step list (it stays available on createBulkCall for the rare list that needs it).
+
 ## [0.11.0] - 2026-08-28
 
 ### Added
