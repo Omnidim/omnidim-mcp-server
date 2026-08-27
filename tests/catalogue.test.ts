@@ -45,6 +45,23 @@ describe("generated tool catalogue", () => {
         }
     });
 
+    it("exposes the bulk-call parity tools", () => {
+        for (const name of [
+            "startBulkCall", "addBulkCallContacts", "retryBulkCall",
+            "setBulkCallConcurrency", "setBulkCallDailyTimeControl",
+            "listBulkCallLines", "listBulkCallNumbers",
+            "addBulkCallNumber", "setBulkCallNumberActive",
+        ]) {
+            expect(src).toContain(`["${name}"`);
+        }
+    });
+
+    it("documents createBulkCall's draft, filtering, and rotation fields", () => {
+        for (const field of ['"bot_id"', '"save_as_draft"', '"call_conditions"', '"rotation"']) {
+            expect(src).toContain(field);
+        }
+    });
+
     it("exposes the phone number search, purchase, and release tools", () => {
         for (const name of ["searchPhoneNumbers", "purchasePhoneNumber", "releasePhoneNumber"]) {
             expect(src).toContain(`["${name}"`);

@@ -102,7 +102,7 @@ connect and talk, see "Connect the client and talk" below the
 request details.
 
 (Tags: Sessions)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["agent_id","type"],"properties":{"agent_id":{"type":"number","description":"ID of the agent the session talks to."},"type":{"type":"string","enum":["voice"],"description":"The session type. Only `voice` is supported."},"custom_variables":{"type":"object","additionalProperties":true,"description":"Per-session variables that personalize the conversation.\nSet server-side, so visitors cannot tamper with them.\n"},"metadata":{"type":"object","additionalProperties":true,"description":"Key-value pairs stored on the session for your own\ntracking (e.g. CRM or lead IDs). Not shared with the\nagent; echoed back as `metadata` in the post-call\nwebhook so you can correlate results with your records.\n"}},"description":"The JSON request body."}},"required":["requestBody"]},
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["agent_id","type"],"properties":{"agent_id":{"type":"number","description":"ID of the agent the session talks to."},"type":{"type":"string","default":"voice","enum":["voice"],"description":"The session type. Only `voice` is supported."},"custom_variables":{"type":"object","additionalProperties":true,"description":"Per-session variables that personalize the conversation.\nSet server-side, so visitors cannot tamper with them.\n"},"metadata":{"type":"object","additionalProperties":true,"description":"Key-value pairs stored on the session for your own\ntracking (e.g. CRM or lead IDs). Not shared with the\nagent; echoed back as `metadata` in the post-call\nwebhook so you can correlate results with your records.\n"}},"description":"The JSON request body."}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/sessions/create",
     executionParameters: [],
@@ -321,22 +321,18 @@ phone number must include a country code with a leading plus.
   }],
   ["createBulkCall", {
     name: "createBulkCall",
-    description: `Create a new bulk-call campaign. Supports immediate, scheduled,
-and auto-retry modes.
+    description: `Create a new bulk-call campaign. Only name, phone_number_id and a
+contact_list are needed to dial a list now; every other field adds
+one behaviour on top (drafts, rotation, filtering, scheduling,
+retries, dynamic feeding).
 
-There are two kinds of campaign:
-
-- **Static** (default): you supply the full \`contact_list\` up
-  front and the campaign dials through it.
-- **Dynamic**: set \`is_dynamic\` to \`true\` and the campaign accepts
-  contacts in real time via the Add contact to dynamic campaign
-  webhook. \`contact_list\` is optional here, so you can start the
-  campaign empty and feed it from a CRM, form, or automation. A
-  dynamic campaign stays alive waiting for contacts instead of
-  completing when its queue drains.
+The guide below the field reference walks the whole journey: the
+first campaign and its response, each behaviour with a working
+request, every refusal message with its fix, and the endpoints that
+operate a campaign once it runs.
 
 (Tags: Bulk calls)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["name","phone_number_id"],"properties":{"name":{"type":"string","description":"Name of the bulk call campaign."},"phone_number_id":{"type":"string","description":"Your phone number id to use for making calls."},"is_dynamic":{"type":"boolean","default":false,"description":"Set to `true` to create a dynamic campaign that accepts\ncontacts in real time via the Add contact to dynamic\ncampaign webhook. When `true`, `contact_list` is optional\nand may be omitted to start the campaign empty.\n"},"contact_list":{"type":"array","description":"Array of contact objects. Each row needs `phone_number`.\nAny other key you add on the row (e.g. `customer_name`,\n`account_id`, `priority`) is passed to the agent as a\ncontext variable for that specific call, so the agent\ncan reference it during the conversation.\n\nRequired for static campaigns. Optional when `is_dynamic`\nis `true` (you can omit it and add contacts later via the\nwebhook).\n","items":{"type":"object","required":["phone_number"],"properties":{"phone_number":{"type":"string","description":"Phone number in international format (e.g., +15551234567)."}},"additionalProperties":true}},"is_scheduled":{"type":"boolean","default":false,"description":"Whether the campaign should be scheduled for future execution."},"scheduled_datetime":{"type":"string","description":"Scheduled execution time in format `YYYY-MM-DD HH:MM:SS` (required if `is_scheduled` is true)."},"timezone":{"type":"string","default":"UTC","description":"Timezone for scheduled execution."},"concurrent_call_limit":{"type":"number","default":1,"minimum":1,"description":"Maximum number of concurrent calls allowed."},"enabled_reschedule_call":{"type":"boolean","default":false,"description":"Enable automatic call rescheduling. When enabled the system can reschedule unreachable calls."},"retry_config":{"type":"object","description":"Auto-retry configuration object containing retry settings.","properties":{"auto_retry":{"type":"boolean","default":false},"auto_retry_schedule":{"type":"string","enum":["immediately","next_day","scheduled_time"],"description":"When to retry failed calls."},"retry_schedule_days":{"type":"number","default":0,"minimum":0,"description":"Days to wait before a scheduled retry."},"retry_schedule_hours":{"type":"number","default":0,"minimum":0,"description":"Hours to wait before a scheduled retry."},"retry_limit":{"type":"number","default":0,"minimum":0,"maximum":5,"description":"Maximum number of retry attempts (0–5)."}}}},"description":"The JSON request body."}},"required":["requestBody"]},
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["name","phone_number_id"],"properties":{"name":{"type":"string","description":"Name of the bulk call campaign."},"phone_number_id":{"type":"string","description":"The number this campaign calls from. With a `rotation`, the\nrotation numbers dial instead and this one is the standby.\n"},"bot_id":{"type":"number","description":"Agent to run the campaign. Defaults to the agent attached\nto `phone_number_id`; required when the number has none.\n"},"save_as_draft":{"type":"boolean","default":false,"description":"Store the campaign without dialing; start it later with the\nstart endpoint. See Drafts in the guide below.\n"},"call_conditions":{"type":"array","description":"Dial only the contacts that match every condition; the rest\nare kept as `Skipped`. See Filtering in the guide below.\n","items":{"type":"object","required":["column","operator","value"],"properties":{"column":{"type":"string","description":"Key on the contact row to test."},"operator":{"type":"string","default":"equals","enum":["equals","not_equals","contains","greater_than","less_than"],"description":"`contains` is case-insensitive. `greater_than` and\n`less_than` compare numerically, and a row whose value\nis not a number fails the condition rather than\nerroring.\n"},"value":{"type":"string"}}}},"rotation":{"type":"object","description":"Rotate the campaign across several of your numbers, so no\nsingle number burns out. See Rotation in the guide below.\n","required":["numbers"],"properties":{"numbers":{"type":"array","minItems":1,"description":"The numbers to rotate across; each must be yours and\nlisted once.\n","items":{"type":"object","required":["phone_number_id"],"properties":{"phone_number_id":{"type":"number","description":"One of your numbers, from List phone numbers."},"sequence":{"type":"number","default":10,"description":"Rotation order. Lowest dials first."}}}},"strategy":{"type":"string","default":"fixed_count","enum":["fixed_count","cpr_threshold","both","none"],"description":"When to move to the next number: every\n`calls_per_number` calls, on low health score, both, or\nnever.\n"},"calls_per_number":{"type":"number","default":50,"description":"Calls before moving on. Used by `fixed_count` and `both`."},"health_threshold":{"type":"number","default":30,"description":"Health score below which a number is rotated away from.\nUsed by `cpr_threshold` and `both`.\n"},"fallback":{"type":"string","default":"pause","enum":["pause","continue_best"],"description":"When every number is unhealthy: `pause` the campaign,\nor `continue_best` with the healthiest one.\n"}}},"is_dynamic":{"type":"boolean","default":false,"description":"A dynamic campaign stays alive accepting contacts via the\nadd-contact webhooks, and `contact_list` becomes optional.\n"},"contact_list":{"type":"array","description":"Who to call. Each row needs `phone_number`; any other key\nreaches the agent as context for that one call.\n","items":{"type":"object","required":["phone_number"],"properties":{"phone_number":{"type":"string","description":"Phone number in international format (e.g., +15551234567)."}},"additionalProperties":true}},"is_scheduled":{"type":"boolean","default":false,"description":"Whether the campaign should be scheduled for future execution."},"scheduled_datetime":{"type":"string","description":"Scheduled execution time in format `YYYY-MM-DD HH:MM:SS` (required if `is_scheduled` is true)."},"timezone":{"type":"string","default":"UTC","description":"Timezone for scheduled execution."},"concurrent_call_limit":{"type":"number","default":1,"minimum":1,"description":"Maximum number of concurrent calls allowed."},"enabled_reschedule_call":{"type":"boolean","default":false,"description":"Enable automatic call rescheduling. When enabled the system can reschedule unreachable calls."},"retry_config":{"type":"object","description":"Auto-retry configuration object containing retry settings.","properties":{"auto_retry":{"type":"boolean","default":false},"auto_retry_schedule":{"type":"string","enum":["immediately","next_day","scheduled_time"],"description":"When to retry failed calls."},"retry_schedule_days":{"type":"number","default":0,"minimum":0,"description":"Days to wait before a scheduled retry."},"retry_schedule_hours":{"type":"number","default":0,"minimum":0,"description":"Hours to wait before a scheduled retry."},"retry_limit":{"type":"number","default":1,"minimum":1,"maximum":10,"description":"Retry attempts, 1 to 10. To disable retries omit it and\nleave `auto_retry` false; never send `0`.\n"}}}},"description":"The JSON request body."}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/calls/bulk_call/create",
     executionParameters: [],
@@ -400,6 +396,208 @@ operating hours.
     pathTemplate: "/calls/bulk_call/{bulk_call_id}",
     executionParameters: [{"name":"bulk_call_id","in":"path"}],
     requestBodyContentType: undefined,
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["listBulkCallLines", {
+    name: "listBulkCallLines",
+    description: `Per-contact results for a campaign: what happened on each call, the
+variables you sent with that contact, and a pointer to the recording.
+
+## Paging
+
+There is one rule. Call it with no \`cursor\`, then keep passing back the
+\`next_cursor\` you were handed until it comes back \`null\`.
+
+\`\`\`
+cursor = None
+while True:
+    page = GET /lines?pagesize=150&cursor={cursor}
+    handle(page["records"])
+    cursor = page["next_cursor"]
+    if not cursor: break
+\`\`\`
+
+Each call returns a page of rows, oldest first: \`pagesize\` goes up to
+150 and defaults to 30. Cursors are opaque, so pass back the string you
+were given and never build one. No contact is skipped or returned
+twice, even while the campaign is still dialing.
+
+## Transcripts are not in the row
+
+Each row carries \`call.recording_id\`, not the conversation. Transcripts
+reach 212 KB, so carrying them here would make one page tens of
+megabytes. Fetch the one you want from
+\`GET /calls/logs/{recording_id}\`.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."},"cursor":{"type":"string","description":"The `next_cursor` from your previous response. Omit it on the first\nrequest. Opaque: pass it back unchanged.\n"},"pagesize":{"type":"integer","minimum":1,"default":30,"maximum":150,"description":"Rows per page. Above 150 the request is refused."},"call_status":{"type":"string","enum":["Pending","In Progress","completed","voicemail_detected","no-answer","busy","Failed","Skipped","retry_scheduled","cancelled"],"description":"Return only contacts in this state."},"interaction_status":{"type":"string","description":"Return only contacts with this interaction outcome."},"search":{"type":"string","description":"An exact phone number, matched against the contact's number and the\nnumber that called it. Not a substring search.\n"},"include_total":{"type":"boolean","default":false,"description":"Add `total_records` to the response. It costs a count over the whole\nfiltered campaign, so it is off unless you ask. Ask for it once to\nfill a header, not on every page of a walk.\n"}},"required":["bulk_call_id"]},
+    method: "get",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/lines",
+    executionParameters: [{"name":"bulk_call_id","in":"path"},{"name":"cursor","in":"query"},{"name":"pagesize","in":"query"},{"name":"call_status","in":"query"},{"name":"interaction_status","in":"query"},{"name":"search","in":"query"},{"name":"include_total","in":"query"}],
+    requestBodyContentType: undefined,
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["listBulkCallNumbers", {
+    name: "listBulkCallNumbers",
+    description: `The campaign's number pool, and which number is dialing right now.
+
+\`calls_this_cycle\` is what \`fixed_count\` rotation compares against, so
+it is the field to watch for the next rotation. \`calls_dispatched\` is
+the number's lifetime total across every cycle.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."}},"required":["bulk_call_id"]},
+    method: "get",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/numbers",
+    executionParameters: [{"name":"bulk_call_id","in":"path"}],
+    requestBodyContentType: undefined,
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["addBulkCallNumber", {
+    name: "addBulkCallNumber",
+    description: `Add one of your numbers to the campaign's rotation pool. Works while the
+campaign is running, which is how you bring in a fresh number when the
+pool is running out of healthy ones.
+
+The number must belong to you and must not already be in the pool. A
+number with no agent attached gets this campaign's agent attached
+automatically; a number attached to a **different** agent is refused.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."},"requestBody":{"type":"object","required":["phone_number_id"],"properties":{"phone_number_id":{"type":"number","description":"One of your numbers, from List phone numbers."}},"description":"The JSON request body."}},"required":["bulk_call_id","requestBody"]},
+    method: "post",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/numbers",
+    executionParameters: [{"name":"bulk_call_id","in":"path"}],
+    requestBodyContentType: "application/json",
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["setBulkCallNumberActive", {
+    name: "setBulkCallNumberActive",
+    description: `Stop or resume dialing from one number in the pool.
+
+Pausing is what you want when a number starts going bad mid-campaign:
+dialing moves to the next number in sequence and the paused number keeps
+its history and counters. The last active number of a running campaign
+cannot be paused, since the campaign would have nothing to dial from.
+
+Send the state you want rather than a toggle, so retrying the same
+request is harmless.
+
+\`assignment_id\` is the number's id **within this campaign's pool**, from
+List rotation pool. It is not the \`phone_number_id\`.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."},"assignment_id":{"type":"number","description":"The `assignment_id` from List rotation pool."},"requestBody":{"type":"object","required":["is_active"],"properties":{"is_active":{"type":"boolean","description":"`false` pauses the number, `true` resumes it."}},"description":"The JSON request body."}},"required":["bulk_call_id","assignment_id","requestBody"]},
+    method: "put",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/numbers/{assignment_id}",
+    executionParameters: [{"name":"bulk_call_id","in":"path"},{"name":"assignment_id","in":"path"}],
+    requestBodyContentType: "application/json",
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["addBulkCallContacts", {
+    name: "addBulkCallContacts",
+    description: `Add up to 1000 contacts to a campaign in one request.
+
+This is the batch form of Add contact to dynamic campaign. Prefer it
+whenever you have more than a handful: one request of 500 contacts is
+far cheaper than 500 requests, on your side and ours.
+
+Repeated numbers are kept, not merged. If the same number appears twice
+with different variables, it is called twice, because two rows for one
+number usually means two real reasons to call.
+
+Rows that fail validation are reported in \`rejected\` and the rest are
+still added, so a single bad number does not lose the batch. If the
+campaign has \`call_conditions\`, rows that do not match are added with
+status \`Skipped\`.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"campaign_id":{"type":"number","description":"Id of the bulk call campaign."},"requestBody":{"type":"object","required":["contacts"],"properties":{"contacts":{"type":"array","maxItems":1000,"description":"Each row needs `to_number`. Note this differs from the\n`contact_list` on Create bulk call, which uses\n`phone_number` and takes loose keys: here the variables go\nin an explicit `custom_variables` object.\n","items":{"type":"object","required":["to_number"],"properties":{"to_number":{"type":"string","description":"Number to call, in international format."},"custom_variables":{"type":"object","description":"Passed to the agent as context for this call, so it\ncan use them in the conversation.\n","additionalProperties":true},"metadata":{"type":"object","description":"Stored with the contact and returned on its row in\nBulk call results. Not shown to the agent.\n","additionalProperties":true}}}}},"description":"The JSON request body."}},"required":["campaign_id","requestBody"]},
+    method: "post",
+    pathTemplate: "/calls/bulk_call/{campaign_id}/add_contacts",
+    executionParameters: [{"name":"campaign_id","in":"path"}],
+    requestBodyContentType: "application/json",
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["startBulkCall", {
+    name: "startBulkCall",
+    description: `Start a campaign that was created with \`save_as_draft: true\`.
+
+Drafts let you build a campaign over several requests: create it, add
+contacts in batches, set the number pool, set concurrency, then start
+when everything is in place. A campaign that is already running,
+scheduled, or finished cannot be started.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."}},"required":["bulk_call_id"]},
+    method: "post",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/start",
+    executionParameters: [{"name":"bulk_call_id","in":"path"}],
+    requestBodyContentType: undefined,
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["setBulkCallConcurrency", {
+    name: "setBulkCallConcurrency",
+    description: `Change how many calls the campaign places at once, including while it is
+running. Raise it to finish sooner, lower it if your team cannot keep up
+with transfers or your numbers are being answered less.
+
+The ceiling is your account's concurrency limit.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."},"requestBody":{"type":"object","required":["concurrent_call_limit"],"properties":{"concurrent_call_limit":{"type":"number","minimum":1,"description":"Calls to place at once."}},"description":"The JSON request body."}},"required":["bulk_call_id","requestBody"]},
+    method: "put",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/concurrency",
+    executionParameters: [{"name":"bulk_call_id","in":"path"}],
+    requestBodyContentType: "application/json",
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["retryBulkCall", {
+    name: "retryBulkCall",
+    description: `Re-queue contacts that did not connect, without creating a new campaign.
+
+Use it after a campaign finishes with more no-answers than you expected,
+or when the reason was on your side (a bad window, a number that was
+having a bad day). Retried contacts keep their original variables.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."},"requestBody":{"type":"object","properties":{"retry_strategy":{"type":"string","default":"all","description":"Which contacts to re-queue. `all` takes everything that did\nnot connect.\n"},"max_retries":{"type":"number","description":"Skip contacts already retried this many times."},"failure_reasons":{"type":"array","description":"Re-queue only contacts that failed for these reasons, for\nexample `no-answer` and `busy`.\n","items":{"type":"string"}}},"description":"The JSON request body."}},"required":["bulk_call_id"]},
+    method: "post",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/manual_retry",
+    executionParameters: [{"name":"bulk_call_id","in":"path"}],
+    requestBodyContentType: "application/json",
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Bulk calls"],
+    deprecated: false
+  }],
+  ["setBulkCallDailyTimeControl", {
+    name: "setBulkCallDailyTimeControl",
+    description: `Restrict a campaign to a daily calling window, in the campaign's
+timezone. Outside the window the campaign holds rather than finishing,
+and resumes the next day.
+
+(Tags: Bulk calls)`,
+    inputSchema: {"type":"object","properties":{"bulk_call_id":{"type":"number","description":"Id of the bulk call campaign."},"requestBody":{"type":"object","required":["enable_daily_hard_stop","enable_daily_auto_start"],"properties":{"enable_daily_hard_stop":{"type":"boolean","description":"Stop dialing at `daily_stop_time` each day."},"daily_stop_time":{"type":"number","description":"Hour of day to stop, 0 to 23. Fractions are allowed, so\n`17.5` is 17:30. Required when the hard stop is on.\n"},"daily_stop_timezone":{"type":"string","description":"Timezone for the stop time."},"enable_daily_auto_start":{"type":"boolean","description":"Resume dialing at `daily_start_time` each day."},"daily_start_time":{"type":"number","description":"Hour of day to resume, 0 to 23. Required when auto start\nis on.\n"},"daily_start_timezone":{"type":"string","description":"Timezone for the start time."}},"description":"The JSON request body."}},"required":["bulk_call_id","requestBody"]},
+    method: "put",
+    pathTemplate: "/calls/bulk_call/{bulk_call_id}/daily-time-control",
+    executionParameters: [{"name":"bulk_call_id","in":"path"}],
+    requestBodyContentType: "application/json",
     securityRequirements: [{"BearerAuth":[]}],
     tags: ["Bulk calls"],
     deprecated: false

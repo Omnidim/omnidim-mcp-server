@@ -34,7 +34,7 @@ describe("toolAnnotations", () => {
     });
 
     it("marks call-placing tools destructive AND open-world", () => {
-        for (const name of ["dispatchCall", "createBulkCall", "addBulkCallContact"]) {
+        for (const name of ["dispatchCall", "createBulkCall", "addBulkCallContact", "addBulkCallContacts", "startBulkCall", "retryBulkCall"]) {
             const a = toolAnnotations({ name, method: "post" });
             expect(a.readOnlyHint, name).toBe(false);
             expect(a.destructiveHint, name).toBe(true);

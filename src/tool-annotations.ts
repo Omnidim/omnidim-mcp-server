@@ -27,6 +27,15 @@ const TOOL_TITLES: Record<string, string> = {
   bulkCallActions: "Control bulk campaign",
   cancelBulkCall: "Cancel bulk campaign",
   getBulkCallLiveStatus: "Get campaign live status",
+  startBulkCall: "Start draft campaign",
+  addBulkCallContacts: "Add contacts to campaign",
+  retryBulkCall: "Retry unconnected contacts",
+  setBulkCallConcurrency: "Set campaign concurrency",
+  setBulkCallDailyTimeControl: "Set campaign calling hours",
+  listBulkCallLines: "List campaign call results",
+  listBulkCallNumbers: "List campaign number pool",
+  addBulkCallNumber: "Add number to campaign pool",
+  setBulkCallNumberActive: "Pause or resume pool number",
   listKnowledgeBaseFiles: "List knowledge base files",
   canUploadFile: "Check file upload eligibility",
   uploadKnowledgeBaseFile: "Upload knowledge base file",
@@ -59,12 +68,14 @@ const DESTRUCTIVE_TOOLS = new Set([
   "deleteAgent", "deleteAgentVersion", "restoreAgentVersion",
   "deleteKnowledgeBaseFile", "detachKnowledgeBaseFiles", "detachPhoneNumber",
   "cancelBulkCall", "dispatchCall", "createBulkCall", "addBulkCallContact",
+  "addBulkCallContacts", "startBulkCall", "retryBulkCall",
   "purchasePhoneNumber", "releasePhoneNumber",
 ]);
 
 // Tools that reach the external phone network (a carrier, not just our API).
 const OPEN_WORLD_TOOLS = new Set([
   "dispatchCall", "createBulkCall", "addBulkCallContact",
+  "addBulkCallContacts", "startBulkCall", "retryBulkCall",
   "purchasePhoneNumber", "releasePhoneNumber",
 ]);
 
