@@ -498,9 +498,8 @@ user before \`startBulkCall\`, and never start one they have not approved.
 2. Number and agent: ${numberLine} ${agentLine}
 3. Create it as a draft with \`createBulkCall\`
    { requestBody: { name, phone_number_id, save_as_draft: true, concurrent_call_limit: <sized below> } }.
-   Add \`call_conditions\` to dial only matching contacts, and \`rotation\` when
-   dialing from several numbers (see the bulk-campaigns resource for the shape).
-   Keep the returned \`id\`.
+   Add \`rotation\` when dialing from several numbers (see the bulk-campaigns
+   resource for the shape). Keep the returned \`id\`.
 4. Size concurrency from the goal's numbers, not a guess: per channel,
    3600 / average call seconds gives calls per hour (~40 at 90s); divide the
    target hourly rate by that. Show the arithmetic to the user.
