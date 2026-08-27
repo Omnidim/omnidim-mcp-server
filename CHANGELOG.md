@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-28
+
 ### Added
 
 - Campaign lifecycle tools: `startBulkCall`, `setBulkCallConcurrency`, `retryBulkCall`, `addBulkCallContacts` (up to 1000 contacts per request), `listBulkCallLines` (per-contact results with cursor paging), `listBulkCallNumbers`, `addBulkCallNumber`, `setBulkCallNumberActive` (rotation pool), and `setBulkCallDailyTimeControl` (calling hours). Start, retry, and batch add place real calls and are marked destructive and open-world.
