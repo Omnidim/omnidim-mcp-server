@@ -266,6 +266,76 @@ specific old -> new changes. Pick the comparison with \`against\`:
   freely. Restore and delete mutate the live agent - confirm intent first.
 `;
 
+const BULK_CAMPAIGNS_GUIDE = `# Running outbound campaigns
+
+## Normal or dynamic
+- One-time list: a normal campaign. Create it (as a draft), add contacts, start it.
+- Continuous leads (form fills, CRM events): a dynamic campaign
+  (\`is_dynamic: true\`, no contact list) fed by \`addBulkCallContact\` as each
+  lead arrives. The faster a fresh lead is called, the higher the conversion.
+
+## The two contact shapes (do not mix them)
+- \`createBulkCall\`'s \`contact_list\` rows are FLAT:
+  \`{ "phone_number": "+1...", "any_other_key": "reaches the agent as context" }\`.
+- \`addBulkCallContact\` / \`addBulkCallContacts\` instead take
+  \`{ to_number, custom_variables: {...}, metadata: {...} }\`. \`metadata\` is
+  bookkeeping the agent never sees.
+- Sending \`custom_variables\` inside a \`contact_list\` row does not error; it
+  becomes one nested variable and garbles the agent's context.
+
+## Build as a draft, then start
+- \`createBulkCall\` { requestBody: { name, phone_number_id, save_as_draft: true, ... } }.
+  Keep the returned \`id\`. Without \`save_as_draft\` the campaign dials the
+  moment it is created.
+- \`addBulkCallContacts\` accepts up to 1000 contacts per request. Invalid rows
+  come back in \`rejected\` with their index and reason; valid rows are still
+  added, so one bad number never costs the batch.
+- \`startBulkCall\` launches a draft.
+- Adding contacts is NOT dynamic-only: any campaign that is not cancelled or
+  failed accepts them, and a completed campaign wakes up and dials again.
+
+## Size concurrency with arithmetic, not vibes
+- Calls per hour per channel = 3600 / average call seconds (~40/hour at 90s).
+- Channels needed = target calls per hour / per-channel rate.
+- Example: 100,000 calls in an 8-hour day is 12,500/hour, ~315 channels.
+  The failure mode: concurrency 5 against 10,000 leads is ~200 calls/hour,
+  a 50-hour "today" campaign.
+- \`setBulkCallConcurrency\` changes it mid-run; the org's ceiling caps it.
+
+## Numbers and rotation
+- One number dialing a whole campaign collects spam reports and stops being
+  answered. Rotate: \`rotation: { numbers: [{ phone_number_id, sequence }],
+  strategy: "fixed_count", calls_per_number: 50 }\` at create.
+- \`phone_number_id\` stays required and becomes the standby; list it in
+  \`rotation.numbers\` too if it should take a share of the calls.
+- A rotation number attached to a DIFFERENT agent is refused by name. Attach
+  it to this campaign's agent first, or leave it out.
+- \`listBulkCallNumbers\` shows which number is dialing now;
+  \`setBulkCallNumberActive\` pauses one without losing its history (the last
+  active number of a running campaign cannot be paused).
+- Check a new number's reputation before a campaign and watch pickup rates.
+
+## Calling hours and the timezone trap
+- \`setBulkCallDailyTimeControl\` sets a hard stop and an auto start; the API
+  requires both blocks together.
+- Those times follow the AGENT's timezone, not the operator's. A wrong
+  timezone dials people at 11 PM, which is a compliance problem. Set the
+  agent's timezone to the customers' region before launching.
+
+## Watching a campaign and reading results
+- \`getBulkCallLiveStatus\` for progress counts while it runs.
+- \`listBulkCallLines\` for per-contact outcomes: \`pagesize\` up to 150, follow
+  \`next_cursor\` until it comes back null, never build a cursor yourself.
+  \`include_total\` once for a header, not on every page.
+- Rows carry \`recording_id\`, not the transcript; \`getCallLog\` serves it.
+- \`retryBulkCall\` re-queues contacts that did not connect; it refuses a
+  campaign that is still running.
+
+## Contact rules
+- Numbers are E.164 with the country code. Run one campaign per country code.
+- Dashboard CSV uploads need the phone column named exactly \`phone_number\`.
+`;
+
 const RESOURCES: ResourceDef[] = [
     {
         uri: "omnidim://guide/routing",
@@ -294,6 +364,13 @@ const RESOURCES: ResourceDef[] = [
         description: "The createAgent field shape with two complete, copy-ready example configurations (Indian-English support, Hindi/Hinglish reminder).",
         mimeType: "text/markdown",
         text: AGENT_CONFIG_GUIDE,
+    },
+    {
+        uri: "omnidim://guide/bulk-campaigns",
+        name: "Running outbound campaigns",
+        description: "The campaign lifecycle end to end: draft, batch contacts (two contact shapes, do not mix), rotation, concurrency arithmetic, the agent-timezone trap, cursor-paged results.",
+        mimeType: "text/markdown",
+        text: BULK_CAMPAIGNS_GUIDE,
     },
     {
         uri: "omnidim://guide/agent-versioning",
@@ -389,6 +466,60 @@ Throughout: phone numbers are E.164 with a leading \`+\`. See the \`omnidim://gu
    reasons and low-sentiment calls, and cite specific \`call_log_id\`s.
 
 See the \`omnidim://guide/routing\` resource for the full gotcha list.`;
+        },
+    },
+    {
+        name: "build_outbound_campaign",
+        description: "Set up and launch a bulk-call campaign safely: draft it, batch the contacts in, size concurrency from the numbers, check calling hours, then start and watch it.",
+        arguments: [
+            { name: "goal", description: "Who to call and why, in plain language (e.g. 'call 8,000 renewal leads today between 9 and 6 Eastern').", required: true },
+            { name: "agent_id", description: "Optional agent to run the calls (the listAgents id). If omitted, the agent attached to the chosen number runs them.", required: false },
+            { name: "phone_number_id", description: "Optional number id to dial from (from listPhoneNumbers). If omitted, pick with the user from their numbers.", required: false },
+        ],
+        build: (a) => {
+            const goal = a.goal || "(describe who to call and why)";
+            const numberLine = a.phone_number_id
+                ? `Use phone_number_id "${a.phone_number_id}".`
+                : `Call \`listPhoneNumbers\` and pick the dialing number WITH the user; never pick silently.`;
+            const agentLine = a.agent_id
+                ? `Pass bot_id ${a.agent_id} so this agent runs the calls even if the number has a different or no agent attached.`
+                : `If the number has an agent attached it runs the calls; otherwise pass a \`bot_id\`.`;
+            return `Set up and launch an OmniDimension bulk-call campaign for this goal:
+
+"${goal}"
+
+Follow these steps in order. Each write tool wraps its payload in \`requestBody\`.
+A campaign dials real people and spends real money: confirm the plan with the
+user before \`startBulkCall\`, and never start one they have not approved.
+
+1. Decide the shape: a one-time list is a normal campaign; continuously arriving
+   leads mean a dynamic campaign (\`is_dynamic: true\`) fed by
+   \`addBulkCallContact\` instead of steps 3 and 5.
+2. Number and agent: ${numberLine} ${agentLine}
+3. Create it as a draft with \`createBulkCall\`
+   { requestBody: { name, phone_number_id, save_as_draft: true, concurrent_call_limit: <sized below> } }.
+   Add \`call_conditions\` to dial only matching contacts, and \`rotation\` when
+   dialing from several numbers (see the bulk-campaigns resource for the shape).
+   Keep the returned \`id\`.
+4. Size concurrency from the goal's numbers, not a guess: per channel,
+   3600 / average call seconds gives calls per hour (~40 at 90s); divide the
+   target hourly rate by that. Show the arithmetic to the user.
+5. Add contacts with \`addBulkCallContacts\` in batches of up to 1000:
+   { requestBody: { contacts: [{ to_number: "+1...", custom_variables: {...} }] } }.
+   This shape differs from create's contact_list on purpose; do not mix them.
+   Report anything that comes back in \`rejected\` with its row index.
+6. Calling hours: if the goal names a time window, set it with
+   \`setBulkCallDailyTimeControl\` (both the stop and start blocks are required)
+   and FIRST verify the agent's timezone matches the customers' region; those
+   times follow the agent's timezone, and a mismatch dials people at night.
+7. Show the user the plan (campaign id, contact count, concurrency, window,
+   rotation) and get their explicit go-ahead. Then \`startBulkCall\`.
+8. Watch it: \`getBulkCallLiveStatus\` for progress. When it finishes, read
+   per-contact outcomes with \`listBulkCallLines\` (follow \`next_cursor\` until
+   null) and offer \`retryBulkCall\` for contacts that did not connect.
+
+See the \`omnidim://guide/bulk-campaigns\` resource for the full rules and
+failure modes.`;
         },
     },
     {

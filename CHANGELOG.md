@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Campaign lifecycle tools: `startBulkCall`, `setBulkCallConcurrency`, `retryBulkCall`, `addBulkCallContacts` (up to 1000 contacts per request), `listBulkCallLines` (per-contact results with cursor paging), `listBulkCallNumbers`, `addBulkCallNumber`, `setBulkCallNumberActive` (rotation pool), and `setBulkCallDailyTimeControl` (calling hours). Start, retry, and batch add place real calls and are marked destructive and open-world.
+- `createBulkCall` now supports `bot_id`, `save_as_draft`, `call_conditions`, and `rotation`.
+- A `build_outbound_campaign` prompt that drafts a campaign, batches contacts in, sizes concurrency from the goal's numbers, checks calling hours and the agent timezone, and requires explicit approval before starting.
+- An `omnidim://guide/bulk-campaigns` resource with the campaign rules: the two contact shapes, draft-first building, concurrency arithmetic, rotation, calling hours, and cursor-paged results.
+
 ## [0.10.1] - 2026-08-26
 
 ### Removed

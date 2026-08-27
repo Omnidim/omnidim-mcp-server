@@ -64,6 +64,49 @@ describe("audit_calls prompt", () => {
     });
 });
 
+describe("build_outbound_campaign prompt", () => {
+    it("weaves the goal in and walks the draft-first lifecycle", () => {
+        const t = getPromptText("build_outbound_campaign", { goal: "call 8,000 renewal leads today" }) ?? "";
+        expect(t).toContain("call 8,000 renewal leads today");
+        expect(t).toContain("createBulkCall");
+        expect(t).toContain("save_as_draft: true");
+        expect(t).toContain("addBulkCallContacts");
+        expect(t).toContain("startBulkCall");
+        expect(t).toContain("requestBody");
+    });
+
+    it("requires explicit user approval before starting", () => {
+        const t = getPromptText("build_outbound_campaign", { goal: "x" }) ?? "";
+        expect(t).toContain("never start one they have not approved");
+        expect(t.indexOf("go-ahead")).toBeLessThan(t.indexOf("Then \`startBulkCall\`"));
+    });
+
+    it("pins the number and agent when given", () => {
+        const t = getPromptText("build_outbound_campaign", { goal: "x", agent_id: "42", phone_number_id: "177" }) ?? "";
+        expect(t).toContain('phone_number_id "177"');
+        expect(t).toContain("bot_id 42");
+    });
+
+    it("teaches the concurrency arithmetic and the timezone trap", () => {
+        const t = getPromptText("build_outbound_campaign", { goal: "x" }) ?? "";
+        expect(t).toContain("3600 / average call seconds");
+        expect(t).toContain("agent's timezone");
+    });
+});
+
+describe("bulk campaigns resource", () => {
+    const text = getResourceText("omnidim://guide/bulk-campaigns") ?? "";
+    it("is listed and documents the load-bearing rules", () => {
+        expect(RESOURCE_URIS).toContain("omnidim://guide/bulk-campaigns");
+        expect(text).toContain("to_number");
+        expect(text).toContain("contact_list");
+        expect(text).toContain("next_cursor");
+        expect(text).toContain("save_as_draft");
+        expect(text).toContain("3600 / average call seconds");
+        expect(text).toContain("AGENT's timezone");
+    });
+});
+
 describe("reference resources", () => {
     it("lists the recommended-stack, voices, and agent-config resources", () => {
         expect(RESOURCE_URIS).toContain("omnidim://reference/recommended-stack");
