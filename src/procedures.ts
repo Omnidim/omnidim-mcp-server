@@ -318,9 +318,13 @@ const BULK_CAMPAIGNS_GUIDE = `# Running outbound campaigns
 ## Calling hours and the timezone trap
 - \`setBulkCallDailyTimeControl\` sets a hard stop and an auto start; the API
   requires both blocks together.
-- Those times follow the AGENT's timezone, not the operator's. A wrong
-  timezone dials people at 11 PM, which is a compliance problem. Set the
-  agent's timezone to the customers' region before launching.
+- Each block carries its own timezone (\`daily_stop_timezone\`,
+  \`daily_start_timezone\`); left out, it falls back to the campaign's
+  \`timezone\`, not the operator's. A wrong timezone dials people at 11 PM,
+  which is a compliance problem. Set both to the customers' region.
+- The agent has its own \`timezone\` field (\`createAgent\`/\`updateAgent\`)
+  that sets the local date and time it works with during calls. Set that to
+  the customers' region too.
 
 ## Watching a campaign and reading results
 - \`getBulkCallLiveStatus\` for progress counts while it runs.
@@ -509,8 +513,10 @@ user before \`startBulkCall\`, and never start one they have not approved.
    Report anything that comes back in \`rejected\` with its row index.
 6. Calling hours: if the goal names a time window, set it with
    \`setBulkCallDailyTimeControl\` (both the stop and start blocks are required)
-   and FIRST verify the agent's timezone matches the customers' region; those
-   times follow the agent's timezone, and a mismatch dials people at night.
+   and pass \`daily_stop_timezone\`/\`daily_start_timezone\` for the customers'
+   region; left out they fall back to the campaign's timezone, and a mismatch
+   dials people at night. Also set the agent's own \`timezone\` field
+   (\`updateAgent\`) so it works with the customers' local time on calls.
 7. Show the user the plan (campaign id, contact count, concurrency, window,
    rotation) and get their explicit go-ahead. Then \`startBulkCall\`.
 8. Watch it: \`getBulkCallLiveStatus\` for progress. When it finishes, read
