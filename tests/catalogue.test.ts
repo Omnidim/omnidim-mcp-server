@@ -71,6 +71,7 @@ describe("generated tool catalogue", () => {
     it("documents createAgent's structured fields", () => {
         expect(src).toContain('"context_breakdown":{"type":"array"');
         expect(src).toContain('"required":["title","body"]');
+        expect(src).toContain('"timezone":{"type":"string","description":"IANA timezone');
     });
 
     // Three places carry the version: package.json, the registry manifest,

@@ -90,7 +90,8 @@ describe("build_outbound_campaign prompt", () => {
     it("teaches the concurrency arithmetic and the timezone trap", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x" }) ?? "";
         expect(t).toContain("3600 / average call seconds");
-        expect(t).toContain("agent's timezone");
+        expect(t).toContain("daily_stop_timezone");
+        expect(t).toContain("agent's own `timezone` field");
     });
 });
 
@@ -103,7 +104,8 @@ describe("bulk campaigns resource", () => {
         expect(text).toContain("next_cursor");
         expect(text).toContain("save_as_draft");
         expect(text).toContain("3600 / average call seconds");
-        expect(text).toContain("AGENT's timezone");
+        expect(text).toContain("daily_stop_timezone");
+        expect(text).toContain("agent has its own `timezone` field");
     });
 });
 
