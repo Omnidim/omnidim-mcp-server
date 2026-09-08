@@ -715,11 +715,16 @@ in a region. Price and validity are flat per region, so every result
 shows the same \`monthly_rental_usd\` and \`validity_days\`, and that is the
 exact amount a purchase will charge.
 
+A region can have more than one carrier, each stocking different
+number series. Pass the \`carrier\` you want; the response names the
+carrier its results came from, and that is the carrier a purchase has
+to pass.
+
 (Tags: Phone numbers)`,
-    inputSchema: {"type":"object","properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region to search in."},"pattern":{"type":"string","description":"Digits or prefix to match within the number."},"page":{"type":"number","minimum":1,"default":1,"description":"Page of results to return."},"limit":{"type":"number","minimum":1,"maximum":150,"default":20,"description":"Results per page."}},"required":["region"]},
+    inputSchema: {"type":"object","properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region to search in. `IN` and `US` both serve numbers. Which\nregions answer is configuration, so a region with no carrier\nenabled returns `404 not_available` rather than an empty list.\n"},"carrier":{"type":"string","description":"Which carrier to use. **Always required** in a region that has\none, however few it holds, so that adding a carrier is never a\nbreaking change.\n\nRegion `IN` has two: `carrier-1` stocks landline numbers (city\ncodes 11, 12 and 80), `carrier-2-new` stocks mobile numbers (94\nand 79 series). Region `US` has one: `carrier-us`, US local\nnumbers by area code.\n\nOmitting it returns `409 carrier_required` listing the carriers\nwith what each one stocks, so an integration can discover them at\nruntime rather than hard-coding this list.\n"},"pattern":{"type":"string","description":"Digits or prefix to match within the number."},"page":{"type":"number","minimum":1,"default":1,"description":"Page of results to return."},"limit":{"type":"number","minimum":1,"maximum":150,"default":20,"description":"Results per page."}},"required":["region","carrier"]},
     method: "get",
     pathTemplate: "/phone_number/search",
-    executionParameters: [{"name":"region","in":"query"},{"name":"pattern","in":"query"},{"name":"page","in":"query"},{"name":"limit","in":"query"}],
+    executionParameters: [{"name":"region","in":"query"},{"name":"carrier","in":"query"},{"name":"pattern","in":"query"},{"name":"page","in":"query"},{"name":"limit","in":"query"}],
     requestBodyContentType: undefined,
     securityRequirements: [{"BearerAuth":[]}],
     tags: ["Phone numbers"],
@@ -732,7 +737,7 @@ rental comes out of your wallet and the number is added to your
 account, ready to attach to an agent.
 
 (Tags: Phone numbers)`,
-    inputSchema: {"type":"object","properties":{"Idempotency-Key":{"type":"string","description":"Your own unique key for this purchase, for example a\nfresh UUID. Strongly recommended: it is what makes a\nretry safe.\n"},"requestBody":{"type":"object","required":["region","phone_number"],"properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region the number belongs to."},"phone_number":{"type":"string","description":"The number to buy, as returned by the search operation."}},"description":"The JSON request body."}},"required":["requestBody"]},
+    inputSchema: {"type":"object","properties":{"Idempotency-Key":{"type":"string","description":"Your own unique key for this purchase, for example a\nfresh UUID. Strongly recommended: it is what makes a\nretry safe.\n"},"requestBody":{"type":"object","required":["region","carrier","phone_number"],"properties":{"region":{"type":"string","enum":["IN","US"],"description":"Region the number belongs to."},"phone_number":{"type":"string","description":"The number to buy, as returned by the search operation."},"carrier":{"type":"string","description":"The carrier to buy from: pass the `carrier` the search\nresponse named, so you buy from the inventory you searched.\nAlways required. Region `IN` has `carrier-1` (landline) and\n`carrier-2-new` (mobile); region `US` has `carrier-us`.\nOmitting it returns `409 carrier_required` listing them.\n"}},"description":"The JSON request body."}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/phone_number/purchase",
     executionParameters: [{"name":"Idempotency-Key","in":"header"}],
