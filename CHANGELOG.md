@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-09-09
+
+### Fixed
+
+- The phone number tools described `carrier` as optional until a region held two, and left it out of the required list on `purchasePhoneNumber` and `searchPhoneNumbers`. Region `IN` has had two carriers since 08 September, so an agent following the catalogue omitted `carrier` and got a `409 carrier_required` the catalogue said would not happen. The tools now require it and say what each carrier stocks.
+
 ## [0.12.0] - 2026-09-03
 
 ### Added
