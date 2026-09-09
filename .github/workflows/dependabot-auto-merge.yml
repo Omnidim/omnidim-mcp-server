@@ -1,0 +1,36 @@
+# Merges Dependabot's routine bumps so they stop queueing up.
+#
+# Non-major only. A major goes to a person, because CI passing is not the
+# same as the upgrade being wanted: TypeScript 7 compiled fine and still
+# refused to emit without an explicit rootDir.
+#
+# Auto-merge waits on the required checks and will not override a red one,
+# so branch protection is what makes this safe, not this workflow.
+
+name: dependabot-auto-merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read what kind of update this is
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # For a grouped PR this reports the highest bump in the group, so one
+      # major in the batch holds the whole batch. That is the intent.
+      - name: Merge it once its checks pass
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "$PR_URL"
