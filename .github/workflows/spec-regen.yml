@@ -1,0 +1,89 @@
+# Regenerates the tool catalogue when the published spec moves.
+#
+# The spec repo dispatches here on merge. spec-drift.yml still runs weekly as
+# a backstop, because GitHub disables a scheduled workflow after 60 days
+# without repo activity.
+#
+# This opens a pull request and stops. It does not merge, and for this repo
+# that is not caution, it is the exposure boundary: a new operation in the
+# spec becomes a new tool every agent can call. Adding a capability to an
+# agent surface is a decision, not a regeneration, so the PR says in its title
+# when the regen would add or remove a tool and a person makes that call.
+
+name: spec-regen
+
+on:
+  repository_dispatch:
+    types: [spec-changed]
+  workflow_dispatch:
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+
+      # Recorded before regenerating, so the PR can say what changed in terms
+      # of capability rather than diff size.
+      - name: Note which tools exist today
+        run: node -e "const s=require('fs').readFileSync('src/index.ts','utf8');const t=[...s.matchAll(/^\s{2}\[\"(\w+)\", \{\$/gm)].map(m=>m[1]).sort();require('fs').writeFileSync('/tmp/before.json',JSON.stringify(t))"
+
+      - run: npm run regen
+      - run: npm test
+
+      - name: Compare the tool list
+        id: tools
+        run: |
+          node -e "
+          const fs=require('fs');
+          const before=new Set(JSON.parse(fs.readFileSync('/tmp/before.json','utf8')));
+          const s=fs.readFileSync('src/index.ts','utf8');
+          const after=new Set([...s.matchAll(/^\s{2}\[\"(\w+)\", \{\$/gm)].map(m=>m[1]));
+          const added=[...after].filter(t=>!before.has(t)).sort();
+          const gone=[...before].filter(t=>!after.has(t)).sort();
+          const out=fs.createWriteStream(process.env.GITHUB_OUTPUT,{flags:'a'});
+          out.write('added='+added.join(',')+'\n');
+          out.write('gone='+gone.join(',')+'\n');
+          out.write('title='+(added.length||gone.length
+            ? 'chore: regenerate tools (EXPOSURE CHANGE: +'+added.length+' -'+gone.length+')'
+            : 'chore: regenerate the tool catalogue from the updated spec')+'\n');
+          "
+
+      - name: Mint an installation token
+        id: token
+        uses: actions/create-github-app-token@v2
+        with:
+          # Public identifier, useless without the key.
+          app-id: "4881703"
+          private-key: ${{ secrets.SPEC_BOT_PRIVATE_KEY }}
+
+      # Opened as the app, not GITHUB_TOKEN, or the PR arrives with no checks.
+      - name: Open a PR if the catalogue changed
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.token.outputs.token }}
+          branch: chore/spec-regen
+          delete-branch: true
+          commit-message: "chore: regenerate the tool catalogue from the updated spec"
+          title: ${{ steps.tools.outputs.title }}
+          body: |
+            The published OpenAPI spec changed and this regenerates the tool
+            catalogue from it.
+
+            **Tools added:** ${{ steps.tools.outputs.added || 'none' }}
+            **Tools removed:** ${{ steps.tools.outputs.gone || 'none' }}
+
+            If either list is non-empty this is a change to what agents can do,
+            not just a refresh. Anything added is callable by every agent using
+            this server the moment it publishes, so check it belongs on this
+            surface before merging. To keep an operation off, add its
+            `operationId` to `exclude.operation_ids` in `mcp-config.yaml` with
+            a reason and regenerate.
+
+            Publishing is still a `v*` tag by hand.
