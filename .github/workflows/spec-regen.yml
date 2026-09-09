@@ -72,6 +72,7 @@ jobs:
 
       # Opened as the app, not GITHUB_TOKEN, or the PR arrives with no checks.
       - name: Open a PR if the catalogue changed
+        id: pr
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.token.outputs.token }}
@@ -95,6 +96,21 @@ jobs:
 
             Publishing is still a `v*` tag by hand.
 
+            With no exposure change this PR sets itself to auto-merge and
+            lands once the required checks pass. An exposure change stays open
+            for a person. Either way, publishing is still a `v*` tag by hand.
+
+      # No EXPOSURE CHANGE in the title means no operation appeared or
+      # vanished, so no agent gained or lost a capability and there is nothing
+      # for a person to decide. An exposure change is left open on purpose.
+      # Auto-merge still waits on the required checks and will not override a
+      # red one; branch protection is what makes this safe.
+      - name: Auto-merge a pure refresh once its checks pass
+        if: steps.pr.outputs.pull-request-number != '' && !contains(steps.tools.outputs.title, 'EXPOSURE CHANGE')
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --squash --delete-branch
+
       # A regen that dies before opening a PR leaves nothing behind, and a red
       # run in a tab nobody has open is how the spec drifted in the first
       # place. One issue, reused until it is closed.
@@ -110,10 +126,10 @@ jobs:
             if (existing.data.length) return;
             await github.rest.issues.create({
               owner: context.repo.owner, repo: context.repo.repo,
-              title: 'Spec regen failed: the tool catalogue was not regenerated',
+              title: 'Spec regen failed: this surface is still on the old spec',
               labels: ['spec-drift'],
-              body: `\`spec-regen\` failed on ${context.sha}, so no PR was opened `
-                + `and this surface is still on the old spec.\n\n`
+              body: `\`spec-regen\` failed on ${context.sha}. Either no PR was `
+                + `opened, or one was opened and could not be set to auto-merge.\n\n`
                 + `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`
                 + `/actions/runs/${context.runId}`,
             });
