@@ -40,10 +40,14 @@ give it a **phone number** and optionally a **knowledge base**, then place
   \`audit_calls\` prompt, then \`listCallLogs\` + \`getCallLog\`.
 - "List / inspect what exists" -> \`listAgents\`, \`listPhoneNumbers\`,
   \`listVoices\`, \`listKnowledgeBaseFiles\`.
-- "Get me a number / buy a number" -> \`searchPhoneNumbers\` { region } then
-  \`purchasePhoneNumber\`. This spends the account's balance, so confirm the
+- "Get me a number / buy a number" -> \`searchPhoneNumbers\` { region, carrier }
+  then \`purchasePhoneNumber\`. This spends the account's balance, so confirm the
   exact number and price with the user before buying. \`releasePhoneNumber\`
   gives one up and cannot be undone.
+  \`carrier\` is required on both calls, in every region. Carriers do not stock
+  the same numbers, so ask the user which one they want rather than picking:
+  see the \`omnidim://reference/carriers\` resource for what each one stocks.
+  \`searchPhoneNumbers\`'s response echoes the \`carrier\` a purchase must pass.
 - "Place one call now" -> \`dispatchCall\`. "Call many contacts" -> the bulk
   call tools.
 
@@ -340,6 +344,48 @@ const BULK_CAMPAIGNS_GUIDE = `# Running outbound campaigns
 - Dashboard CSV uploads need the phone column named exactly \`phone_number\`.
 `;
 
+const CARRIERS_GUIDE = `# Which carrier to buy from
+
+A region holds one or more carriers. They do not stock the same numbers and
+they are not interchangeable, so \`carrier\` is **required** on
+\`searchPhoneNumbers\` and \`purchasePhoneNumber\`, in every region, however few
+it holds.
+
+## What each one stocks
+
+| Region | \`carrier\` | Stocks |
+|---|---|---|
+| \`IN\` | \`carrier-1\` | Landline numbers, city codes 11, 12 and 80 |
+| \`IN\` | \`carrier-2-new\` | Mobile numbers, 94 and 79 series |
+| \`US\` | \`carrier-us\` | US local numbers, by area code |
+
+A snapshot, not the authority. The API is: omit \`carrier\` on a call that needs
+one and the \`409 carrier_required\` body lists that region's carriers with what
+each stocks and whether each is taking orders. This server validates the tool
+schema before the call leaves, so a required field cannot in fact be omitted
+here, which is why the table exists at all. If a user names a carrier that is
+not in it, pass it through rather than refusing: this file can be older than
+the account.
+
+## Rules
+
+- **Ask, do not pick.** Landline and mobile are not substitutes, and buying
+  spends the account's balance on a rental that renews. If the user has not
+  said which they want, ask, and say what each one stocks.
+- **Buy from the carrier you searched.** \`searchPhoneNumbers\` echoes the
+  \`carrier\` its results came from. Pass that exact value to
+  \`purchasePhoneNumber\`, or you are buying out of inventory you never looked
+  at.
+- **Verification is per carrier.** An account verified on one carrier of a
+  region is not verified on the other, and a purchase it has not cleared fails
+  with \`409 kyc_incomplete\`. Verification is not on this surface: send the user
+  to the dashboard number shop.
+- **A carrier can be down.** One flagged unavailable is still named in the
+  refusal, and a purchase against it answers \`422 purchase_failed\`. Sell from
+  another one meanwhile.
+- **The name is stable across a rename**, so it is safe for a user to store.
+`;
+
 const RESOURCES: ResourceDef[] = [
     {
         uri: "omnidim://guide/routing",
@@ -361,6 +407,13 @@ const RESOURCES: ResourceDef[] = [
         description: "How to pick a voice from listVoices (use the name as voice_id), per-provider notes, and the verify-on-a-test-call rule.",
         mimeType: "text/markdown",
         text: VOICES_GUIDE,
+    },
+    {
+        uri: "omnidim://reference/carriers",
+        name: "Which carrier to buy from",
+        description: "What each region's carriers stock, why `carrier` is required on search and purchase, and the ask-do-not-pick rule. The only place an agent on this server can learn a carrier value.",
+        mimeType: "text/markdown",
+        text: CARRIERS_GUIDE,
     },
     {
         uri: "omnidim://reference/agent-config",
