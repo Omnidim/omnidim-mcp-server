@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- An agent on this server had no way to learn a carrier value. `carrier` is required on `searchPhoneNumbers` and `purchasePhoneNumber` and has no enum, and the server validates the tool schema before the call leaves, so the `409 carrier_required` body that lists the valid carriers is never reached. 0.13.0 covered that by naming the carriers in the tool descriptions, and the spec regen on 09 September reworded those descriptions to point at the 409 instead. A new `omnidim://reference/carriers` resource holds the list, the routing guide points at it, and a test fails if either goes away.
+
 ## [0.13.0] - 2026-09-09
 
 ### Fixed
