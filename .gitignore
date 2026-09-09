@@ -65,3 +65,6 @@ Thumbs.db
 
 *.local.md
 CLAUDE.local.md
+
+# Local agent runbooks, not for a public repo
+.claude/
