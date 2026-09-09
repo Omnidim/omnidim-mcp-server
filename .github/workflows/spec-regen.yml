@@ -20,6 +20,10 @@ on:
 jobs:
   regen:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -35,7 +39,10 @@ jobs:
         run: node -e "const s=require('fs').readFileSync('src/index.ts','utf8');const t=[...s.matchAll(/^\s{2}\[\"(\w+)\", \{\$/gm)].map(m=>m[1]).sort();require('fs').writeFileSync('/tmp/before.json',JSON.stringify(t))"
 
       - run: npm run regen
-      - run: npm test
+      # No test step. The PR this opens is authored by the app, so ci.yml runs
+      # the suite on it across every supported platform. Running it here too
+      # would only mean a regen that breaks something arrives as no PR at all
+      # instead of as a PR with red checks, which is the outcome that hides it.
 
       - name: Compare the tool list
         id: tools
@@ -65,6 +72,7 @@ jobs:
 
       # Opened as the app, not GITHUB_TOKEN, or the PR arrives with no checks.
       - name: Open a PR if the catalogue changed
+        id: pr
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.token.outputs.token }}
@@ -87,3 +95,41 @@ jobs:
             a reason and regenerate.
 
             Publishing is still a `v*` tag by hand.
+
+            With no exposure change this PR sets itself to auto-merge and
+            lands once the required checks pass. An exposure change stays open
+            for a person. Either way, publishing is still a `v*` tag by hand.
+
+      # No EXPOSURE CHANGE in the title means no operation appeared or
+      # vanished, so no agent gained or lost a capability and there is nothing
+      # for a person to decide. An exposure change is left open on purpose.
+      # Auto-merge still waits on the required checks and will not override a
+      # red one; branch protection is what makes this safe.
+      - name: Auto-merge a pure refresh once its checks pass
+        if: steps.pr.outputs.pull-request-number != '' && !contains(steps.tools.outputs.title, 'EXPOSURE CHANGE')
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --squash --delete-branch
+
+      # A regen that dies before opening a PR leaves nothing behind, and a red
+      # run in a tab nobody has open is how the spec drifted in the first
+      # place. One issue, reused until it is closed.
+      - name: Open an issue if the regen never produced a PR
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'spec-drift',
+            });
+            if (existing.data.length) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: 'Spec regen failed: this surface is still on the old spec',
+              labels: ['spec-drift'],
+              body: `\`spec-regen\` failed on ${context.sha}. Either no PR was `
+                + `opened, or one was opened and could not be set to auto-merge.\n\n`
+                + `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`
+                + `/actions/runs/${context.runId}`,
+            });
