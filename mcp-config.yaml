@@ -53,6 +53,10 @@ exclude:
     - saveResellerIdentitySmtp
     - testResellerIdentitySmtp
     - disableResellerIdentitySmtp
+    # Usage and margin: the reseller's wholesale cost and profit on each
+    # client. Business data for the reseller alone, not agent context.
+    - getResellerUsage
+    - getResellerClientUsage
 
   # Parameters to strip from operations that are otherwise exposed.
   # `user_id` on the phone number tools is the reseller "act on a client"
