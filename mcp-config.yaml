@@ -39,6 +39,20 @@ exclude:
     - getResellerKycStatus
     - getResellerKycRequirements
     - submitResellerKycStep
+    # Client access and keys: block or release a client, and issue or revoke
+    # the credentials its own system calls with.
+    - setClientAccess
+    - previewClientRelease
+    - releaseClient
+    - issueChildApiKey
+    - revokeChildApiKey
+    # Brand identity and SMTP: changes what a reseller's clients see and
+    # routes their email through the reseller's own mail server.
+    - getResellerIdentity
+    - saveResellerIdentity
+    - saveResellerIdentitySmtp
+    - testResellerIdentitySmtp
+    - disableResellerIdentitySmtp
 
   # Parameters to strip from operations that are otherwise exposed.
   # `user_id` on the phone number tools is the reseller "act on a client"
