@@ -420,6 +420,16 @@ Use it to orient in a large workflow. Use \`view: full\` before you edit config.
 - Every edit needs the current \`revision\`. On \`409 revision_conflict\`, someone
   (often the user in the dashboard) saved first. Call \`getWorkflow\` and retry.
 
+## Do not break a workflow that is already running
+
+Most harm comes from changing a workflow the user did not ask you to touch.
+
+- Default to creating a NEW workflow. Edit an existing one only when the user names it.
+- Call \`getWorkflow\` first and read what it does before any edit. Keep its \`revision\`.
+- Your edits land on the draft and change nothing live until you publish.
+- \`publishWorkflow\` overwrites the live version that real events run. \`deactivateWorkflow\` pauses automation the user depends on. \`deleteWorkflow\` stops it for good. Before any of these on an existing workflow, tell the user exactly what will change and get a yes.
+- Never publish, activate, deactivate, delete or test a workflow as a side effect of another task.
+
 ## Entry: the trigger
 
 Every workflow has exactly one trigger node. Its output is the event payload,
@@ -647,6 +657,8 @@ Read the \`omnidim://guide/workflows\` resource first. It explains triggers, out
 5. A test run happens for real: messages, calls and CRM writes go out. Only call \`testWorkflow\` after the
    user says yes, with their own phone number or email in the payload. Then poll \`getWorkflowExecution\` until \`state\` is \`completed\`, \`failed\` or \`cancelled\`.
 6. Show the user the finished flow, then \`publishWorkflow\` when they approve.
+7. Prefer creating a new workflow. Never publish, activate, deactivate, delete or test an existing workflow
+   without the user's explicit yes, after reading it first.
 `;
         },
     },

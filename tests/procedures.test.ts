@@ -166,6 +166,12 @@ describe("build_workflow prompt and workflows guide", () => {
         expect(prompt).toContain("Only call `testWorkflow` after the\n   user says yes");
     });
 
+    it("warns against breaking a running workflow", () => {
+        const guide = getResourceText("omnidim://guide/workflows") ?? "";
+        expect(guide).toContain("## Do not break a workflow that is already running");
+        expect(guide).toContain("overwrites");
+    });
+
     // The guide and prompt steer the model by tool name. A renamed operation
     // must fail here, not leave the model calling a tool the server does not have.
     it("names only tools that exist", () => {
