@@ -158,14 +158,32 @@ describe("build_workflow prompt and workflows guide", () => {
         }
     });
 
-    // The guide steers the model by tool name. A renamed operation must fail
-    // here, not leave the model calling a tool the server does not have.
+    it("keeps the safety sections and the consent clause", () => {
+        const guide = getResourceText("omnidim://guide/workflows") ?? "";
+        expect(guide).toContain("## Test runs are real");
+        expect(guide).toContain("## Credentials");
+        const prompt = getPromptText("build_workflow", { goal: "x" }) ?? "";
+        expect(prompt).toContain("Only call `testWorkflow` after the\n   user says yes");
+    });
+
+    // The guide and prompt steer the model by tool name. A renamed operation
+    // must fail here, not leave the model calling a tool the server does not have.
     it("names only tools that exist", () => {
         const guide = getResourceText("omnidim://guide/workflows") ?? "";
+        const prompt = getPromptText("build_workflow", { goal: "x" }) ?? "";
         const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
         const tools = new Set([...src.matchAll(/^\s{2}\["(\w+)", \{$/gm)].map((m) => m[1]));
-        const named = new Set([...guide.matchAll(/`([a-z]+Workflow[A-Za-z]*)`/g)].map((m) => m[1]));
+        const named = new Set([...(guide + prompt).matchAll(/`([a-z]+Workflow[A-Za-z]*)`/g)].map((m) => m[1]));
         expect(named.size).toBeGreaterThan(0);
         expect([...named].filter((n) => !tools.has(n))).toEqual([]);
+    });
+});
+
+describe("reseller client selection", () => {
+    // user_id lets a reseller key act for another client. It must never be
+    // reachable from an LLM-driven tool, as a query param or a body property.
+    it("exposes no user_id on any tool", () => {
+        const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
+        expect(src).not.toContain("user_id");
     });
 });
