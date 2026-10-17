@@ -90,6 +90,52 @@ function stripParams(op) {
   return n;
 }
 const spec = yaml.load(specBytes.toString('utf8'));
+
+// Reseller "act as one of your clients" user_id. A public LLM-driven server
+// must never let a model pick another client, so strip it everywhere it is
+// declared: query parameters and request-body properties (and their required
+// lists), in operations and in shared components.
+const isClientUserId = (x) =>
+  x && typeof x === 'object' &&
+  ((typeof x.$ref === 'string' && x.$ref.endsWith('/ClientUserId')) ||
+    (/act as one of your clients|reseller accounts only|the client to act on/i.test(x.description ?? '')));
+function stripClientUserId(node) {
+  if (Array.isArray(node)) {
+    for (let i = node.length - 1; i >= 0; i--) {
+      if (node[i]?.name === 'user_id' && (isClientUserId(node[i]) || isClientUserId(node[i].schema))) node.splice(i, 1);
+      else stripClientUserId(node[i]);
+    }
+    return;
+  }
+  if (!node || typeof node !== 'object') return;
+  if (node.properties && isClientUserId(node.properties.user_id)) {
+    delete node.properties.user_id;
+    if (Array.isArray(node.required)) node.required = node.required.filter((r) => r !== 'user_id');
+  }
+  for (const v of Object.values(node)) stripClientUserId(v);
+}
+// Shared parameter definition: drop it, and the $ref entries pointing at it.
+function dropClientUserIdRefs(node) {
+  if (Array.isArray(node)) {
+    for (let i = node.length - 1; i >= 0; i--) {
+      if (typeof node[i]?.$ref === 'string' && node[i].$ref.endsWith('/parameters/ClientUserId')) node.splice(i, 1);
+      else dropClientUserIdRefs(node[i]);
+    }
+    return;
+  }
+  if (node && typeof node === 'object') for (const v of Object.values(node)) dropClientUserIdRefs(v);
+}
+dropClientUserIdRefs(spec.paths);
+stripClientUserId(spec);
+// Operation prose must not tell the model to pass a parameter it cannot see.
+for (const item of Object.values(spec.paths ?? {})) {
+  for (const m of METHODS) {
+    const op = item[m];
+    if (op?.description?.includes('user_id')) {
+      op.description = op.description.replace(/[^.]*`user_id`[^.]*\.\s*/g, '').trim();
+    }
+  }
+}
 let removed = 0;
 let strippedParams = 0;
 for (const [specPath, item] of Object.entries(spec.paths ?? {})) {

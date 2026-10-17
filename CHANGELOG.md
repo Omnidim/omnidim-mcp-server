@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-18
+
+### Added
+
+- Workflow builder tools: list node types and field choices, create, read, edit, validate, publish, turn on and off, test and delete workflows, and read a run. A new `omnidim://guide/workflows` resource and a `build_workflow` prompt guide the model, including asking before a test run, which sends real messages.
+- Post-call action tools (`listPostCallActions`, `addPostCallAction`, `updatePostCallAction`, `deletePostCallAction`) and `listIntegrations`.
+- Cloned voice tools (list, create, get, update, delete, get and regenerate a sample) and `getAccountBalance`.
+
+### Security
+
+- The reseller `user_id` ("act as one of your clients") is removed from every tool, as a query parameter and as a body property, so a model cannot pick a client account. Regen strips it for all operations.
+
 ## [0.13.1] - 2026-09-09
 
 ### Fixed
