@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-18
+
 ### Added
 
 - Workflow builder tools: list node types and field choices, create, read, edit, validate, publish, turn on and off, test and delete workflows, and read a run. A new `omnidim://guide/workflows` resource and a `build_workflow` prompt guide the model, including asking before a test run, which sends real messages.
