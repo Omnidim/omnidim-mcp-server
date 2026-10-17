@@ -57,10 +57,37 @@ const TOOL_TITLES: Record<string, string> = {
   searchPhoneNumbers: "Search available phone numbers",
   purchasePhoneNumber: "Buy phone number",
   releasePhoneNumber: "Release phone number",
+  getAccountBalance: "Get account balance",
+  listClonedVoices: "List cloned voices",
+  createClonedVoice: "Clone a voice",
+  getClonedVoice: "Get cloned voice",
+  updateClonedVoice: "Update cloned voice",
+  deleteClonedVoice: "Delete cloned voice",
+  getClonedVoiceSample: "Get cloned voice sample",
+  regenerateClonedVoiceSample: "Regenerate cloned voice sample",
+  listWorkflowNodeTypes: "List workflow node types",
+  getWorkflowNodeType: "Get workflow node type",
+  listWorkflowFieldOptions: "List choices for a workflow field",
+  listWorkflows: "List workflows",
+  createWorkflow: "Create workflow",
+  getWorkflow: "Get workflow",
+  editWorkflow: "Edit workflow draft",
+  deleteWorkflow: "Delete workflow",
+  validateWorkflow: "Validate workflow",
+  publishWorkflow: "Publish workflow",
+  activateWorkflow: "Turn workflow on",
+  deactivateWorkflow: "Turn workflow off",
+  testWorkflow: "Test workflow (runs for real)",
+  getWorkflowExecution: "Get workflow run",
+  listPostCallActions: "List post-call actions",
+  addPostCallAction: "Add a post-call action",
+  deletePostCallAction: "Delete a post-call action",
+  updatePostCallAction: "Update a post-call action",
+  listIntegrations: "List integrations",
 };
 
 // POST tools that only validate or preview, with no state change.
-const READ_ONLY_TOOLS = new Set(["canUploadFile"]);
+const READ_ONLY_TOOLS = new Set(["canUploadFile", "validateWorkflow"]);
 
 // Irreversible removals, overwrites of live config, plus tools that place
 // real outbound calls.
@@ -70,10 +97,13 @@ const DESTRUCTIVE_TOOLS = new Set([
   "cancelBulkCall", "dispatchCall", "createBulkCall", "addBulkCallContact",
   "addBulkCallContacts", "startBulkCall", "retryBulkCall",
   "purchasePhoneNumber", "releasePhoneNumber",
+  "deleteClonedVoice", "deleteWorkflow", "publishWorkflow", "activateWorkflow",
+  "deactivateWorkflow", "testWorkflow", "deletePostCallAction",
 ]);
 
 // Tools that reach the external phone network (a carrier, not just our API).
 const OPEN_WORLD_TOOLS = new Set([
+  "testWorkflow",
   "dispatchCall", "createBulkCall", "addBulkCallContact",
   "addBulkCallContacts", "startBulkCall", "retryBulkCall",
   "purchasePhoneNumber", "releasePhoneNumber",

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -137,5 +140,32 @@ describe("reference resources", () => {
             expect(t, `${uri} must not mention failover`).not.toContain("failover");
             expect(t, `${uri} must not mention the welcome model`).not.toContain("gpt-5.4");
         }
+    });
+});
+
+describe("build_workflow prompt and workflows guide", () => {
+    it("asks before a real test run", () => {
+        const t = getPromptText("build_workflow", { goal: "Follow up interested leads on WhatsApp" }) ?? "";
+        expect(t).toContain("Follow up interested leads on WhatsApp");
+        expect(t).toContain("omnidim://guide/workflows");
+        expect(t).toContain("for real"); // test runs send real messages; the model must ask first
+    });
+
+    it("covers building end to end", () => {
+        const guide = getResourceText("omnidim://guide/workflows") ?? "";
+        for (const topic of ["## Lifecycle", "## Entry", "## Connecting", "## Exit", "## Moving", "## Notes"]) {
+            expect(guide, topic).toContain(topic);
+        }
+    });
+
+    // The guide steers the model by tool name. A renamed operation must fail
+    // here, not leave the model calling a tool the server does not have.
+    it("names only tools that exist", () => {
+        const guide = getResourceText("omnidim://guide/workflows") ?? "";
+        const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
+        const tools = new Set([...src.matchAll(/^\s{2}\["(\w+)", \{$/gm)].map((m) => m[1]));
+        const named = new Set([...guide.matchAll(/`([a-z]+Workflow[A-Za-z]*)`/g)].map((m) => m[1]));
+        expect(named.size).toBeGreaterThan(0);
+        expect([...named].filter((n) => !tools.has(n))).toEqual([]);
     });
 });
