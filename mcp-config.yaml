@@ -22,6 +22,8 @@ exclude:
     - deleteSimulation
     - startSimulation
     - stopSimulation
+    - applyEnhancedPrompt
+    - generateAutoScenarios
     # Authoring helper, not a runtime action for an agent to call.
     - enhancePrompt
     # Reseller operations: admin-level actions on other people's accounts.
