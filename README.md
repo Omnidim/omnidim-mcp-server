@@ -107,4 +107,4 @@ See [ISSUES.md](./ISSUES.md) for how to file bug reports, request features, or g
 
 ## License
 
-[MIT](./LICENSE)
+MIT, see [LICENSE](./LICENSE). Built by [Alok Ranjan](https://alokranjan.me/).

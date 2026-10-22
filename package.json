@@ -47,7 +47,7 @@
   "bugs": {
     "url": "https://github.com/Omnidim/omnidim-mcp-server/issues"
   },
-  "author": "OmniDimension <support@omnidim.io>",
+  "author": "Alok Ranjan <alok@omnidim.io> (https://alokranjan.me)",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
