@@ -169,7 +169,7 @@ const result = spawnSync(
     '--output', TMP,
     '--server-name', pkg.name,
     '--server-version', pkg.version,
-    '--base-url', 'https://backend.omnidim.io/api/v1',
+    '--base-url', 'https://omnidim.io/api/v1',
     '--transport', 'stdio',
     '--force',
   ],
@@ -216,7 +216,7 @@ src = src.replace(
 src = src.replace(
   /\/\/ Base URL for the API, can be set via environment variable or determined from OpenAPI spec\nexport const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
   `// Base URL for the API. Pinned to production; not env-overridable.
-export const API_BASE_URL = "https://backend.omnidim.io/api/v1";`
+export const API_BASE_URL = "https://omnidim.io/api/v1";`
 );
 
 // Add User-Agent + 60s timeout to every backend request.
@@ -527,7 +527,7 @@ const REQUIRED = [
   'annotations: toolAnnotations(def)',
   '_meta: toolMeta(def.name)',
   'registerProcedures(server);',
-  'export const API_BASE_URL = "https://backend.omnidim.io/api/v1";',
+  'export const API_BASE_URL = "https://omnidim.io/api/v1";',
   'process.env.OMNIDIM_API_KEY ||',
   'isError: true, content: [{ type: "text", text: errorMessage }]',
 ];

@@ -7,7 +7,7 @@ import { readApiKey } from "./credentials.js";
 import { LOG_PATH, readLogTail } from "./logger.js";
 import { telemetryStatus } from "./telemetry.js";
 
-const PROD_API = "https://backend.omnidim.io/api/v1";
+const PROD_API = "https://omnidim.io/api/v1";
 const ISSUES_URL = "https://github.com/Omnidim/omnidim-mcp-server/issues/new";
 
 function packageVersion(): string {

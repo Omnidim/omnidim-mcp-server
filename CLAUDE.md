@@ -4,7 +4,7 @@ Guidance for working on `@omnidim-ai/mcp-server`.
 
 ## What this repo is
 
-The npm-distributed Model Context Protocol server for OmniDimension. Users install it with `npx @omnidim-ai/mcp-server` and run it locally over stdio. It calls `https://backend.omnidim.io/api/v1` with a bearer token from `OMNIDIM_API_KEY`.
+The npm-distributed Model Context Protocol server for OmniDimension. Users install it with `npx @omnidim-ai/mcp-server` and run it locally over stdio. It calls `https://omnidim.io/api/v1` with a bearer token from `OMNIDIM_API_KEY`.
 
 ## Build, test, inspect
 
