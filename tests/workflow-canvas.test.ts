@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -68,6 +69,17 @@ describe("workflow canvas resource", () => {
         expect(pick("readWorkflow")(result(body)).workflowId).toBe(3);
         expect(pick("editArgs")(3, "r1", []).revision).toBe("r1");
         expect(pick("errorText")('{"error_description":"Nope."}')).toBe("Nope.");
+    });
+
+    it("gets a new address whenever the page changes, so chat apps cannot keep showing a cached old page", () => {
+        const html = getResourceText(WORKFLOW_CANVAS_URI) ?? "";
+        const hash = createHash("sha256").update(html).digest("hex").slice(0, 12);
+        expect(WORKFLOW_CANVAS_URI).toBe(`ui://omnidim/workflow-canvas/${hash}`);
+        expect(listResources().filter((x) => x.uri.startsWith("ui://"))).toHaveLength(1);
+    });
+
+    it("still serves the current page at the old address, for canvases in older chats", () => {
+        expect(getResourceText("ui://omnidim/workflow-canvas")).toBe(getResourceText(WORKFLOW_CANVAS_URI));
     });
 
     it("ships no test-only switches", () => {

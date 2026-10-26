@@ -13,7 +13,7 @@ import {
     ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-import { WORKFLOW_CANVAS_HTML, WORKFLOW_CANVAS_URI } from "./workflow-canvas.js";
+import { LEGACY_CANVAS_URI, WORKFLOW_CANVAS_HTML, WORKFLOW_CANVAS_URI } from "./workflow-canvas.js";
 
 interface PromptArg { name: string; description: string; required?: boolean; }
 interface PromptDef {
@@ -857,9 +857,12 @@ export function getPromptText(name: string, args: Record<string, string> = {}): 
     const p = PROMPTS.find((x) => x.name === name);
     return p ? p.build(args) : null;
 }
+function findResource(uri: string): ResourceDef | undefined {
+    const current = uri === LEGACY_CANVAS_URI ? WORKFLOW_CANVAS_URI : uri;
+    return RESOURCES.find((x) => x.uri === current);
+}
 export function getResourceText(uri: string): string | null {
-    const r = RESOURCES.find((x) => x.uri === uri);
-    return r ? r.text : null;
+    return findResource(uri)?.text ?? null;
 }
 export const PROMPT_NAMES = PROMPTS.map((p) => p.name);
 export const RESOURCE_URIS = RESOURCES.map((r) => r.uri);
@@ -884,8 +887,8 @@ export function registerProcedures(server: Server): void {
         resources: listResources(),
     }));
     server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-        const r = RESOURCES.find((x) => x.uri === request.params.uri);
+        const r = findResource(request.params.uri);
         if (!r) throw new Error(`Unknown resource: ${request.params.uri}`);
-        return { contents: [{ uri: r.uri, mimeType: r.mimeType, text: r.text }] };
+        return { contents: [{ uri: request.params.uri, mimeType: r.mimeType, text: r.text }] };
     });
 }
