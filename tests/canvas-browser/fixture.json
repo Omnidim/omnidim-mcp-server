@@ -1,0 +1,41 @@
+{
+  "workflow": {
+    "id": 101,
+    "name": "Lead Router",
+    "status": "draft",
+    "published_version_id": null,
+    "draft": {
+      "version_id": 1,
+      "revision": "r0",
+      "nodes": [
+        { "id": "trigger", "type": "trigger", "label": "Webhook In", "position": { "x": 0, "y": 200 }, "config": { "webhook_enabled": true } },
+        {
+          "id": "route", "type": "switch_condition", "label": "Route by lead_score", "position": { "x": 300, "y": 200 },
+          "config": {
+            "cases": [
+              { "id": "hot", "label": "Hot (>=70) -> Call", "logic": "and", "conditions": [{ "value": "70", "operator": ">=", "variable": "{{ context.trigger.lead_score }}" }] },
+              { "id": "warm", "label": "Warm (>=40) -> WhatsApp", "logic": "and", "conditions": [{ "value": "40", "operator": ">=", "variable": "{{ context.trigger.lead_score }}" }] }
+            ]
+          }
+        },
+        { "id": "call_hot", "type": "voice_ai", "label": "AI Call (hot)", "position": { "x": 650, "y": 0 }, "config": { "bot_id": 1, "to_number": "{{ context.trigger.phone }}", "from_number": 1, "custom_variables": { "name": "{{ context.trigger.name }}" } } },
+        { "id": "wait_retry", "type": "wait", "label": "Wait 30 min", "position": { "x": 950, "y": 0 }, "config": { "delay_seconds": 1800 } },
+        { "id": "email_missed_call", "type": "send_email", "label": "Email: missed call", "position": { "x": 1250, "y": 0 }, "config": { "body": "Hi {{ context.trigger.name }}, we tried reaching you by phone. Reply to this email to pick a time.", "subject": "We tried calling you", "email_to": "{{ context.trigger.email }}", "body_type": "text" } },
+        { "id": "wa_warm", "type": "whatsapp", "label": "WhatsApp (warm)", "position": { "x": 650, "y": 200 }, "config": { "to_number": "{{ context.trigger.phone }}", "message_type": "template" } },
+        { "id": "email_cold", "type": "send_email", "label": "Email (cold)", "position": { "x": 650, "y": 400 }, "config": { "body": "Hi {{ context.trigger.name }}, thanks for reaching out. Here is more info.", "subject": "Thanks for your interest", "email_to": "{{ context.trigger.email }}", "body_type": "text" } }
+      ],
+      "edges": [
+        { "from": "trigger", "to": "route", "handle": "default" },
+        { "from": "route", "to": "call_hot", "handle": "hot" },
+        { "from": "route", "to": "wa_warm", "handle": "warm" },
+        { "from": "route", "to": "email_cold", "handle": "else" },
+        { "from": "call_hot", "to": "wait_retry", "handle": "Not Completed" },
+        { "from": "wait_retry", "to": "email_missed_call", "handle": "default" }
+      ]
+    }
+  },
+  "issues": [
+    { "code": "missing_field", "message": "'phone_number_id' is required.", "node": "wa_warm", "field": "phone_number_id", "hint": null },
+    { "code": "missing_field", "message": "'template_id' is required.", "node": "wa_warm", "field": "template_id", "hint": null }
+  ]
+}

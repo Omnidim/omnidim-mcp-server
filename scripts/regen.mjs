@@ -214,7 +214,7 @@ src = src.replace(
 // server attaches the user's bearer key to every request to whatever
 // the URL points at. No override, no startup log.
 src = src.replace(
-  /\/\/ Base URL for the API, can be set via environment variable or determined from OpenAPI spec\nexport const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
+  /\/\/ Base URL for the API, can be set via environment variable or determined from OpenAPI spec\nexport const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
   `// Base URL for the API. Pinned to production; not env-overridable.
 export const API_BASE_URL = "https://omnidim.io/api/v1";`
 );
@@ -294,7 +294,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -491,6 +491,12 @@ src = src.replace(
   `$1,\n    annotations: toolAnnotations(def),\n    _meta: toolMeta(def.name)$2`
 );
 
+// Add the hand-written showWorkflow tool (the only tool that draws the workflow canvas).
+src = src.replace(
+  /(const toolDefinitionMap: Map<string, McpToolDefinition> = new Map\(\[[\s\S]*?\n\]\);\n)/,
+  `$1addShowWorkflow(toolDefinitionMap);\n`
+);
+
 // A crash never runs the graceful-shutdown path, so flush a session_crash
 // (carrying the session's tool-call summary) from every uncaught exit.
 src = src.replace(
@@ -526,6 +532,7 @@ src = src.replace(
 const REQUIRED = [
   'annotations: toolAnnotations(def)',
   '_meta: toolMeta(def.name)',
+  'addShowWorkflow(toolDefinitionMap);',
   'registerProcedures(server);',
   'export const API_BASE_URL = "https://omnidim.io/api/v1";',
   'process.env.OMNIDIM_API_KEY ||',

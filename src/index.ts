@@ -7,7 +7,7 @@ import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse }
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import { registerProcedures } from "./procedures.js";
 import { toolAnnotations } from "./tool-annotations.js";
-import { toolMeta } from "./workflow-canvas.js";
+import { addShowWorkflow, toolMeta } from "./workflow-canvas.js";
 import { notifyUpdates } from "./update_notifier.js";
 
 
@@ -50,7 +50,7 @@ interface McpToolDefinition {
  * Server configuration
  */
 export const SERVER_NAME = "OmniDimension";
-export const SERVER_VERSION = "0.15.0";
+export const SERVER_VERSION = "0.16.0";
 // Base URL for the API. Pinned to production; not env-overridable.
 export const API_BASE_URL = "https://omnidim.io/api/v1";
 
@@ -1327,6 +1327,7 @@ It returns an \`execution_id\` at once. Poll \`getWorkflowExecution\` for the re
     deprecated: false
   }],
 ]);
+addShowWorkflow(toolDefinitionMap);
 
 /**
  * Security schemes from the OpenAPI spec
