@@ -72,7 +72,7 @@ window.addEventListener("message", async (e) => {
       break;
   }
 });
-rpc("resources/read", { uri: "ui://omnidim/workflow-canvas" }).then((r) => { frame.srcdoc = r.contents[0].text; });
+rpc("resources/read", { uri: "__CANVAS_URI__" }).then((r) => { frame.srcdoc = r.contents[0].text; });
 </script>
 </body>
 </html>

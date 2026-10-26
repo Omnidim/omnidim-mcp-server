@@ -2,7 +2,10 @@
 // The page holds no API key: every read and edit goes back through this
 // server's own tools via the host, so it runs on the user's existing login.
 
-export const WORKFLOW_CANVAS_URI = "ui://omnidim/workflow-canvas";
+import { createHash } from "node:crypto";
+
+// Where the canvas lived before its address carried a hash. Chats that showed it still ask for it there.
+export const LEGACY_CANVAS_URI = "ui://omnidim/workflow-canvas";
 
 // Only showWorkflow draws the canvas. Linking get/create/edit posted one canvas per build step.
 export function toolMeta(name: string): { ui: { resourceUri: string } } | undefined {
@@ -584,3 +587,6 @@ request("ui/initialize", {
 </body>
 </html>
 `;
+
+// Chat apps cache a view by its address, so a changed page needs a new address or users keep the old one.
+export const WORKFLOW_CANVAS_URI = `${LEGACY_CANVAS_URI}/${createHash("sha256").update(WORKFLOW_CANVAS_HTML).digest("hex").slice(0, 12)}`;

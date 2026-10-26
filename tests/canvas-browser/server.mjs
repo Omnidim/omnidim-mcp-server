@@ -5,7 +5,8 @@ import http from "node:http";
 
 import { WORKFLOW_CANVAS_HTML, WORKFLOW_CANVAS_URI } from "../../build/workflow-canvas.js";
 
-const HOST = readFileSync(new URL("host.html", import.meta.url), "utf8");
+// A real chat app reads the canvas address from showWorkflow's _meta; the test host gets it filled in.
+const HOST = readFileSync(new URL("host.html", import.meta.url), "utf8").replace("__CANVAS_URI__", WORKFLOW_CANVAS_URI);
 const FIXTURE = readFileSync(new URL("fixture.json", import.meta.url), "utf8");
 
 export function startServer() {
