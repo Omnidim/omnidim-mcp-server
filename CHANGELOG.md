@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-10-26
+
+### Fixed
+
+- Chat apps show the current workflow canvas after an update, instead of a copy they saved from an older version.
+
 ## [0.16.0] - 2026-10-26
 
 ### Changed
