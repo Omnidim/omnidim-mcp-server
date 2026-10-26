@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Canvas test host</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg:#faf9f5; --ink:#1f1e1d; --muted:#6f6b63; --bubble:#efece3; --line:#e2ded3; }
+  :root.dark { --bg:#262624; --ink:#ecebe6; --muted:#a6a39b; --bubble:#33322f; --line:#3d3c38; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
+  main.full { max-width: none; }
+  .user { margin-left:auto; width:fit-content; max-width:80%; background:var(--bubble); padding:10px 14px; border-radius:14px; }
+  .claude { margin:18px 0 10px; }
+  iframe { width:100%; border:1px solid var(--line); border-radius:12px; height:420px; display:block; background:transparent; }
+  #log { margin-top:14px; font: 12px/1.5 ui-monospace, Menlo, monospace; color:var(--muted); white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<main id="main">
+  <div class="user">Show me the lead router workflow.</div>
+  <div class="claude">Here is the workflow.</div>
+  <iframe id="app" sandbox="allow-scripts" title="Workflow canvas"></iframe>
+  <div id="log"></div>
+</main>
+<script>
+// A minimal MCP Apps host, like a chat app embedding the canvas: it relays the canvas's tool calls to
+// the test server and logs what the canvas sends to the chat. ?wf=<id>&theme=dark&delay=<ms of a late result>
+const params = new URLSearchParams(location.search);
+const theme = params.get("theme") || "light";
+const WF = Number(params.get("wf"));
+const DELAY = Number(params.get("delay") || 0);
+if (theme === "dark") document.documentElement.classList.add("dark");
+const frame = document.getElementById("app");
+const log = (s) => { document.getElementById("log").textContent += s + "\n"; };
+let rid = 1;
+async function rpc(method, p) {
+  const r = await fetch("/mcp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: rid++, method, params: p }) });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message);
+  return j.result;
+}
+const post = (m) => frame.contentWindow.postMessage(Object.assign({ jsonrpc: "2.0" }, m), "*");
+window.addEventListener("message", async (e) => {
+  if (e.source !== frame.contentWindow) return;
+  const m = e.data;
+  const reply = (result) => post({ id: m.id, result });
+  switch (m.method) {
+    case "ui/initialize":
+      reply({ protocolVersion: "2026-01-26", hostInfo: { name: "test-host", version: "0" }, hostCapabilities: { serverTools: {}, openLinks: {}, updateModelContext: {}, message: {} },
+              hostContext: { theme, displayMode: "inline", availableDisplayModes: ["inline", "fullscreen"] } });
+      break;
+    case "ui/notifications/initialized": {
+      post({ method: "ui/notifications/tool-input", params: { arguments: { workflow_id: WF } } });
+      const res = await rpc("tools/call", { name: "showWorkflow", arguments: { workflow_id: WF } });
+      setTimeout(() => post({ method: "ui/notifications/tool-result", params: res }), DELAY);
+      break;
+    }
+    case "tools/call":
+      try { reply(await rpc("tools/call", m.params)); } catch (err) { post({ id: m.id, error: { code: -32603, message: err.message } }); }
+      break;
+    case "ui/request-display-mode":
+      document.getElementById("main").classList.toggle("full", m.params.mode === "fullscreen");
+      frame.style.height = m.params.mode === "fullscreen" ? "88vh" : "420px";
+      reply({ mode: m.params.mode });
+      break;
+    case "ui/update-model-context": log("context for Claude: " + m.params.content[0].text); reply({}); break;
+    case "ui/message": log("message into chat: " + m.params.content[0].text); reply({}); break;
+    case "ui/open-link": log("open link: " + m.params.url); reply({}); break;
+    case "ui/notifications/size-changed":
+      if (!document.getElementById("main").classList.contains("full")) frame.style.height = Math.min(m.params.height, 640) + "px";
+      break;
+  }
+});
+rpc("resources/read", { uri: "ui://omnidim/workflow-canvas" }).then((r) => { frame.srcdoc = r.contents[0].text; });
+</script>
+</body>
+</html>
