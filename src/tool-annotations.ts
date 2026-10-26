@@ -71,6 +71,7 @@ const TOOL_TITLES: Record<string, string> = {
   listWorkflows: "List workflows",
   createWorkflow: "Create workflow",
   getWorkflow: "Get workflow",
+  showWorkflow: "Show workflow canvas",
   editWorkflow: "Edit workflow draft",
   deleteWorkflow: "Delete workflow",
   validateWorkflow: "Validate workflow",

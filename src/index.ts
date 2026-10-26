@@ -7,7 +7,7 @@ import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse }
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import { registerProcedures } from "./procedures.js";
 import { toolAnnotations } from "./tool-annotations.js";
-import { toolMeta } from "./workflow-canvas.js";
+import { addShowWorkflow, toolMeta } from "./workflow-canvas.js";
 import { notifyUpdates } from "./update_notifier.js";
 
 
@@ -1327,6 +1327,7 @@ It returns an \`execution_id\` at once. Poll \`getWorkflowExecution\` for the re
     deprecated: false
   }],
 ]);
+addShowWorkflow(toolDefinitionMap);
 
 /**
  * Security schemes from the OpenAPI spec
