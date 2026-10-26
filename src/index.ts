@@ -7,6 +7,7 @@ import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse }
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import { registerProcedures } from "./procedures.js";
 import { toolAnnotations } from "./tool-annotations.js";
+import { toolMeta } from "./workflow-canvas.js";
 import { notifyUpdates } from "./update_notifier.js";
 
 
@@ -49,9 +50,9 @@ interface McpToolDefinition {
  * Server configuration
  */
 export const SERVER_NAME = "OmniDimension";
-export const SERVER_VERSION = "0.14.0";
+export const SERVER_VERSION = "0.15.0";
 // Base URL for the API. Pinned to production; not env-overridable.
-export const API_BASE_URL = "https://backend.omnidim.io/api/v1";
+export const API_BASE_URL = "https://omnidim.io/api/v1";
 
 /**
  * MCP Server instance
@@ -1344,7 +1345,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     name: def.name,
     description: def.description,
     inputSchema: def.inputSchema,
-    annotations: toolAnnotations(def)
+    annotations: toolAnnotations(def),
+    _meta: toolMeta(def.name)
   }));
   return { tools: toolsForClient };
 });

@@ -13,6 +13,8 @@ import {
     ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
+import { WORKFLOW_CANVAS_HTML, WORKFLOW_CANVAS_URI } from "./workflow-canvas.js";
+
 interface PromptArg { name: string; description: string; required?: boolean; }
 interface PromptDef {
     name: string;
@@ -630,6 +632,13 @@ const RESOURCES: ResourceDef[] = [
         mimeType: "text/markdown",
         text: WORKFLOWS_GUIDE,
     },
+    {
+        uri: WORKFLOW_CANVAS_URI,
+        name: "Workflow canvas",
+        description: "Interactive view of a workflow draft, shown by clients that support MCP Apps.",
+        mimeType: "text/html;profile=mcp-app",
+        text: WORKFLOW_CANVAS_HTML,
+    },
 ];
 
 const PROMPTS: PromptDef[] = [
@@ -854,6 +863,9 @@ export function getResourceText(uri: string): string | null {
 }
 export const PROMPT_NAMES = PROMPTS.map((p) => p.name);
 export const RESOURCE_URIS = RESOURCES.map((r) => r.uri);
+export function listResources(): Omit<ResourceDef, "text">[] {
+    return RESOURCES.map(({ uri, name, description, mimeType }) => ({ uri, name, description, mimeType }));
+}
 
 export function registerProcedures(server: Server): void {
     server.setRequestHandler(ListPromptsRequestSchema, async () => ({
@@ -869,7 +881,7 @@ export function registerProcedures(server: Server): void {
         };
     });
     server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-        resources: RESOURCES.map(({ uri, name, description, mimeType }) => ({ uri, name, description, mimeType })),
+        resources: listResources(),
     }));
     server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         const r = RESOURCES.find((x) => x.uri === request.params.uri);

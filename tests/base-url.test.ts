@@ -10,9 +10,9 @@ import { describe, expect, it } from "vitest";
 const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
 
 describe("API base URL", () => {
-    it("is pinned to the production backend", () => {
+    it("is pinned to the production API at omnidim.io", () => {
         expect(src).toContain(
-            'export const API_BASE_URL = "https://backend.omnidim.io/api/v1";',
+            'export const API_BASE_URL = "https://omnidim.io/api/v1";',
         );
     });
 

@@ -16,7 +16,7 @@ import {
     type SetupKeyOutcome,
 } from "./telemetry.js";
 
-const PROD_API = "https://backend.omnidim.io/api/v1";
+const PROD_API = "https://omnidim.io/api/v1";
 
 const dim = (s: string): string => `\x1b[2m${s}\x1b[0m`;
 const italicDim = (s: string): string => `\x1b[2;3m${s}\x1b[0m`;

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-26
+
+### Added
+
+- Workflow canvas: in clients that support MCP Apps (such as Claude and ChatGPT), reading, creating or editing a workflow shows the draft as a canvas in the chat. You can select a node to see its settings, drag nodes to move them, ask about a node, and open the workflow in the dashboard.
+
 ## [0.14.0] - 2026-10-18
 
 ### Added

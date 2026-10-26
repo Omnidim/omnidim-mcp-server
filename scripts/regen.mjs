@@ -163,12 +163,13 @@ const result = spawnSync(
   'npx',
   [
     '-y',
-    'openapi-mcp-generator@latest',
+    // Pinned: the patches below match this version's output; 5.x reshaped it and they silently missed.
+    'openapi-mcp-generator@4.1.0',
     '--input', FILTERED_SPEC,
     '--output', TMP,
     '--server-name', pkg.name,
     '--server-version', pkg.version,
-    '--base-url', 'https://backend.omnidim.io/api/v1',
+    '--base-url', 'https://omnidim.io/api/v1',
     '--transport', 'stdio',
     '--force',
   ],
@@ -215,7 +216,7 @@ src = src.replace(
 src = src.replace(
   /\/\/ Base URL for the API, can be set via environment variable or determined from OpenAPI spec\nexport const API_BASE_URL = process\.env\.API_BASE_URL \|\| "https:\/\/backend\.omnidim\.io\/api\/v1";\nconsole\.error\("API_BASE_URL is set to:", API_BASE_URL\);/,
   `// Base URL for the API. Pinned to production; not env-overridable.
-export const API_BASE_URL = "https://backend.omnidim.io/api/v1";`
+export const API_BASE_URL = "https://omnidim.io/api/v1";`
 );
 
 // Add User-Agent + 60s timeout to every backend request.
@@ -293,7 +294,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -487,7 +488,7 @@ src = src.replace(
 // parallelize reads and confirm before destructive or real-world actions.
 src = src.replace(
   /(server\.setRequestHandler\(ListToolsRequestSchema, async \(\) => \{\n\s*const toolsForClient: Tool\[\] = Array\.from\(toolDefinitionMap\.values\(\)\)\.map\(def => \(\{\n\s*name: def\.name,\n\s*description: def\.description,\n\s*inputSchema: def\.inputSchema)(\n\s*\}\)\);)/,
-  `$1,\n    annotations: toolAnnotations(def)$2`
+  `$1,\n    annotations: toolAnnotations(def),\n    _meta: toolMeta(def.name)$2`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash
@@ -521,6 +522,20 @@ src = src.replace(
 });`
 );
 
+// String patches fail silently when the generator's output moves, so prove the critical ones landed.
+const REQUIRED = [
+  'annotations: toolAnnotations(def)',
+  '_meta: toolMeta(def.name)',
+  'registerProcedures(server);',
+  'export const API_BASE_URL = "https://omnidim.io/api/v1";',
+  'process.env.OMNIDIM_API_KEY ||',
+  'isError: true, content: [{ type: "text", text: errorMessage }]',
+];
+const missing = REQUIRED.filter((s) => !src.includes(s));
+if (missing.length) {
+  console.error(`patches did not apply (generator output changed?):\n  ${missing.join('\n  ')}`);
+  process.exit(2);
+}
 writeFileSync(indexPath, src);
 
 const specHash = createHash('sha256').update(specBytes).digest('hex');
