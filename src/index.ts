@@ -7,6 +7,7 @@ import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse }
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import { registerProcedures } from "./procedures.js";
 import { toolAnnotations } from "./tool-annotations.js";
+import { toolMeta } from "./workflow-canvas.js";
 import { notifyUpdates } from "./update_notifier.js";
 
 
@@ -1344,7 +1345,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     name: def.name,
     description: def.description,
     inputSchema: def.inputSchema,
-    annotations: toolAnnotations(def)
+    annotations: toolAnnotations(def),
+    _meta: toolMeta(def.name)
   }));
   return { tools: toolsForClient };
 });
