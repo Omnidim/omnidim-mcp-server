@@ -163,7 +163,8 @@ const result = spawnSync(
   'npx',
   [
     '-y',
-    'openapi-mcp-generator@latest',
+    // Pinned: the patches below match this version's output; 5.x reshaped it and they silently missed.
+    'openapi-mcp-generator@4.1.0',
     '--input', FILTERED_SPEC,
     '--output', TMP,
     '--server-name', pkg.name,
@@ -521,6 +522,19 @@ src = src.replace(
 });`
 );
 
+// String patches fail silently when the generator's output moves, so prove the critical ones landed.
+const REQUIRED = [
+  'annotations: toolAnnotations(def)',
+  'registerProcedures(server);',
+  'export const API_BASE_URL = "https://backend.omnidim.io/api/v1";',
+  'process.env.OMNIDIM_API_KEY ||',
+  'isError: true, content: [{ type: "text", text: errorMessage }]',
+];
+const missing = REQUIRED.filter((s) => !src.includes(s));
+if (missing.length) {
+  console.error(`patches did not apply (generator output changed?):\n  ${missing.join('\n  ')}`);
+  process.exit(2);
+}
 writeFileSync(indexPath, src);
 
 const specHash = createHash('sha256').update(specBytes).digest('hex');
