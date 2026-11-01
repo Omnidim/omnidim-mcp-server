@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/github-script@v8
+      - uses: actions/github-script@v9
         continue-on-error: true # advisory: this step can never turn the PR red
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
