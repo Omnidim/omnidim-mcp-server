@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `setup` now waits for its usage events to send before it exits. The install, per-client and finished events were being dropped.
+- The server now sends `session_end` when the client closes stdin or hangs up (SIGHUP). Before, only SIGINT and SIGTERM did.
 
 ## [0.16.1] - 2026-10-26
 

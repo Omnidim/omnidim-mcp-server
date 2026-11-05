@@ -1817,6 +1817,9 @@ async function main() {
     await server.connect(transport);
     console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));
     beginSession();
+    // Only for the stdio server: a client that closes the pipe or hangs up (not kill -9) sends no other end signal.
+    process.on('SIGHUP', cleanup);
+    process.stdin.on('end', cleanup);
     notifyUpdates(SERVER_VERSION);
   } catch (error) {
     try { await emitSessionCrash(error); } catch { /* telemetry must never mask the crash */ }
