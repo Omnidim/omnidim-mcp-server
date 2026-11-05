@@ -1794,7 +1794,11 @@ async function executeApiTool(
 async function main() {
   if (process.argv[2] === "setup") {
     const { runSetup } = await import("./setup.js");
-    process.exit(await runSetup());
+    const code = await runSetup();
+    // setup fires its events without awaiting; exiting now would drop them (install never arrived).
+    const { flushTelemetry } = await import("./telemetry.js");
+    await flushTelemetry();
+    process.exit(code);
   }
   if (process.argv[2] === "telemetry") {
     const { runTelemetryCommand } = await import("./telemetry-cli.js");
