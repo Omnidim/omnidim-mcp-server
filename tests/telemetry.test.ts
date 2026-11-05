@@ -1,3 +1,6 @@
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { endSession, recordToolResult, sanitizeError } from "../src/telemetry.js";
@@ -60,6 +63,10 @@ describe("recordToolResult + endSession", () => {
 
 describe("flushTelemetry", () => {
     it("waits for fire-and-forget sends so process.exit cannot drop them", async () => {
+        const home = mkdtempSync(join(tmpdir(), "omnidim-tel-"));
+        vi.stubEnv("HOME", home);
+        vi.stubEnv("USERPROFILE", home);
+        vi.resetModules();
         const { emitInstall, flushTelemetry } = await import("../src/telemetry.js");
         let delivered = false;
         const real = globalThis.fetch;
@@ -74,9 +81,11 @@ describe("flushTelemetry", () => {
             void emitInstall();
             await flushTelemetry();
             expect(delivered).toBe(true);
+            expect(existsSync(join(home, ".config", "omnidim", "install-id"))).toBe(true);
         } finally {
             globalThis.fetch = real;
             vi.unstubAllEnvs();
+            rmSync(home, { recursive: true, force: true });
         }
     });
 });
