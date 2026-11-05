@@ -79,7 +79,21 @@ function baseFields(): BaseFields {
     };
 }
 
-async function send(event: string, extra: Record<string, unknown> = {}): Promise<void> {
+// Fire-and-forget sends tracked so the setup command can wait for them before process.exit.
+const pending = new Set<Promise<void>>();
+
+export async function flushTelemetry(): Promise<void> {
+    await Promise.allSettled([...pending]);
+}
+
+function send(event: string, extra: Record<string, unknown> = {}): Promise<void> {
+    const p = doSend(event, extra);
+    pending.add(p);
+    void p.finally(() => pending.delete(p));
+    return p;
+}
+
+async function doSend(event: string, extra: Record<string, unknown>): Promise<void> {
     if (isTelemetryDisabled()) return;
     const body = {
         event,
