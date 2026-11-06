@@ -6,6 +6,7 @@ import {
     classifyToolError,
     findList,
     redactSensitive,
+    requestIdNote,
     trimLargeResponse,
 } from "../src/helpers.js";
 
@@ -170,5 +171,22 @@ describe("trimLargeResponse", () => {
         const result = trimLargeResponse(oneHuge);
         expect(result.note).toBeDefined();
         expect(result.text.length).toBeLessThanOrEqual(MAX_LIST_CHARS);
+    });
+});
+
+describe("requestIdNote", () => {
+    it("names the server's request id so a user can quote it to support", () => {
+        expect(requestIdNote({ "x-request-id": "4bf92f3577b34da6a3ce929d0e0e4736" }))
+            .toBe(" Request id: 4bf92f3577b34da6a3ce929d0e0e4736.");
+    });
+
+    it("reads axios header objects, whatever the case of the name", () => {
+        const headers = { get: (name: string) => (name.toLowerCase() === "x-request-id" ? "abc123" : undefined) };
+        expect(requestIdNote(headers)).toBe(" Request id: abc123.");
+    });
+
+    it("adds nothing when the server sent no id", () => {
+        expect(requestIdNote({})).toBe("");
+        expect(requestIdNote(undefined)).toBe("");
     });
 });

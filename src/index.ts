@@ -3,7 +3,7 @@
  * OmniDimension MCP server.
  */
 import { readApiKey } from "./credentials.js";
-import { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";
+import { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse } from "./helpers.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import { registerProcedures } from "./procedures.js";
 import { toolAnnotations } from "./tool-annotations.js";
@@ -1865,7 +1865,7 @@ main().catch(async (error) => {
 function formatApiError(error: AxiosError): string {
     let message = 'API request failed.';
     if (error.response) {
-        message = `API Error: Status ${error.response.status} (${error.response.statusText || 'Status text not available'}). `;
+        message = `API Error: Status ${error.response.status} (${error.response.statusText || 'Status text not available'}).${requestIdNote(error.response.headers)} `;
         const responseData = error.response.data;
         const MAX_LEN = 200;
         if (typeof responseData === 'string') { 

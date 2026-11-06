@@ -278,6 +278,17 @@ src = src.replaceAll(
   `const token = process.env.OMNIDIM_API_KEY || process.env[\`BEARER_TOKEN_\${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}\`];`
 );
 
+// Put the server's request id in API error text, so a user can quote it to support.
+const statusLine = "message = `API Error: Status ${error.response.status} (${error.response.statusText || 'Status text not available'}). `;";
+if (!src.includes(statusLine)) {
+  console.error(`formatApiError status line missing: generator output shape changed; investigate before re-running`);
+  process.exit(2);
+}
+src = src.replace(
+  statusLine,
+  "message = `API Error: Status ${error.response.status} (${error.response.statusText || 'Status text not available'}).${requestIdNote(error.response.headers)} `;"
+);
+
 // axios v1 typed response.headers as a union; the generator's call to
 // `.toLowerCase()` on it fails strict TS.
 src = src.replace(
@@ -294,7 +305,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY

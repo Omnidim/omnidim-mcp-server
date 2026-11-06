@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- API errors include the request id. Quote it to support to have that exact request looked up.
+
 ## [0.16.1] - 2026-10-26
 
 ### Fixed
