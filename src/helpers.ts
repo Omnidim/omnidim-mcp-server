@@ -188,3 +188,11 @@ export function classifyToolError(error: unknown): string {
     }
     return "unknown";
 }
+
+/** The server's id for a failed request, for the error text a user copies into a support ticket. */
+export function requestIdNote(headers: unknown): string {
+    if (!headers || typeof headers !== "object") return "";
+    const h = headers as { get?: (name: string) => unknown } & Record<string, unknown>;
+    const id = typeof h.get === "function" ? h.get("x-request-id") : h["x-request-id"];
+    return typeof id === "string" && id ? ` Request id: ${id}.` : "";
+}
