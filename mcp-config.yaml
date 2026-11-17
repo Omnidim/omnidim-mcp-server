@@ -62,6 +62,10 @@ exclude:
     # A multipart file upload. Tool arguments are JSON, so the request this
     # tool would send has no form boundary and the API rejects it.
     - uploadWhatsappMedia
+    # Needs the user's Cal.com API key as an argument, so the key would sit in
+    # the chat transcript. Users connect Cal.com at omnidim.io/integrations,
+    # then attachAgentIntegration links it to an agent.
+    - createCalIntegration
 
   # Parameters to strip from operations that are otherwise exposed.
   # `user_id` on the phone number tools is the reseller "act on a client"
