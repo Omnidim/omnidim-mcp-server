@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 
-import { classifyToolError } from "./helpers.js";
+import { classifyToolError, packageVersion } from "./helpers.js";
 import { appendLog } from "./logger.js";
 
 const ENDPOINT = "https://mcp.omnidim.io/api/telemetry/event";
@@ -62,17 +62,8 @@ interface BaseFields {
 }
 
 function baseFields(): BaseFields {
-    let version = "unknown";
-    try {
-        const pkg = JSON.parse(
-            readFileSync(new URL("../package.json", import.meta.url), "utf8")
-        ) as { version?: string };
-        version = pkg.version ?? "unknown";
-    } catch {
-        // keep "unknown"
-    }
     return {
-        package_version: version,
+        package_version: packageVersion(),
         node_version: process.version,
         os_platform: process.platform,
         os_arch: process.arch,

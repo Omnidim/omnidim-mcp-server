@@ -3,7 +3,7 @@
  * OmniDimension MCP server.
  */
 import { readApiKey } from "./credentials.js";
-import { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse } from "./helpers.js";
+import { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import { registerProcedures } from "./procedures.js";
 import { toolAnnotations } from "./tool-annotations.js";
@@ -1691,7 +1691,9 @@ async function executeApiTool(
     
 
     // Prepare the axios request configuration
+    headers['user-agent'] = USER_AGENT;
     const config: AxiosRequestConfig = {
+      timeout: 60_000,
       method: definition.method.toUpperCase(),
       url: requestUrl,
       params: queryParams,

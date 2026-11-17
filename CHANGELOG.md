@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- API requests send `User-Agent: omnidim-mcp-server/<version>` and time out after 60 seconds again.
+
 ## [0.17.0] - 2026-11-06
 
 ### Added

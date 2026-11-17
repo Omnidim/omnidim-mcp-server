@@ -1,6 +1,22 @@
+import { readFileSync } from "node:fs";
+
 import { renderWordmark } from "./banner.js";
 
 export const PACKAGE_NAME = "@omnidim-ai/mcp-server";
+
+export function packageVersion(): string {
+    try {
+        const pkg = JSON.parse(
+            readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+        ) as { version?: string };
+        return pkg.version ?? "unknown";
+    } catch {
+        return "unknown";
+    }
+}
+
+// The backend reads this to tell MCP traffic from raw API calls.
+export const USER_AGENT = `omnidim-mcp-server/${packageVersion()}`;
 
 const bold = (s: string): string => `\x1b[1m${s}\x1b[0m`;
 const italic = (s: string): string => `\x1b[3m${s}\x1b[0m`;
