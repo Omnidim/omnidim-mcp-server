@@ -219,19 +219,15 @@ src = src.replace(
 export const API_BASE_URL = "https://omnidim.io/api/v1";`
 );
 
-// Add User-Agent + 60s timeout to every backend request.
+// Add User-Agent + 60s timeout to every backend request. Anchored on the config's
+// first line only, so a new generator field below it cannot make the patch miss.
 src = src.replace(
-  /\/\/ Prepare the axios request configuration\n\s+const config: AxiosRequestConfig = \{\n\s+method: definition\.method\.toUpperCase\(\),\s*\n\s+url: requestUrl,\s*\n\s+params: queryParams,\s*\n\s+headers: headers,\n\s+\.\.\.\(requestBodyData !== undefined && \{ data: requestBodyData \}\),\n\s+\};/,
+  /\/\/ Prepare the axios request configuration\n\s+const config: AxiosRequestConfig = \{\n/,
   `// Prepare the axios request configuration
-    headers['user-agent'] = \`\${SERVER_NAME}-mcp-server/\${SERVER_VERSION}\`;
+    headers['user-agent'] = USER_AGENT;
     const config: AxiosRequestConfig = {
-      method: definition.method.toUpperCase(),
-      url: requestUrl,
-      params: queryParams,
-      headers: headers,
       timeout: 60_000,
-      ...(requestBodyData !== undefined && { data: requestBodyData }),
-    };`
+`
 );
 
 // Replace eval() with a scoped new Function + per-tool cache. The schema
@@ -305,7 +301,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -548,6 +544,8 @@ const REQUIRED = [
   'export const API_BASE_URL = "https://omnidim.io/api/v1";',
   'process.env.OMNIDIM_API_KEY ||',
   'isError: true, content: [{ type: "text", text: errorMessage }]',
+  "headers['user-agent'] = USER_AGENT;",
+  'timeout: 60_000,',
 ];
 const missing = REQUIRED.filter((s) => !src.includes(s));
 if (missing.length) {

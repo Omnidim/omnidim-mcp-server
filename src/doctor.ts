@@ -1,31 +1,22 @@
-import { readFileSync } from "node:fs";
-
 import axios from "axios";
 
 import { buildTargets } from "./clients.js";
 import { readApiKey } from "./credentials.js";
+import { packageVersion, USER_AGENT } from "./helpers.js";
 import { LOG_PATH, readLogTail } from "./logger.js";
 import { telemetryStatus } from "./telemetry.js";
 
 const PROD_API = "https://omnidim.io/api/v1";
 const ISSUES_URL = "https://github.com/Omnidim/omnidim-mcp-server/issues/new";
 
-function packageVersion(): string {
-    try {
-        const pkg = JSON.parse(
-            readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-        ) as { version?: string };
-        return pkg.version ?? "unknown";
-    } catch {
-        return "unknown";
-    }
-}
-
 async function probeBackend(apiKey: string | null): Promise<string> {
     try {
         const res = await axios.get(`${PROD_API}/agents`, {
             params: { pagesize: 1 },
-            headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+            headers: {
+                "user-agent": USER_AGENT,
+                ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+            },
             timeout: 8000,
             validateStatus: () => true,
         });
