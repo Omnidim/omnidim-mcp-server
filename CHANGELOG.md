@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Tools for WhatsApp numbers, templates, conversations, opt-outs and campaigns, for agent integrations, for campaign number rotation, and for phone number auto-renew. Clients that support confirmations ask before a tool sends a WhatsApp message, launches or resumes a campaign, lifts an opt-out, or connects an agent to an outside URL.
+
 ### Fixed
 
 - API requests send `User-Agent: omnidim-mcp-server/<version>` and time out after 60 seconds again.

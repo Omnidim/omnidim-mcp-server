@@ -85,13 +85,46 @@ const TOOL_TITLES: Record<string, string> = {
   deletePostCallAction: "Delete a post-call action",
   updatePostCallAction: "Update a post-call action",
   listIntegrations: "List integrations",
+  createCustomApiIntegration: "Create custom API integration",
+  listAgentIntegrations: "List agent integrations",
+  attachAgentIntegration: "Attach integration to agent",
+  detachAgentIntegration: "Detach integration from agent",
+  setBulkCallRotation: "Set campaign number rotation",
+  setPhoneNumberAutoRenew: "Set phone number auto-renew",
+  listWhatsappNumbers: "List WhatsApp numbers",
+  importWhatsappNumbers: "Import WhatsApp numbers",
+  previewWhatsappNumbers: "Preview WhatsApp numbers to import",
+  getWhatsappNumber: "Get WhatsApp number",
+  listWhatsappTemplates: "List WhatsApp templates",
+  syncWhatsappTemplates: "Sync WhatsApp templates",
+  getWhatsappCalling: "Get WhatsApp calling setting",
+  setWhatsappCalling: "Turn WhatsApp calling on or off",
+  listWhatsappConversations: "List WhatsApp conversations",
+  getWhatsappConversation: "Get WhatsApp conversation",
+  takeOverWhatsappConversation: "Take over WhatsApp conversation",
+  handBackWhatsappConversation: "Hand WhatsApp conversation back to agent",
+  listWhatsappMessages: "List WhatsApp messages",
+  sendWhatsappMessage: "Send WhatsApp message",
+  getWhatsappMessage: "Get WhatsApp message",
+  listWhatsappOptOuts: "List WhatsApp opt-outs",
+  addWhatsappOptOut: "Add WhatsApp opt-out",
+  liftWhatsappOptOut: "Lift WhatsApp opt-out",
+  listWhatsappCampaigns: "List WhatsApp campaigns",
+  createWhatsappCampaign: "Create WhatsApp campaign",
+  getWhatsappCampaign: "Get WhatsApp campaign",
+  listWhatsappCampaignContacts: "List WhatsApp campaign contacts",
+  addWhatsappCampaignContacts: "Add contacts to WhatsApp campaign",
+  launchWhatsappCampaign: "Launch WhatsApp campaign",
+  pauseWhatsappCampaign: "Pause WhatsApp campaign",
+  resumeWhatsappCampaign: "Resume WhatsApp campaign",
+  cancelWhatsappCampaign: "Cancel WhatsApp campaign",
 };
 
 // POST tools that only validate or preview, with no state change.
-const READ_ONLY_TOOLS = new Set(["canUploadFile", "validateWorkflow"]);
+const READ_ONLY_TOOLS = new Set(["canUploadFile", "validateWorkflow", "previewWhatsappNumbers"]);
 
 // Irreversible removals, overwrites of live config, plus tools that place
-// real outbound calls.
+// real outbound calls or send real messages.
 const DESTRUCTIVE_TOOLS = new Set([
   "deleteAgent", "deleteAgentVersion", "restoreAgentVersion",
   "deleteKnowledgeBaseFile", "detachKnowledgeBaseFiles", "detachPhoneNumber",
@@ -100,14 +133,22 @@ const DESTRUCTIVE_TOOLS = new Set([
   "purchasePhoneNumber", "releasePhoneNumber",
   "deleteClonedVoice", "deleteWorkflow", "publishWorkflow", "activateWorkflow",
   "deactivateWorkflow", "testWorkflow", "deletePostCallAction",
+  "sendWhatsappMessage", "launchWhatsappCampaign", "resumeWhatsappCampaign",
+  "addWhatsappCampaignContacts", "cancelWhatsappCampaign", "liftWhatsappOptOut",
+  "importWhatsappNumbers", "attachAgentIntegration", "detachAgentIntegration",
+  "setPhoneNumberAutoRenew",
 ]);
 
-// Tools that reach the external phone network (a carrier, not just our API).
+// Tools that reach people or systems outside our API: a carrier, Meta, or
+// (attachAgentIntegration) a live agent calling a caller-supplied URL.
 const OPEN_WORLD_TOOLS = new Set([
   "testWorkflow",
   "dispatchCall", "createBulkCall", "addBulkCallContact",
   "addBulkCallContacts", "startBulkCall", "retryBulkCall",
   "purchasePhoneNumber", "releasePhoneNumber",
+  "sendWhatsappMessage", "launchWhatsappCampaign", "resumeWhatsappCampaign",
+  "addWhatsappCampaignContacts", "importWhatsappNumbers", "setWhatsappCalling",
+  "attachAgentIntegration",
 ]);
 
 export interface ToolAnnotations {
