@@ -1499,7 +1499,7 @@ async function executeApiTool(
     } catch (error: unknown) {
         recordToolResult(toolName, 'validation');
         if (error instanceof ZodError) {
-            const validationErrorMessage = `Invalid arguments for tool '${toolName}': ${error.issues.map(e =>`${e.path.join('.')} (${e.code}): ${e.message}`).join(', ')}`;
+            const validationErrorMessage = `Invalid arguments for tool '${toolName}': ${error.issues.map(e => `${e.path.join('.')} (${e.code}): ${e.message}`).join(', ')}`;
             return { isError: true, content: [{ type: 'text', text: validationErrorMessage }] };
         } else {
              const errorMessage = error instanceof Error ? error.message : String(error);
