@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildToolSchema } from "../src/tool-schema.js";
 
 const schemas: any[] = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8")
-    .split("\n")
+    .split(/\r?\n/) // Windows checkouts have CRLF line endings
     .filter((line) => line.startsWith("    inputSchema: {"))
     .map((line) => JSON.parse(line.slice("    inputSchema: ".length).replace(/,$/, "")));
 
