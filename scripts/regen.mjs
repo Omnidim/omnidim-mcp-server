@@ -230,38 +230,31 @@ src = src.replace(
 `
 );
 
-// Replace eval() with a scoped new Function + per-tool cache. The schema
-// string is compile-time generated from inputSchema literals (never user
-// input), but shipping eval to npm is a footgun and an auditor flag.
+// Replace eval() with buildToolSchema (src/tool-schema.ts, tested in
+// tests/schemas.test.ts) behind a per-tool cache. A schema that fails to build
+// used to fall back to accept-anything, which turned off argument checks.
+src = src.replace(
+  /import \{ jsonSchemaToZod \} from 'json-schema-to-zod';/,
+  `import { buildToolSchema } from './tool-schema.js';`
+);
 src = src.replace(
   /function getZodSchemaFromJsonSchema\(jsonSchema: any, toolName: string\): z\.ZodTypeAny \{[\s\S]*?\n\}\n/,
-  `const zodSchemaCache: Map<string, z.ZodTypeAny> = new Map();
-function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodTypeAny {
-    const cached = zodSchemaCache.get(toolName);
-    if (cached) return cached;
-    if (typeof jsonSchema !== 'object' || jsonSchema === null) {
-        const fallback = z.object({}).passthrough();
-        zodSchemaCache.set(toolName, fallback);
-        return fallback;
-    }
-    try {
-        const body = jsonSchemaToZod(jsonSchema);
-        const factory = new Function('z', \`return (\${body});\`) as (z: any) => z.ZodTypeAny;
-        const schema = factory(z);
-        if (typeof (schema as any)?.parse !== 'function') {
-            throw new Error('Schema factory did not produce a valid Zod schema.');
-        }
-        zodSchemaCache.set(toolName, schema);
-        return schema;
-    } catch (err: any) {
-        console.error(\`Failed to generate Zod schema for '\${toolName}':\`, err);
-        const fallback = z.object({}).passthrough();
-        zodSchemaCache.set(toolName, fallback);
-        return fallback;
-    }
+  `const zodSchemaCache: Map<string, z.ZodType> = new Map();
+function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodType {
+    let schema = zodSchemaCache.get(toolName);
+    if (!schema) zodSchemaCache.set(toolName, schema = buildToolSchema(jsonSchema));
+    return schema;
 }
 `
 );
+
+// The generator targets zod 3. Zod 4 parses to unknown and renamed
+// ZodError.errors to .issues (zod 3 has a memory DoS fixed only in 4.6.6).
+src = src.replace(
+  /validatedArgs = zodSchema\.parse\(argsToParse\);/,
+  'validatedArgs = zodSchema.parse(argsToParse) as JsonObject;'
+);
+src = src.replace(/\$\{error\.errors\.map\(e => /, '${error.issues.map(e => ');
 
 // Read bearer token from OMNIDIM_API_KEY (matches the Python SDK
 // convention), falling back to the generator's auto-named env var.

@@ -22,7 +22,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { z, ZodError } from 'zod';
-import { jsonSchemaToZod } from 'json-schema-to-zod';
+import { buildToolSchema } from './tool-schema.js';
 import axios, { type AxiosRequestConfig, type AxiosError } from 'axios';
 
 /**
@@ -1495,11 +1495,11 @@ async function executeApiTool(
     try {
         const zodSchema = getZodSchemaFromJsonSchema(definition.inputSchema, toolName);
         const argsToParse = (typeof toolArgs === 'object' && toolArgs !== null) ? toolArgs : {};
-        validatedArgs = zodSchema.parse(argsToParse);
+        validatedArgs = zodSchema.parse(argsToParse) as JsonObject;
     } catch (error: unknown) {
         recordToolResult(toolName, 'validation');
         if (error instanceof ZodError) {
-            const validationErrorMessage = `Invalid arguments for tool '${toolName}': ${error.errors.map(e => `${e.path.join('.')} (${e.code}): ${e.message}`).join(', ')}`;
+            const validationErrorMessage = `Invalid arguments for tool '${toolName}': ${error.issues.map(e =>`${e.path.join('.')} (${e.code}): ${e.message}`).join(', ')}`;
             return { isError: true, content: [{ type: 'text', text: validationErrorMessage }] };
         } else {
              const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1900,28 +1900,9 @@ function formatApiError(error: AxiosError): string {
  * @param toolName Tool name for error reporting
  * @returns Zod schema
  */
-const zodSchemaCache: Map<string, z.ZodTypeAny> = new Map();
-function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodTypeAny {
-    const cached = zodSchemaCache.get(toolName);
-    if (cached) return cached;
-    if (typeof jsonSchema !== 'object' || jsonSchema === null) {
-        const fallback = z.object({}).passthrough();
-        zodSchemaCache.set(toolName, fallback);
-        return fallback;
-    }
-    try {
-        const body = jsonSchemaToZod(jsonSchema);
-        const factory = new Function('z', `return (${body});`) as (z: any) => z.ZodTypeAny;
-        const schema = factory(z);
-        if (typeof (schema as any)?.parse !== 'function') {
-            throw new Error('Schema factory did not produce a valid Zod schema.');
-        }
-        zodSchemaCache.set(toolName, schema);
-        return schema;
-    } catch (err: any) {
-        console.error(`Failed to generate Zod schema for '${toolName}':`, err);
-        const fallback = z.object({}).passthrough();
-        zodSchemaCache.set(toolName, fallback);
-        return fallback;
-    }
+const zodSchemaCache: Map<string, z.ZodType> = new Map();
+function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodType {
+    let schema = zodSchemaCache.get(toolName);
+    if (!schema) zodSchemaCache.set(toolName, schema = buildToolSchema(jsonSchema));
+    return schema;
 }

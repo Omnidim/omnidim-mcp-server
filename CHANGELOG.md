@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - API requests send `User-Agent: omnidim-mcp-server/<version>` and time out after 60 seconds again.
+- `dispatchCall` and `createSession` check their arguments again. A call with a missing or wrong-type argument now fails before it reaches the API.
+
+### Security
+
+- Updated zod to 4 and the MCP SDK to 1.32. This fixes a memory exhaustion bug in zod 3 and the advisories that `npm audit` reported.
 
 ## [0.17.0] - 2026-11-06
 
