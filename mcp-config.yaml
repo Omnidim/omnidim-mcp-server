@@ -59,6 +59,9 @@ exclude:
     # client. Business data for the reseller alone, not agent context.
     - getResellerUsage
     - getResellerClientUsage
+    # A multipart file upload. Tool arguments are JSON, so the request this
+    # tool would send has no form boundary and the API rejects it.
+    - uploadWhatsappMedia
 
   # Parameters to strip from operations that are otherwise exposed.
   # `user_id` on the phone number tools is the reseller "act on a client"

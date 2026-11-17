@@ -71,6 +71,29 @@ describe("toolAnnotations", () => {
         }
     });
 
+    it("marks tools that message customers or wire an agent to an outside URL destructive AND open-world", () => {
+        for (const name of [
+            "sendWhatsappMessage", "launchWhatsappCampaign", "resumeWhatsappCampaign",
+            "addWhatsappCampaignContacts", "importWhatsappNumbers", "attachAgentIntegration",
+        ]) {
+            const a = toolAnnotations({ name, method: "post" });
+            expect(a.destructiveHint, name).toBe(true);
+            expect(a.openWorldHint, name).toBe(true);
+        }
+    });
+
+    it("marks lifting an opt-out, cancelling a campaign and auto-renew destructive", () => {
+        for (const name of ["liftWhatsappOptOut", "cancelWhatsappCampaign", "detachAgentIntegration", "setPhoneNumberAutoRenew"]) {
+            const a = toolAnnotations({ name, method: "post" });
+            expect(a.destructiveHint, name).toBe(true);
+            expect(a.openWorldHint, name).toBe(false);
+        }
+    });
+
+    it("treats the WhatsApp import preview as read-only", () => {
+        expect(toolAnnotations({ name: "previewWhatsappNumbers", method: "post" }).readOnlyHint).toBe(true);
+    });
+
     // Regen adds tools; titles are hand-authored. Without this guard a new
     // tool ships with no display name (the version-history tools did).
     it("titles every tool in the generated catalogue", () => {
