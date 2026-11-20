@@ -84,7 +84,8 @@ describe("generated tool catalogue", () => {
         for (const entry of manifest.packages) {
             expect(entry.version, entry.identifier).toBe(pkg.version);
         }
-        expect(src).toContain(`export const SERVER_VERSION = "${pkg.version}";`);
+        // The marker lets release-please bump this line in the release PR.
+        expect(src).toContain(`export const SERVER_VERSION = "${pkg.version}"; // x-release-please-version`);
     });
 
     it("keeps the instructions in sync with the exposed surface", () => {
