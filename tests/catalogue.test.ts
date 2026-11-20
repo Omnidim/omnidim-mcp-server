@@ -16,6 +16,7 @@ const EXCLUDED_TOOLS = [
     "startSimulation",
     "stopSimulation",
     "enhancePrompt",
+    "createClonedVoice",
     // Reseller operations: admin-level, several move money, KYC ones relay
     // identity documents. See mcp-config.yaml.
     "listChildOrganizations",
