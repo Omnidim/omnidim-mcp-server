@@ -83,6 +83,8 @@ Get your API key from [omnidim.io/api-management](https://omnidim.io/api-managem
 | Cursor | `~/.cursor/mcp.json` |
 | Windsurf | `~/.codeium/windsurf/mcp_config.json` |
 
+**Read-only mode:** add `"OMNIDIM_READONLY": "1"` to `env`. The server then offers only the tools that read data (agents, call logs, campaigns, numbers), so the agent cannot change your account or place a call.
+
 ## Tools
 
 Each tool maps to one endpoint of the [OmniDimension API](https://docs.omnidim.io).

@@ -6,7 +6,7 @@ import { readApiKey } from "./credentials.js";
 import { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
 import { registerProcedures } from "./procedures.js";
-import { toolAnnotations } from "./tool-annotations.js";
+import { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";
 import { addShowWorkflow, toolMeta } from "./workflow-canvas.js";
 import { notifyUpdates } from "./update_notifier.js";
 
@@ -1873,6 +1873,7 @@ or already-canceled campaign cannot be canceled.
   }],
 ]);
 addShowWorkflow(toolDefinitionMap);
+if (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);
 
 /**
  * Security schemes from the OpenAPI spec
