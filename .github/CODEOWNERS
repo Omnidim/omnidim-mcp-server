@@ -1,0 +1,2 @@
+# A release PR is the only PR that changes this file. Merging it publishes to npm.
+/.release-please-manifest.json @Omnidim/approvers

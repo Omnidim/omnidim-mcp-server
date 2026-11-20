@@ -24,4 +24,7 @@ The npm-distributed Model Context Protocol server for OmniDimension. Users insta
 
 ## Changelog
 
-`CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/). Entries describe user-visible behaviour (not commit history, not test or CI work), grouped under `Added` / `Changed` / `Fixed` / `Removed` / `Security`. The `[Unreleased]` section collects changes and is renamed to `[X.Y.Z] - YYYY-MM-DD` at release. Releases are cut by maintainers via a `v*` tag, which CI publishes.
+Do not edit `CHANGELOG.md` or any version number by hand. release-please writes both from PR titles.
+
+- PRs are squash-merged, so the PR title becomes the commit and the changelog line. Write it as a conventional commit that a user can read: `feat: ...` lands under Added, `fix: ...` under Fixed, `perf: ...` under Changed. `ci`, `test`, `build`, `docs` and `chore` stay out of the changelog. The `pr-title` check rejects other formats.
+- After each merge to `main`, release-please updates one open release PR with the next version and changelog. Merging it tags the release, publishes to npm, and updates the MCP Registry. A member of the approvers team merges it.
