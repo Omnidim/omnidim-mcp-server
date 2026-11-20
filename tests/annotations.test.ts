@@ -95,8 +95,8 @@ describe("toolAnnotations", () => {
         expect(toolAnnotations({ name: "previewWhatsappNumbers", method: "post" }).readOnlyHint).toBe(true);
     });
 
-    // Regen adds tools; titles are hand-authored. Without this guard a new
-    // tool ships with no display name (the version-history tools did).
+    // Titles come from each operation's x-mcp block through regen. Without this
+    // guard a tool whose marks did not land ships with no display name.
     it("titles every tool in the generated catalogue", () => {
         const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
         const names = [...src.matchAll(/^\s{2}\["(\w+)", \{$/gm)].map((m) => m[1]);

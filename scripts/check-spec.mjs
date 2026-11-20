@@ -14,6 +14,7 @@ import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as yaml from 'js-yaml';
+import { mcpMarks } from './x-mcp.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC_URL = 'https://docs.omnidim.io/openapi.yaml';
@@ -41,16 +42,11 @@ const sentinel = Object.fromEntries(
     .map((l) => l.split(': ').map((s) => s.trim())),
 );
 
-const excludeCfg = yaml.load(readFileSync(resolve(ROOT, 'mcp-config.yaml'), 'utf8'))?.exclude ?? {};
-const excludedPaths = new Set(excludeCfg.paths ?? []);
-const excludedOps = new Set(excludeCfg.operation_ids ?? []);
-
 const expected = new Set();
-for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
-  if (excludedPaths.has(specPath)) continue;
+for (const item of Object.values(spec.paths ?? {})) {
   for (const m of METHODS) {
     const op = item[m];
-    if (op && !excludedOps.has(op.operationId)) expected.add(op.operationId);
+    if (op && !('hidden' in mcpMarks(op.operationId, m, op))) expected.add(op.operationId);
   }
 }
 
