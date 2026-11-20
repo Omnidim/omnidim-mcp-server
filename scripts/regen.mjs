@@ -335,6 +335,12 @@ src = src.replace(
 registerProcedures(server);`
 );
 
+// release-please bumps the line that carries this marker in each release PR.
+src = src.replace(
+  /^export const SERVER_VERSION = "([^"]+)";$/m,
+  'export const SERVER_VERSION = "$1"; // x-release-please-version'
+);
+
 // Route JSON responses through the trimmer.
 src = src.replace(
   /try \{\s*\n\s*responseText = JSON\.stringify\(response\.data, null, 2\);\s*\n\s*\} catch \(e\) \{/,
