@@ -8,6 +8,7 @@ import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolE
 import { registerProcedures } from "./procedures.js";
 import { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";
 import { addShowWorkflow, toolMeta } from "./workflow-canvas.js";
+import { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";
 import { notifyUpdates } from "./update_notifier.js";
 
 
@@ -1873,6 +1874,7 @@ or already-canceled campaign cannot be canceled.
   }],
 ]);
 addShowWorkflow(toolDefinitionMap);
+addDocsTools(toolDefinitionMap);
 if (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);
 
 /**
@@ -1906,6 +1908,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
     console.error(`Error: Unknown tool requested: ${toolName}`);
     return { content: [{ type: "text", text: `Error: Unknown tool requested: ${toolName}` }] };
   }
+  if (isDocsTool(toolName)) return await callDocsTool(toolName, toolArgs ?? {});
   return await executeApiTool(toolName, toolDefinition, toolArgs ?? {}, securitySchemes);
 });
 

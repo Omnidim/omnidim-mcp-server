@@ -294,7 +294,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -509,7 +509,7 @@ src = src.replace(
 // Add the hand-written showWorkflow tool (the only tool that draws the workflow canvas).
 src = src.replace(
   /(const toolDefinitionMap: Map<string, McpToolDefinition> = new Map\(\[[\s\S]*?\n\]\);\n)/,
-  `$1addShowWorkflow(toolDefinitionMap);\nif (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);\n`
+  `$1addShowWorkflow(toolDefinitionMap);\naddDocsTools(toolDefinitionMap);\nif (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);\n`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash
@@ -542,6 +542,13 @@ src = src.replace(
   process.exit(1);
 });`
 );
+
+// searchDocs and readDoc answer from docs.omnidim.io, not the API, so they skip executeApiTool.
+src = src.replace(
+  /(\n  return await executeApiTool\(toolName, toolDefinition, toolArgs \?\? \{\}, securitySchemes\);)/,
+  `\n  if (isDocsTool(toolName)) return await callDocsTool(toolName, toolArgs ?? {});$1`
+);
+
 
 // String patches fail silently when the generator's output moves, so prove the critical ones landed.
 const REQUIRED = [
