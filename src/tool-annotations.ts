@@ -20,3 +20,14 @@ const HAND_MARKS: Record<string, ToolAnnotations> = {
 export function toolAnnotations(def: { name: string; method: string }): ToolAnnotations {
   return { ...(TOOL_MARKS[def.name] ?? HAND_MARKS[def.name] ?? {}) };
 }
+
+// OMNIDIM_READONLY=1 serves only tools that read data, so an agent cannot change the account or place a call.
+export function readOnlyMode(env: Record<string, string | undefined> = process.env): boolean {
+  return ["1", "true", "on", "yes"].includes((env.OMNIDIM_READONLY ?? "").toLowerCase());
+}
+
+export function keepReadOnlyTools(map: Map<string, { name: string; method: string }>): void {
+  for (const def of [...map.values()]) {
+    if (!toolAnnotations(def).readOnlyHint) map.delete(def.name);
+  }
+}

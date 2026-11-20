@@ -294,7 +294,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { registerProcedures } from "./procedures.js";\nimport { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -500,7 +500,7 @@ src = src.replace(
 // Add the hand-written showWorkflow tool (the only tool that draws the workflow canvas).
 src = src.replace(
   /(const toolDefinitionMap: Map<string, McpToolDefinition> = new Map\(\[[\s\S]*?\n\]\);\n)/,
-  `$1addShowWorkflow(toolDefinitionMap);\n`
+  `$1addShowWorkflow(toolDefinitionMap);\nif (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);\n`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash
