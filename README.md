@@ -104,6 +104,10 @@ Each tool maps to one endpoint of the [OmniDimension API](https://docs.omnidim.i
 | Account | `getAccountBalance` |
 | Sessions | `createSession` |
 
+## Docs tools
+
+`searchDocs` and `readDoc` answer from [docs.omnidim.io](https://docs.omnidim.io), so an agent can look up a field or an error instead of guessing. They read the public docs only and never send your API key there.
+
 ## Local development
 
 ```bash

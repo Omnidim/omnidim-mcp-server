@@ -14,6 +14,8 @@ export interface ToolAnnotations {
 // Tools that are not spec operations, so they carry no x-mcp block.
 const HAND_MARKS: Record<string, ToolAnnotations> = {
   showWorkflow: { title: "Show workflow canvas", readOnlyHint: true, openWorldHint: false },
+  searchDocs: { title: "Search the docs", readOnlyHint: true, openWorldHint: false },
+  readDoc: { title: "Read a docs page", readOnlyHint: true, openWorldHint: false },
 };
 
 // Spec tools get their marks from the spec's x-mcp block, through regen.
