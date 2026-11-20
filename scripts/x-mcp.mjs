@@ -46,3 +46,21 @@ export function annotationsFor(marks) {
     openWorldHint: Boolean(marks['open-world']),
   };
 }
+
+// A schema marked x-mcp-brief becomes a free-form object described by that one line, so a large
+// shape repeated across tools (post-call actions) costs one line in each. Same rule as the hosted
+// server's scripts/regen.py apply_briefs.
+export function applyBriefs(spec) {
+  let swapped = 0;
+  const schemas = spec?.components?.schemas ?? {};
+  for (const [name, schema] of Object.entries(schemas)) {
+    if (!schema || typeof schema !== 'object' || !('x-mcp-brief' in schema)) continue;
+    const brief = schema['x-mcp-brief'];
+    if (typeof brief !== 'string' || !brief.trim() || brief.includes('\n') || brief.length > 400) {
+      throw new Error(`bad x-mcp-brief on ${name}: one line of text, 400 chars at most`);
+    }
+    schemas[name] = { type: 'object', additionalProperties: true, description: brief };
+    swapped += 1;
+  }
+  return swapped;
+}

@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 // @ts-expect-error plain ESM helper shared by scripts/regen.mjs and scripts/check-spec.mjs
-import { annotationsFor, mcpMarks } from "../scripts/x-mcp.mjs";
+import { annotationsFor, applyBriefs, mcpMarks } from "../scripts/x-mcp.mjs";
 
 describe("x-mcp marks", () => {
   it("fails an operation with no block", () => {
@@ -56,4 +56,31 @@ describe("x-mcp marks", () => {
   ])("maps %j to hints", (block, expected) => {
     expect(annotationsFor(block)).toEqual(expected);
   });
+});
+
+describe("x-mcp-brief", () => {
+    const BRIEF = "Post-call actions. Add them with addPostCallAction.";
+    const spec = (brief: unknown) => ({
+        components: {
+            schemas: {
+                Big: {
+                    type: "object",
+                    "x-mcp-brief": brief,
+                    properties: Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`f${i}`, { type: "string" }])),
+                },
+                Small: { type: "object", properties: { a: { type: "string" } } },
+            },
+        },
+    });
+
+    it("swaps a briefed schema for one free-form line and leaves others alone", () => {
+        const s = spec(BRIEF);
+        expect(applyBriefs(s)).toBe(1);
+        expect(s.components.schemas.Big).toEqual({ type: "object", additionalProperties: true, description: BRIEF });
+        expect(s.components.schemas.Small).toEqual({ type: "object", properties: { a: { type: "string" } } });
+    });
+
+    it.each(["", "  ", 3, "two\nlines", "x".repeat(401)])("fails a bad brief %j", (brief) => {
+        expect(() => applyBriefs(spec(brief))).toThrow("bad x-mcp-brief on Big");
+    });
 });

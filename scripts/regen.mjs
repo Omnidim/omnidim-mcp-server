@@ -18,7 +18,7 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import * as yaml from 'js-yaml';
-import { annotationsFor, mcpMarks } from './x-mcp.mjs';
+import { annotationsFor, applyBriefs, mcpMarks } from './x-mcp.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -128,6 +128,7 @@ for (const item of Object.values(spec.paths ?? {})) {
     }
   }
 }
+const briefed = applyBriefs(spec);
 let removed = 0;
 let strippedParams = 0;
 const toolMarks = {};
@@ -148,7 +149,7 @@ for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
 }
 const FILTERED_SPEC = `${TMP}-filtered-spec.yaml`;
 writeFileSync(FILTERED_SPEC, yaml.dump(spec, { noRefs: true }));
-console.log(`hid ${removed} operations and dropped ${strippedParams} parameters via x-mcp`);
+console.log(`hid ${removed} operations, dropped ${strippedParams} parameters and briefed ${briefed} schemas via x-mcp`);
 const sortedMarks = Object.fromEntries(Object.entries(toolMarks).sort(([a], [b]) => a.localeCompare(b)));
 writeFileSync(
   resolve(ROOT, 'src', 'tool-marks.ts'),
