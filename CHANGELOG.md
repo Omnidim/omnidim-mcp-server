@@ -8,15 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.18.1](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.18.0...v0.18.1) (2026-11-20)
 
 
+### Added
+
+- Tools for WhatsApp numbers, templates, conversations, opt-outs and campaigns, for agent integrations, for campaign number rotation, and for phone number auto-renew. Clients that support confirmations ask before a tool sends a WhatsApp message, launches or resumes a campaign, lifts an opt-out, or connects an agent to an outside URL.
+
+### Removed
+
+- `createClonedVoice`. A model cannot send a real voice recording in a tool call. Upload a clip at https://omnidim.io/clone-voice instead.
+
 ### Fixed
 
 * **annotations:** ask before bulkCallActions resumes paid calls ([#101](https://github.com/Omnidim/omnidim-mcp-server/issues/101)) ([4376b56](https://github.com/Omnidim/omnidim-mcp-server/commit/4376b565b72b5e16f52ec30a99890687a4cb3aa7))
 
 ## [0.18.0] - 2026-11-19
-
-### Added
-
-- Tools for WhatsApp numbers, templates, conversations, opt-outs and campaigns, for agent integrations, for campaign number rotation, and for phone number auto-renew. Clients that support confirmations ask before a tool sends a WhatsApp message, launches or resumes a campaign, lifts an opt-out, or connects an agent to an outside URL.
 
 ### Fixed
 
