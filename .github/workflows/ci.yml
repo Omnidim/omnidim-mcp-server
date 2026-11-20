@@ -31,6 +31,9 @@ jobs:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    concurrency:
+      group: release-please
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write
