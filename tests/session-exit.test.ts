@@ -2,10 +2,14 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const BINARY = resolve(__dirname, "..", "build", "index.js");
-const PRELOAD = resolve(__dirname, "fixtures", "capture-fetch.mjs");
+// --import takes a URL: a bare C:\ path fails on Windows.
+const PRELOAD = pathToFileURL(resolve(__dirname, "fixtures", "capture-fetch.mjs")).href;
+// Windows ends a child on kill() without running signal handlers.
+const signals = process.platform === "win32" ? it.skip : it;
 
 function runSession(
     end: (child: ReturnType<typeof spawn>) => void,
@@ -38,12 +42,12 @@ describe("session_end on exit", () => {
         expect(events).toContain("session_end");
     }, 15000);
 
-    it("is sent on SIGTERM and SIGHUP", async () => {
+    signals("is sent on SIGTERM and SIGHUP", async () => {
         expect(await runSession((c) => c.kill("SIGTERM"))).toContain("session_end");
         expect(await runSession((c) => c.kill("SIGHUP"))).toContain("session_end");
     }, 25000);
 
-    it("survives a SIGTERM while the stdin-close send is still in flight", async () => {
+    signals("survives a SIGTERM while the stdin-close send is still in flight", async () => {
         const events = await runSession((c) => {
             c.stdin!.end();
             setTimeout(() => c.kill("SIGTERM"), 100);
