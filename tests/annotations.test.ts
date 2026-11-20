@@ -26,7 +26,8 @@ describe("toolAnnotations", () => {
     });
 
     it("marks deletes and removals destructive but not open-world", () => {
-        for (const name of ["deleteAgent", "cancelBulkCall", "detachPhoneNumber"]) {
+        // regenerateClonedVoiceSample overwrites the only sample of a cloned voice.
+        for (const name of ["deleteAgent", "cancelBulkCall", "detachPhoneNumber", "regenerateClonedVoiceSample"]) {
             const a = toolAnnotations({ name, method: "post" });
             expect(a.destructiveHint, name).toBe(true);
             expect(a.openWorldHint, name).toBe(false);
