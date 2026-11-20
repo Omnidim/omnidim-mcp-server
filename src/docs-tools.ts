@@ -55,14 +55,16 @@ export function docPath(raw: unknown): string | null {
     if (typeof raw !== "string") return null;
     const trimmed = raw.trim();
     // A full url must be exactly this origin; anything left must then be a /docs/ path.
-    const rest = trimmed.startsWith(DOCS_ORIGIN) ? trimmed.slice(DOCS_ORIGIN.length) : trimmed;
+    const full = /^https:\/\/docs\.omnidim\.io(\/.*)?$/s.exec(trimmed);
+    const rest = full ? (full[1] ?? "") : trimmed;
     let path: string;
     try {
         path = decodeURIComponent(rest.split(/[?#]/)[0]);
     } catch {
         return null;
     }
-    return DOC_PATH_RE.test(path) ? path : null;
+    // The docs site redirects a trailing slash; asking for the final url saves a round trip.
+    return DOC_PATH_RE.test(path) ? path.replace(/\/+$/, "") || "/docs" : null;
 }
 
 type Result = { content: Array<{ type: "text"; text: string }>; isError?: boolean };

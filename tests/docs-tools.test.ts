@@ -75,12 +75,21 @@ describe("docs tools", () => {
         "//evil.example/docs/x",
         "http://docs.omnidim.io/docs/x",
         "https://docs.omnidim.io.evil.example/docs/x",
+        "/docs/x%0A",
+        "https://[",
+        "/docs/%E0%A4%A",
     ])("readDoc refuses %s without a request", async (url) => {
         expect(docPath(url)).toBeNull();
         const seen: Seen[] = [];
         const r = await callDocsTool("readDoc", { url }, fakeFetch(200, "x", seen));
         expect(r.isError).toBe(true);
         expect(seen).toHaveLength(0);
+    });
+
+    it("readDoc drops a trailing slash, which the docs site would redirect", async () => {
+        const seen: Seen[] = [];
+        await callDocsTool("readDoc", { url: "/docs/get-started/quickstart/" }, fakeFetch(200, "# Page", seen));
+        expect(new URL(seen[0].url).pathname).toBe("/docs/get-started/quickstart");
     });
 
     // index.ts is generated: these guard the regen patches that serve and route the docs tools.
