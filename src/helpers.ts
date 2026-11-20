@@ -147,12 +147,39 @@ export function findList(data: unknown): { arr: unknown[]; key: string | null } 
 // Trim list responses to fit a model context budget. Single-resource
 // responses are never trimmed; an oversized payload from getAgent etc.
 // is handled by the MCP client (spill-to-file + chunked read).
-export function trimLargeResponse(data: unknown): { text: string; note?: string } {
-    const redacted = redactSensitive(data);
-    const full = JSON.stringify(redacted, null, 2);
-    const list = findList(redacted);
+// Call logs without their per-turn `interactions`, which are most of a call log's size.
+function withoutTurnDetail(data: unknown): unknown | null {
+    const list = findList(data);
+    if (!list || !list.arr.some((r) => r && typeof r === "object" && "interactions" in r)) return null;
+    const slim = list.arr.map((r) => {
+        if (!r || typeof r !== "object") return r;
+        const { interactions: _dropped, ...rest } = r as Record<string, unknown>;
+        return rest;
+    });
+    return list.key ? { ...(data as Record<string, unknown>), [list.key]: slim } : slim;
+}
 
-    if (!list || full.length <= MAX_LIST_CHARS) return { text: full };
+export function trimLargeResponse(data: unknown): { text: string; note?: string } {
+    let redacted = redactSensitive(data);
+    let full = JSON.stringify(redacted, null, 2);
+    if (full.length <= MAX_LIST_CHARS) return { text: full };
+
+    // Turn detail goes before rows or a cut, so transcript, recording and cost always arrive.
+    const slim = withoutTurnDetail(redacted);
+    if (slim !== null) {
+        const slimText = JSON.stringify(slim, null, 2);
+        if (slimText.length <= MAX_LIST_CHARS) {
+            return {
+                text: slimText,
+                note: "[Left out per-turn detail (interactions) to fit. call_conversation has the transcript.]",
+            };
+        }
+        redacted = slim;
+        full = slimText;
+    }
+
+    const list = findList(redacted);
+    if (!list) return { text: full };
 
     const { arr, key } = list;
     let kept = arr.length;
