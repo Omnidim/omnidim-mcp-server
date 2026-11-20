@@ -18,7 +18,7 @@ const EXCLUDED_TOOLS = [
     "enhancePrompt",
     "createClonedVoice",
     // Reseller operations: admin-level, several move money, KYC ones relay
-    // identity documents. See mcp-config.yaml.
+    // identity documents. Each is `x-mcp: {hidden: ...}` in the spec.
     "listChildOrganizations",
     "addUser",
     "setUserAccessControl",

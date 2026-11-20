@@ -90,9 +90,9 @@ jobs:
             If either list is non-empty this is a change to what agents can do,
             not just a refresh. Anything added is callable by every agent using
             this server the moment it publishes, so check it belongs on this
-            surface before merging. To keep an operation off, add its
-            `operationId` to `exclude.operation_ids` in `mcp-config.yaml` with
-            a reason and regenerate.
+            surface before merging. To keep an operation off, set
+            `x-mcp: {hidden: "<reason>"}` on it in omnidim-docs
+            `openapi/omnidim.yaml`.
 
             With no exposure change this PR sets itself to auto-merge and
             lands once the required checks pass. An exposure change stays open
