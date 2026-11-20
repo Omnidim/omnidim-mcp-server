@@ -18,6 +18,7 @@
     "start": "node build/index.js",
     "build": "tsc && shx chmod 755 build/index.js",
     "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
     "test": "vitest run",
     "test:canvas": "npm run build && node tests/canvas-browser/run.mjs",
     "test:watch": "vitest",
