@@ -25,5 +25,16 @@ jobs:
           echo "${PUBLISHER_SHA256}  mcp-publisher.tar.gz" | sha256sum -c -
           tar xzf mcp-publisher.tar.gz mcp-publisher
       # The io.github.Omnidim namespace is proven by this repo's OIDC identity, so no stored token expires.
+      # npm takes minutes to list a new version, and the registry rejects a
+      # version npm does not list yet (400 "version was not found").
+      - name: Wait for npm to list this version
+        timeout-minutes: 20
+        run: |
+          pkg=$(jq -r '.packages[0].identifier' server.json)
+          ver=$(jq -r '.version' server.json)
+          until [ "$(npm view "$pkg@$ver" version 2>/dev/null)" = "$ver" ]; do
+            echo "Waiting for $pkg@$ver on npm"
+            sleep 15
+          done
       - run: ./mcp-publisher login github-oidc
       - run: ./mcp-publisher publish
