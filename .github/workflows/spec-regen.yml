@@ -58,8 +58,8 @@ jobs:
           out.write('added='+added.join(',')+'\n');
           out.write('gone='+gone.join(',')+'\n');
           out.write('title='+(added.length||gone.length
-            ? 'chore: regenerate tools (EXPOSURE CHANGE: +'+added.length+' -'+gone.length+')'
-            : 'chore: regenerate the tool catalogue from the updated spec')+'\n');
+            ? 'feat: regenerate tools (EXPOSURE CHANGE: +'+added.length+' -'+gone.length+')'
+            : 'fix: refresh tool descriptions from the updated API spec')+'\n');
           "
 
       - name: Mint an installation token
@@ -78,7 +78,7 @@ jobs:
           token: ${{ steps.token.outputs.token }}
           branch: chore/spec-regen
           delete-branch: true
-          commit-message: "chore: regenerate the tool catalogue from the updated spec"
+          commit-message: ${{ steps.tools.outputs.title }}
           title: ${{ steps.tools.outputs.title }}
           body: |
             The published OpenAPI spec changed and this regenerates the tool
@@ -94,11 +94,10 @@ jobs:
             `operationId` to `exclude.operation_ids` in `mcp-config.yaml` with
             a reason and regenerate.
 
-            Publishing is still a `v*` tag by hand.
-
             With no exposure change this PR sets itself to auto-merge and
             lands once the required checks pass. An exposure change stays open
-            for a person. Either way, publishing is still a `v*` tag by hand.
+            for a person. After it merges, the release PR picks it up, and
+            merging that release PR publishes.
 
       # No EXPOSURE CHANGE in the title means no operation appeared or
       # vanished, so no agent gained or lost a capability and there is nothing
