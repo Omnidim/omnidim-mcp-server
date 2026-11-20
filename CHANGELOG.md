@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.18.2...v0.19.0) (2026-11-20)
+
+
+### Added
+
+* add a read-only mode with OMNIDIM_READONLY=1 ([#110](https://github.com/Omnidim/omnidim-mcp-server/issues/110)) ([c32a94e](https://github.com/Omnidim/omnidim-mcp-server/commit/c32a94e2f79e975be8ce0777abc62f5147234b56))
+* add searchDocs and readDoc tools that answer from docs.omnidim.io ([#111](https://github.com/Omnidim/omnidim-mcp-server/issues/111)) ([0d6273d](https://github.com/Omnidim/omnidim-mcp-server/commit/0d6273d800b3c615c718a7b0aa420fc81890d7bc))
+* shrink large repeated schemas in tool inputs with the spec's x-mcp-brief mark ([#113](https://github.com/Omnidim/omnidim-mcp-server/issues/113)) ([838523e](https://github.com/Omnidim/omnidim-mcp-server/commit/838523e655fdddd93d6aaca5c1d53ec80867a80f))
+
+
+### Fixed
+
+* keep long call logs as valid JSON with transcript, recording and cost ([#109](https://github.com/Omnidim/omnidim-mcp-server/issues/109)) ([6f4862b](https://github.com/Omnidim/omnidim-mcp-server/commit/6f4862b748dcf1aee13e4bb9ea251e4426fde860))
+* wait for setup telemetry before exit so install events arrive ([#85](https://github.com/Omnidim/omnidim-mcp-server/issues/85)) ([707efb9](https://github.com/Omnidim/omnidim-mcp-server/commit/707efb95d935f6bbe59d6575cb07da89f9302d93))
+
 ## [0.18.2](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.18.1...v0.18.2) (2026-11-20)
 
 
