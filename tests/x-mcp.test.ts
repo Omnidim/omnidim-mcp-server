@@ -17,6 +17,13 @@ describe("x-mcp marks", () => {
     [{ title: "T", effect: "write", colour: "red" }],
     [{ hidden: "" }],
     [{ hidden: "why", title: "T" }],
+    [{ title: 5, effect: "write" }],
+    [{ hidden: null }],
+    [{ hidden: false }],
+    [{ title: "T", effect: "write", "hide-params": "user_id" }],
+    [{ title: "T", effect: "write", "hide-params": [1] }],
+    [{ title: "T", effect: "write", "open-world": 1 }],
+    [{ title: "T", effect: ["write"] }],
   ])("fails a malformed block %j", (block) => {
     expect(() => mcpMarks("op", "post", { "x-mcp": block })).toThrow("bad x-mcp on op");
   });
