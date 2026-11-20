@@ -198,6 +198,19 @@ describe("trimLargeResponse", () => {
         expect(rows.every((r: Record<string, unknown>) => !("interactions" in r))).toBe(true);
     });
 
+    it("says turn detail was dropped when rows had to go too", () => {
+        const result = trimLargeResponse({ call_log_data: Array.from({ length: 30 }, (_, i) => callLog(i)) });
+        expect(JSON.parse(result.text).call_log_data.length).toBeLessThan(30);
+        expect(result.note).toMatch(/Showing \d+ of 30 items\. Left out per-turn detail/);
+    });
+
+    it("drops turn detail from a bare call log object", () => {
+        const result = trimLargeResponse(callLog(1));
+        const row = JSON.parse(result.text);
+        expect(row.call_conversation).toBe(callLog(1).call_conversation);
+        expect(row.interactions).toBeUndefined();
+    });
+
     it("keeps turn detail when the call log fits", () => {
         const result = trimLargeResponse({ call_log_data: [callLog(1, 2)] });
         expect(JSON.parse(result.text).call_log_data[0].interactions).toHaveLength(2);
