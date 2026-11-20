@@ -384,7 +384,11 @@ src = src.replace(
   /(async function main\(\) \{\s*\n)\/\/ Set up stdio transport\s*\n(\s*try \{)/,
   `$1  if (process.argv[2] === "setup") {
     const { runSetup } = await import("./setup.js");
-    process.exit(await runSetup());
+    const code = await runSetup();
+    // setup fires its events without awaiting; exiting now would drop them (install never arrived).
+    const { flushTelemetry } = await import("./telemetry.js");
+    await flushTelemetry();
+    process.exit(code);
   }
   if (process.argv[2] === "telemetry") {
     const { runTelemetryCommand } = await import("./telemetry-cli.js");
@@ -405,21 +409,26 @@ $2`
 // Line-anchored to avoid the nested-backtick parse problem.
 src = src.replace(
   /^.*console\.error\(`\$\{SERVER_NAME\} MCP Server.*$/m,
-  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();\n    notifyUpdates(SERVER_VERSION);`
+  `    console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));\n    beginSession();\n    // Only for the stdio server: a client that closes the pipe or hangs up (not kill -9) sends no other end signal.\n    process.on('SIGHUP', cleanup);\n    process.stdin.on('end', cleanup);\n    notifyUpdates(SERVER_VERSION);`
 );
 
 // Flush the session-end event during graceful shutdown, before the generator's
 // console.error + process.exit. Best-effort: telemetry must never block shutdown.
 src = src.replace(
   /async function cleanup\(\) \{\s*\n\s*console\.error\("Shutting down MCP server\.\.\.\"\);\s*\n\s*process\.exit\(0\);\s*\n\}/,
-  `async function cleanup() {
-    try {
-        await emitSessionEnd(endSession());
-    } catch {
-        // telemetry must never block shutdown
-    }
-    console.error("Shutting down MCP server...");
-    process.exit(0);
+  `// One shutdown at a time: a SIGTERM after stdin closes must not exit before session_end is sent.
+let shuttingDown: Promise<void> | undefined;
+function cleanup(): Promise<void> {
+    shuttingDown ??= (async () => {
+        try {
+            await emitSessionEnd(endSession());
+        } catch {
+            // telemetry must never block shutdown
+        }
+        console.error("Shutting down MCP server...");
+        process.exit(0);
+    })();
+    return shuttingDown;
 }`
 );
 

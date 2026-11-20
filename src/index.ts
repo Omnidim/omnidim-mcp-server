@@ -2378,14 +2378,19 @@ async function main() {
 /**
  * Cleanup function for graceful shutdown
  */
-async function cleanup() {
-    try {
-        await emitSessionEnd(endSession());
-    } catch {
-        // telemetry must never block shutdown
-    }
-    console.error("Shutting down MCP server...");
-    process.exit(0);
+// One shutdown at a time: a SIGTERM after stdin closes must not exit before session_end is sent.
+let shuttingDown: Promise<void> | undefined;
+function cleanup(): Promise<void> {
+    shuttingDown ??= (async () => {
+        try {
+            await emitSessionEnd(endSession());
+        } catch {
+            // telemetry must never block shutdown
+        }
+        console.error("Shutting down MCP server...");
+        process.exit(0);
+    })();
+    return shuttingDown;
 }
 
 // Register signal handlers
