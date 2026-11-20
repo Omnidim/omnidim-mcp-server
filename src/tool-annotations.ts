@@ -129,7 +129,7 @@ const DESTRUCTIVE_TOOLS = new Set([
   "deleteAgent", "deleteAgentVersion", "restoreAgentVersion",
   "deleteKnowledgeBaseFile", "detachKnowledgeBaseFiles", "detachPhoneNumber",
   "cancelBulkCall", "dispatchCall", "createBulkCall", "addBulkCallContact",
-  "addBulkCallContacts", "startBulkCall", "retryBulkCall",
+  "addBulkCallContacts", "startBulkCall", "retryBulkCall", "bulkCallActions",
   "purchasePhoneNumber", "releasePhoneNumber",
   "deleteClonedVoice", "deleteWorkflow", "publishWorkflow", "activateWorkflow",
   "deactivateWorkflow", "testWorkflow", "deletePostCallAction",
@@ -144,7 +144,7 @@ const DESTRUCTIVE_TOOLS = new Set([
 const OPEN_WORLD_TOOLS = new Set([
   "testWorkflow",
   "dispatchCall", "createBulkCall", "addBulkCallContact",
-  "addBulkCallContacts", "startBulkCall", "retryBulkCall",
+  "addBulkCallContacts", "startBulkCall", "retryBulkCall", "bulkCallActions",
   "purchasePhoneNumber", "releasePhoneNumber",
   "sendWhatsappMessage", "launchWhatsappCampaign", "resumeWhatsappCampaign",
   "addWhatsappCampaignContacts", "importWhatsappNumbers", "setWhatsappCalling",
