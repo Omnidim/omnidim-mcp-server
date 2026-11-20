@@ -166,6 +166,56 @@ describe("trimLargeResponse", () => {
         expect(result.text).not.toMatch(/sk_secret_\d/);
     });
 
+    // A 20-turn call log measured 38,015 chars, 26,295 of them `interactions` (2026-11-20).
+    const callLog = (id: number, turns = 20) => ({
+        id,
+        call_conversation: "user: hello\nbot: hi there\n".repeat(60),
+        recording_url: `https://example.com/rec/${id}.mp3`,
+        call_cost: 0.42,
+        interactions: Array.from({ length: turns }, (_, t) => ({
+            interaction_sequence: t,
+            user_query: "q".repeat(300),
+            bot_response: "r".repeat(900),
+        })),
+    });
+
+    it("keeps one large call log as valid JSON with transcript, recording and cost", () => {
+        const payload = { call_log_data: [callLog(1)], total_records: 1 };
+        expect(JSON.stringify(payload, null, 2).length).toBeGreaterThan(MAX_LIST_CHARS);
+        const result = trimLargeResponse(payload);
+        const row = JSON.parse(result.text).call_log_data[0];
+        expect(row.call_conversation).toBe(payload.call_log_data[0].call_conversation);
+        expect(row.recording_url).toBe("https://example.com/rec/1.mp3");
+        expect(row.call_cost).toBe(0.42);
+        expect(row.interactions).toBeUndefined();
+        expect(result.note).toMatch(/interactions/);
+    });
+
+    it("drops turn detail from a page of call logs before dropping rows", () => {
+        const result = trimLargeResponse({ call_log_data: Array.from({ length: 10 }, (_, i) => callLog(i)) });
+        const rows = JSON.parse(result.text).call_log_data;
+        expect(rows).toHaveLength(10);
+        expect(rows.every((r: Record<string, unknown>) => !("interactions" in r))).toBe(true);
+    });
+
+    it("says turn detail was dropped when rows had to go too", () => {
+        const result = trimLargeResponse({ call_log_data: Array.from({ length: 30 }, (_, i) => callLog(i)) });
+        expect(JSON.parse(result.text).call_log_data.length).toBeLessThan(30);
+        expect(result.note).toMatch(/Showing \d+ of 30 items\. Left out per-turn detail/);
+    });
+
+    it("drops turn detail from a bare call log object", () => {
+        const result = trimLargeResponse(callLog(1));
+        const row = JSON.parse(result.text);
+        expect(row.call_conversation).toBe(callLog(1).call_conversation);
+        expect(row.interactions).toBeUndefined();
+    });
+
+    it("keeps turn detail when the call log fits", () => {
+        const result = trimLargeResponse({ call_log_data: [callLog(1, 2)] });
+        expect(JSON.parse(result.text).call_log_data[0].interactions).toHaveLength(2);
+    });
+
     it("falls back to a hard truncation when even one item exceeds the budget", () => {
         const oneHuge = [{ id: 1, body: "x".repeat(MAX_LIST_CHARS * 2) }];
         const result = trimLargeResponse(oneHuge);

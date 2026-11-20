@@ -144,15 +144,46 @@ export function findList(data: unknown): { arr: unknown[]; key: string | null } 
     return null;
 }
 
-// Trim list responses to fit a model context budget. Single-resource
-// responses are never trimmed; an oversized payload from getAgent etc.
-// is handled by the MCP client (spill-to-file + chunked read).
-export function trimLargeResponse(data: unknown): { text: string; note?: string } {
-    const redacted = redactSensitive(data);
-    const full = JSON.stringify(redacted, null, 2);
-    const list = findList(redacted);
+// Call logs without their per-turn `interactions`, which are most of a call log's size.
+function withoutTurnDetail(data: unknown): unknown | null {
+    const list = findList(data);
+    const rows = list ? list.arr : [data];
+    if (!rows.some((r) => r && typeof r === "object" && "interactions" in r)) return null;
+    const slim = rows.map((r) => {
+        if (!r || typeof r !== "object") return r;
+        const { interactions: _dropped, ...rest } = r as Record<string, unknown>;
+        return rest;
+    });
+    if (!list) return slim[0];
+    return list.key ? { ...(data as Record<string, unknown>), [list.key]: slim } : slim;
+}
 
-    if (!list || full.length <= MAX_LIST_CHARS) return { text: full };
+// Trim responses to fit a model context budget: call log turn detail first, then
+// list rows. Other single resources are never trimmed; an oversized getAgent etc.
+// is handled by the MCP client (spill-to-file + chunked read).
+
+export function trimLargeResponse(data: unknown): { text: string; note?: string } {
+    let redacted = redactSensitive(data);
+    let full = JSON.stringify(redacted, null, 2);
+    if (full.length <= MAX_LIST_CHARS) return { text: full };
+
+    // Turn detail goes before rows or a cut, so transcript, recording and cost always arrive.
+    const slim = withoutTurnDetail(redacted);
+    const dropNote = slim !== null ? " Left out per-turn detail (interactions)." : "";
+    if (slim !== null) {
+        const slimText = JSON.stringify(slim, null, 2);
+        if (slimText.length <= MAX_LIST_CHARS) {
+            return {
+                text: slimText,
+                note: "[Left out per-turn detail (interactions) to fit. call_conversation has the transcript.]",
+            };
+        }
+        redacted = slim;
+        full = slimText;
+    }
+
+    const list = findList(redacted);
+    if (!list) return { text: full };
 
     const { arr, key } = list;
     let kept = arr.length;
@@ -164,7 +195,7 @@ export function trimLargeResponse(data: unknown): { text: string; note?: string 
         if (candidate.length <= MAX_LIST_CHARS) {
             return {
                 text: candidate,
-                note: `[Showing ${kept} of ${arr.length} items. Lower pagesize, filter by name, or fetch a specific item by ID for full detail.]`,
+                note: `[Showing ${kept} of ${arr.length} items.${dropNote} Lower pagesize, filter by name, or fetch a specific item by ID for full detail.]`,
             };
         }
         kept = Math.max(1, Math.floor(kept * 0.6));
@@ -172,7 +203,7 @@ export function trimLargeResponse(data: unknown): { text: string; note?: string 
 
     return {
         text: full.slice(0, MAX_LIST_CHARS),
-        note: `[Response truncated. Full size: ${full.length} chars.]`,
+        note: `[Response truncated. Full size: ${full.length} chars.${dropNote}]`,
     };
 }
 
