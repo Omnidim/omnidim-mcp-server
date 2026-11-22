@@ -89,6 +89,14 @@ describe("generated tool catalogue", () => {
         expect(src).toContain(`export const SERVER_VERSION = "${pkg.version}"; // x-release-please-version`);
     });
 
+    it("fits the registry listing inside the registry's limits", () => {
+        const manifest = JSON.parse(readFileSync(resolve(__dirname, "../server.json"), "utf8"));
+        expect(manifest.title).toBe("OmniDimension");
+        expect(manifest.description.length).toBeLessThanOrEqual(100);
+        expect(manifest.description).toMatch(/WhatsApp/);
+        expect(manifest.icons[0]).toMatchObject({ mimeType: "image/png", sizes: ["512x512"] });
+    });
+
     it("keeps the instructions in sync with the exposed surface", () => {
         expect(src).toContain("Dispatching calls: run listPhoneNumbers first.");
         expect(src).not.toContain("Simulations: run scripted test scenarios");
