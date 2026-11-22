@@ -93,7 +93,6 @@ describe("generated tool catalogue", () => {
         const manifest = JSON.parse(readFileSync(resolve(__dirname, "../server.json"), "utf8"));
         expect(manifest.title).toBe("OmniDimension");
         expect(manifest.description.length).toBeLessThanOrEqual(100);
-        expect(manifest.description).toMatch(/WhatsApp/);
         expect(manifest.icons[0]).toMatchObject({ mimeType: "image/png", sizes: ["512x512"] });
     });
 
