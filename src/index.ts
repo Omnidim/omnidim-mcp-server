@@ -2101,7 +2101,7 @@ async function executeApiTool(
     // Security requirements use OR between array items and AND within each object
     const appliedSecurity = definition.securityRequirements?.find(req => {
         // Try each security requirement (combined with OR)
-        return Object.entries(req).every(([schemeName, scopesArray]) => {
+        return Object.entries(req).every(([schemeName]) => {
             const scheme = allSecuritySchemes[schemeName];
             if (!scheme) return false;
             
@@ -2282,7 +2282,7 @@ async function executeApiTool(
              const trimmed = trimLargeResponse(response.data);
              responseText = trimmed.text;
              if (trimmed.note) responseText += `\n\n${trimmed.note}`;
-         } catch (e) { 
+         } catch { 
              responseText = "[Stringify Error]"; 
          }
     } 
