@@ -2,7 +2,7 @@
   "name": "@omnidim-ai/mcp-server",
   "version": "0.20.0",
   "mcpName": "io.github.Omnidim/omnidim-mcp-server",
-  "description": "Official MCP server for OmniDimension. Build voice AI agents, make calls, run call campaigns and workflows, and send WhatsApp messages from any MCP client.",
+  "description": "Official MCP server for OmniDimension. Build and deploy voice AI agents, make calls, and run call campaigns, workflows and WhatsApp from any MCP client.",
   "type": "module",
   "main": "build/index.js",
   "bin": {
