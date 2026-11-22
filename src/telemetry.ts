@@ -74,7 +74,7 @@ function baseFields(): BaseFields {
 const pending = new Set<Promise<void>>();
 
 export async function flushTelemetry(): Promise<void> {
-    await Promise.allSettled([...pending]);
+    await Promise.allSettled(pending);
 }
 
 function send(event: string, extra: Record<string, unknown> = {}): Promise<void> {
@@ -160,7 +160,7 @@ export async function emitSetupClientResult(
     outcome: "installed" | "failed",
     error?: SanitizedError & { exit_code?: number },
 ): Promise<void> {
-    await send("setup_client_result", { client, outcome, ...(error ?? {}) });
+    await send("setup_client_result", { client, outcome, ...error });
 }
 
 export async function emitSetupFinished(

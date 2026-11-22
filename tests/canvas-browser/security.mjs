@@ -55,6 +55,7 @@ export default async function security({ browser, base, check }) {
     // A message from anything but the embedding chat app is ignored.
     await page.evaluate(() => {
         const sib = document.createElement("iframe");
+        // oxlint-disable-next-line no-useless-escape -- a bare </script> would end this page's own script
         sib.srcdoc = "<script>parent.frames[0].postMessage({jsonrpc:'2.0',method:'ui/notifications/tool-result',params:{content:[{type:'text',text:JSON.stringify({workflow:{id:1,name:'SPOOFED',draft:{revision:'x',nodes:[],edges:[]}}})}]}},'*')<\/script>";
         document.body.append(sib);
     });

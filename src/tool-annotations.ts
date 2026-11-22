@@ -20,7 +20,7 @@ const HAND_MARKS: Record<string, ToolAnnotations> = {
 
 // Spec tools get their marks from the spec's x-mcp block, through regen.
 export function toolAnnotations(def: { name: string; method: string }): ToolAnnotations {
-  return { ...(TOOL_MARKS[def.name] ?? HAND_MARKS[def.name] ?? {}) };
+  return { ...(TOOL_MARKS[def.name] ?? HAND_MARKS[def.name]) };
 }
 
 // OMNIDIM_READONLY=1 serves only tools that read data, so an agent cannot change the account or place a call.
@@ -29,7 +29,7 @@ export function readOnlyMode(env: Record<string, string | undefined> = process.e
 }
 
 export function keepReadOnlyTools(map: Map<string, { name: string; method: string }>): void {
-  for (const def of [...map.values()]) {
+  for (const def of map.values()) {
     if (!toolAnnotations(def).readOnlyHint) map.delete(def.name);
   }
 }

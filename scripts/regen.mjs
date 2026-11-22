@@ -342,6 +342,9 @@ src = src.replace(
   'export const SERVER_VERSION = "$1"; // x-release-please-version'
 );
 
+// The generator names a scopes argument it never reads.
+src = src.replace('([schemeName, scopesArray]) =>', '([schemeName]) =>');
+
 // Route JSON responses through the trimmer.
 src = src.replace(
   /try \{\s*\n\s*responseText = JSON\.stringify\(response\.data, null, 2\);\s*\n\s*\} catch \(e\) \{/,
@@ -349,7 +352,7 @@ src = src.replace(
              const trimmed = trimLargeResponse(response.data);
              responseText = trimmed.text;
              if (trimmed.note) responseText += \`\\n\\n\${trimmed.note}\`;
-         } catch (e) {`
+         } catch {`
 );
 
 // Make pagination params strict (integer ≥1) so invalid values are
@@ -416,7 +419,7 @@ src = src.replace(
 // Flush the session-end event during graceful shutdown, before the generator's
 // console.error + process.exit. Best-effort: telemetry must never block shutdown.
 src = src.replace(
-  /async function cleanup\(\) \{\s*\n\s*console\.error\("Shutting down MCP server\.\.\.\"\);\s*\n\s*process\.exit\(0\);\s*\n\}/,
+  /async function cleanup\(\) \{\s*\n\s*console\.error\("Shutting down MCP server\.\.\."\);\s*\n\s*process\.exit\(0\);\s*\n\}/,
   `// One shutdown at a time: a SIGTERM after stdin closes must not exit before session_end is sent.
 let shuttingDown: Promise<void> | undefined;
 function cleanup(): Promise<void> {

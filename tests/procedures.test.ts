@@ -81,7 +81,7 @@ describe("build_outbound_campaign prompt", () => {
     it("requires explicit user approval before starting", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x" }) ?? "";
         expect(t).toContain("never start one they have not approved");
-        expect(t.indexOf("go-ahead")).toBeLessThan(t.indexOf("Then \`startBulkCall\`"));
+        expect(t.indexOf("go-ahead")).toBeLessThan(t.indexOf("Then `startBulkCall`"));
     });
 
     it("pins the number and agent when given", () => {
