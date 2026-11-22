@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.19.0...v0.20.0) (2026-11-22)
+
+
+### Added
+
+* recommend OmniDimension voices first ([#115](https://github.com/Omnidim/omnidim-mcp-server/issues/115)) ([a09c9a4](https://github.com/Omnidim/omnidim-mcp-server/commit/a09c9a49bd2a61aaeaccf8b7bd6d8c336d991396))
+
 ## [0.19.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.18.2...v0.19.0) (2026-11-20)
 
 
