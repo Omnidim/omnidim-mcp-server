@@ -4,25 +4,37 @@
 [![npm downloads](https://img.shields.io/npm/dm/@omnidim-ai/mcp-server)](https://www.npmjs.com/package/@omnidim-ai/mcp-server)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
-Model Context Protocol server for [OmniDimension](https://omnidim.io). Build voice agents, give them phone numbers, place calls and run call campaigns from Claude, ChatGPT, Cursor, VS Code, or any MCP client.
+The [Model Context Protocol](https://modelcontextprotocol.io) server for [OmniDimension](https://omnidim.io). Connect Claude, ChatGPT, Cursor, VS Code or any MCP client to build and deploy voice AI agents, make calls, and run call campaigns, workflows and WhatsApp in your account.
 
 ## Connect the hosted server
 
 [![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=omnidim&config=eyJ1cmwiOiJodHRwczovL21jcC5vbW5pZGltLmlvL21jcCJ9)
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_omnidim-0098FF?logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=omnidim&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.omnidim.io%2Fmcp%22%7D)
-[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_omnidim-24bfa5?logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=omnidim&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.omnidim.io%2Fmcp%22%7D&quality=insiders)
 
 The hosted server lives at `https://mcp.omnidim.io/mcp`. You sign in with your OmniDimension account in the browser, so you need no API key.
 
+Claude Code:
+
+```bash
+claude mcp add --transport http omnidim https://mcp.omnidim.io/mcp
+```
+
+Codex:
+
+```bash
+codex mcp add omnidim --url https://mcp.omnidim.io/mcp
+```
+
 | Client | Setup |
 |---|---|
-| Claude Code | `claude mcp add --transport http omnidim https://mcp.omnidim.io/mcp` |
-| Claude Desktop, Claude.ai | [Claude guide](https://docs.omnidim.io/docs/mcp/connect/claude-desktop) |
-| Cursor | Use the button above, or the [Cursor guide](https://docs.omnidim.io/docs/mcp/connect/cursor) |
-| VS Code | Use the button above, or the [VS Code guide](https://docs.omnidim.io/docs/mcp/connect/vscode) |
+| Claude Desktop, Claude.ai | Settings, Connectors, Add custom connector, then paste `https://mcp.omnidim.io/mcp`. [Claude guide](https://docs.omnidim.io/docs/mcp/connect/claude-desktop) |
+| ChatGPT | Add `https://mcp.omnidim.io/mcp` as a custom connector. [MCP overview](https://docs.omnidim.io/docs/mcp) |
+| Claude Code | Run the command above, then `/mcp` to sign in. [Claude Code guide](https://docs.omnidim.io/docs/mcp/connect/claude-code) |
+| Codex | Run the command above, then `codex mcp login omnidim`. [Codex guide](https://docs.omnidim.io/docs/mcp/connect/codex) |
+| Cursor | The button above, or the [Cursor guide](https://docs.omnidim.io/docs/mcp/connect/cursor) |
+| VS Code | The button above, or the [VS Code guide](https://docs.omnidim.io/docs/mcp/connect/vscode) |
 | Windsurf | [Windsurf guide](https://docs.omnidim.io/docs/mcp/connect/windsurf) |
-| Codex | [Codex guide](https://docs.omnidim.io/docs/mcp/connect/codex) |
-| ChatGPT and other clients | Add `https://mcp.omnidim.io/mcp` as a custom connector. See the [MCP overview](https://docs.omnidim.io/docs/mcp) |
+| Any other MCP client | Add `https://mcp.omnidim.io/mcp` as a remote server |
 
 ## Try these prompts
 
@@ -30,9 +42,10 @@ The hosted server lives at `https://mcp.omnidim.io/mcp`. You sign in with your O
 - "Build a receptionist agent for a dental clinic that books appointments, then give it a phone number."
 - "Call +15550100 with my receptionist agent and show me the transcript when the call ends."
 - "Start a campaign that calls the contacts in this CSV, 5 calls at a time, between 10 AM and 6 PM."
+- "After each call, sort it into booked, callback or not interested, and post the booked ones to Slack."
 - "Which calls failed yesterday, and why?"
 
-The server also ships prompts for common jobs (`provision_agent`, `build_outbound_campaign`, `build_workflow`, `audit_calls`, `restore_agent_version`) and guide resources under `omnidim://guide/`.
+The server also ships prompts for common jobs (`provision_agent`, `build_outbound_campaign`, `build_workflow`, `audit_calls`, `restore_agent_version`) and guide resources under `omnidim://guide/` and `omnidim://reference/`.
 
 ## Run it locally with an API key
 
@@ -89,40 +102,40 @@ Get your API key from [omnidim.io/api-management](https://omnidim.io/api-managem
 
 Each tool maps to one endpoint of the [OmniDimension API](https://docs.omnidim.io).
 
-| Group | Tools |
+| Area | What your agent can do | Tools |
+|---|---|---|
+| Agents | Build, edit and version voice agents, and set what happens after each call | 15 |
+| Calls | Place a call and read call logs and transcripts | 3 |
+| Call campaigns | Create, start, pace and retry bulk call campaigns | 17 |
+| Phone numbers | Search, buy, attach and import numbers (Twilio, Exotel, SIP) | 10 |
+| Workflows | Build, test and publish post-call workflows | 15 |
+| Knowledge base | Upload files and attach them to agents | 6 |
+| Voices and providers | Pick voices, models and providers, and manage cloned voices | 12 |
+| Integrations | Connect agents to your APIs and apps | 5 |
+| WhatsApp | Numbers, templates, conversations and campaigns | 27 |
+| Docs | Search and read [docs.omnidim.io](https://docs.omnidim.io), with no access to your account | 2 |
+| Account | Check your balance and start a web call session | 2 |
+
+<details>
+<summary>All tool names</summary>
+
+| Area | Tools |
 |---|---|
 | Agents | `listAgents`, `createAgent`, `getAgent`, `updateAgent`, `deleteAgent`, `listPostCallActions`, `addPostCallAction`, `deletePostCallAction`, `updatePostCallAction`, `listAgentVersions`, `createAgentVersion`, `deleteAgentVersion`, `renameAgentVersion`, `diffAgentVersion`, `restoreAgentVersion` |
 | Calls | `dispatchCall`, `listCallLogs`, `getCallLog` |
-| Bulk calls | `fetchBulkCalls`, `createBulkCall`, `addBulkCallContact`, `getBulkCall`, `bulkCallActions`, `cancelBulkCall`, `listBulkCallLines`, `listBulkCallNumbers`, `addBulkCallNumber`, `setBulkCallNumberActive`, `addBulkCallContacts`, `startBulkCall`, `setBulkCallConcurrency`, `setBulkCallRotation`, `retryBulkCall`, `setBulkCallDailyTimeControl`, `getBulkCallLiveStatus` |
+| Call campaigns | `fetchBulkCalls`, `createBulkCall`, `addBulkCallContact`, `getBulkCall`, `bulkCallActions`, `cancelBulkCall`, `listBulkCallLines`, `listBulkCallNumbers`, `addBulkCallNumber`, `setBulkCallNumberActive`, `addBulkCallContacts`, `startBulkCall`, `setBulkCallConcurrency`, `setBulkCallRotation`, `retryBulkCall`, `setBulkCallDailyTimeControl`, `getBulkCallLiveStatus` |
 | Phone numbers | `listPhoneNumbers`, `searchPhoneNumbers`, `purchasePhoneNumber`, `releasePhoneNumber`, `setPhoneNumberAutoRenew`, `attachPhoneNumber`, `detachPhoneNumber`, `importTwilioNumber`, `importExotelNumber`, `importSipTrunk` |
-| WhatsApp | `listWhatsappNumbers`, `importWhatsappNumbers`, `previewWhatsappNumbers`, `getWhatsappNumber`, `listWhatsappTemplates`, `syncWhatsappTemplates`, `getWhatsappCalling`, `setWhatsappCalling`, `listWhatsappConversations`, `getWhatsappConversation`, `takeOverWhatsappConversation`, `handBackWhatsappConversation`, `listWhatsappMessages`, `sendWhatsappMessage`, `getWhatsappMessage`, `listWhatsappOptOuts`, `addWhatsappOptOut`, `liftWhatsappOptOut`, `listWhatsappCampaigns`, `createWhatsappCampaign`, `getWhatsappCampaign`, `listWhatsappCampaignContacts`, `addWhatsappCampaignContacts`, `launchWhatsappCampaign`, `pauseWhatsappCampaign`, `resumeWhatsappCampaign`, `cancelWhatsappCampaign` |
+| Workflows | `listWorkflowNodeTypes`, `getWorkflowNodeType`, `listWorkflowFieldOptions`, `listWorkflows`, `createWorkflow`, `getWorkflow`, `deleteWorkflow`, `editWorkflow`, `validateWorkflow`, `publishWorkflow`, `activateWorkflow`, `deactivateWorkflow`, `testWorkflow`, `getWorkflowExecution`, `showWorkflow` |
 | Knowledge base | `listKnowledgeBaseFiles`, `canUploadFile`, `uploadKnowledgeBaseFile`, `attachKnowledgeBaseFiles`, `detachKnowledgeBaseFiles`, `deleteKnowledgeBaseFile` |
-| Workflows | `listWorkflowNodeTypes`, `getWorkflowNodeType`, `listWorkflowFieldOptions`, `listWorkflows`, `createWorkflow`, `getWorkflow`, `deleteWorkflow`, `editWorkflow`, `validateWorkflow`, `publishWorkflow`, `activateWorkflow`, `deactivateWorkflow`, `testWorkflow`, `getWorkflowExecution` |
-| Voice cloning | `listClonedVoices`, `getClonedVoice`, `deleteClonedVoice`, `updateClonedVoice`, `getClonedVoiceSample`, `regenerateClonedVoiceSample` |
+| Voices and providers | `listLLMProviders`, `listVoices`, `listSTTProviders`, `listTTSProviders`, `listAllProviders`, `getVoice`, `listClonedVoices`, `getClonedVoice`, `deleteClonedVoice`, `updateClonedVoice`, `getClonedVoiceSample`, `regenerateClonedVoiceSample` |
 | Integrations | `listIntegrations`, `createCustomApiIntegration`, `listAgentIntegrations`, `attachAgentIntegration`, `detachAgentIntegration` |
-| Providers | `listLLMProviders`, `listVoices`, `listSTTProviders`, `listTTSProviders`, `listAllProviders`, `getVoice` |
-| Account | `getAccountBalance` |
-| Sessions | `createSession` |
+| WhatsApp | `listWhatsappNumbers`, `importWhatsappNumbers`, `previewWhatsappNumbers`, `getWhatsappNumber`, `listWhatsappTemplates`, `syncWhatsappTemplates`, `getWhatsappCalling`, `setWhatsappCalling`, `listWhatsappConversations`, `getWhatsappConversation`, `takeOverWhatsappConversation`, `handBackWhatsappConversation`, `listWhatsappMessages`, `sendWhatsappMessage`, `getWhatsappMessage`, `listWhatsappOptOuts`, `addWhatsappOptOut`, `liftWhatsappOptOut`, `listWhatsappCampaigns`, `createWhatsappCampaign`, `getWhatsappCampaign`, `listWhatsappCampaignContacts`, `addWhatsappCampaignContacts`, `launchWhatsappCampaign`, `pauseWhatsappCampaign`, `resumeWhatsappCampaign`, `cancelWhatsappCampaign` |
+| Docs | `searchDocs`, `readDoc` |
+| Account | `getAccountBalance`, `createSession` |
 
-## Docs tools
+</details>
 
-`searchDocs` and `readDoc` answer from [docs.omnidim.io](https://docs.omnidim.io), so an agent can look up a field or an error instead of guessing. They read the public docs only and never send your API key there.
-
-## Local development
-
-```bash
-git clone https://github.com/Omnidim/omnidim-mcp-server
-cd omnidim-mcp-server
-npm install
-npm run build
-OMNIDIM_API_KEY=sk_... npm start
-```
-
-Inspect tools and call them interactively:
-
-```bash
-OMNIDIM_API_KEY=sk_... npx @modelcontextprotocol/inspector node build/index.js
-```
+The docs tools read the public docs only and never send your API key there.
 
 ## Telemetry
 
