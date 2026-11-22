@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.1](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.20.0...v0.20.1) (2026-11-22)
+
+
+### Fixed
+
+* lead the registry listing with voice AI agents, calls and workflows ([#120](https://github.com/Omnidim/omnidim-mcp-server/issues/120)) ([e0368f5](https://github.com/Omnidim/omnidim-mcp-server/commit/e0368f521879083cf987347207f1a80eef049df4))
+
 ## [0.20.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.19.0...v0.20.0) (2026-11-22)
 
 
