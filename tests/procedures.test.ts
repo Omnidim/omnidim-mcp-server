@@ -38,7 +38,7 @@ describe("provision_agent prompt", () => {
         expect(t).toContain("book dental appointments");
         expect(t).toContain("createAgent");
         expect(t).toContain("attachPhoneNumber");
-        expect(t).toContain("deepgram_stream");
+        expect(t).toContain('"transcriber": { "provider": "soniox" }');
         expect(t).toContain("requestBody");
     });
 
@@ -119,19 +119,40 @@ describe("reference resources", () => {
         expect(RESOURCE_URIS).toContain("omnidim://reference/agent-config");
     });
 
-    it("recommends providers by language using the createAgent enum values", () => {
+    it("recommends providers by language", () => {
         const t = getResourceText("omnidim://reference/recommended-stack") ?? "";
-        expect(t).toContain("azure_stream");
         expect(t).toContain("soniox");
         expect(t).toContain("sarvam");
         expect(t).toContain("cartesia");
         expect(t).toContain("gpt-4.1-mini");
     });
 
-    it("gives a copy-ready createAgent example with the requestBody wrapper", () => {
-        const t = getResourceText("omnidim://reference/agent-config") ?? "";
-        expect(t).toContain("requestBody");
-        expect(t).toContain('"transcriber": { "provider": "azure_stream" }');
+    // New accounts lack Azure STT and ElevenLabs TTS, so steering to them fails the agent save.
+    it("steers to models every account has", () => {
+        const cfg = getResourceText("omnidim://reference/agent-config") ?? "";
+        expect(cfg).toContain("requestBody");
+        expect(cfg).toContain('"transcriber": { "provider": "soniox" }');
+        expect(cfg).not.toContain("azure_stream");
+        expect(cfg).not.toContain('"provider": "eleven_labs"');
+        const provision = getPromptText("provision_agent", { purpose: "support" });
+        expect(provision).not.toContain('"provider": "eleven_labs"');
+        expect(provision).toContain('"provider": "soniox"');
+    });
+
+    // OmniDimension voices are our top picks per language. A Cartesia `search` never finds
+    // them, so the only way in is listVoices provider=featured.
+    it("leads with OmniDimension voices", () => {
+        const texts = [
+            getResourceText("omnidim://guide/routing") ?? "",
+            getResourceText("omnidim://reference/recommended-stack") ?? "",
+            getResourceText("omnidim://reference/voices") ?? "",
+            getPromptText("provision_agent", { purpose: "support" }),
+        ];
+        for (const t of texts) {
+            expect(t).toContain("OmniDimension voices");
+            expect(t).toContain("`provider=featured`");
+        }
+        expect(getResourceText("omnidim://reference/voices")).not.toContain("eleven_labs");
     });
 
     it("never exposes internal infra in any customer-facing resource", () => {

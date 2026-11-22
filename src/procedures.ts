@@ -65,7 +65,14 @@ give it a **phone number** and optionally a **knowledge base**, then place
 3. **The agent's numeric \`voice\` field is not used for speech.** It can read
    back as \`false\` on an API-created agent; that is normal. The call handler
    uses \`voice_external_id\` + \`voice_provider\`.
-4. **Set a transcriber** (e.g. \`deepgram_stream\` / \`nova-3\` / \`en-US\`).
+4. **Use the platform defaults:** transcriber \`soniox\`, one of the
+   OmniDimension voices, model \`gpt-4.1-mini\`. Pick another provider only when
+   the user names one. OmniDimension voices are our most recommended voices:
+   picked by our team for each language and tested on real calls. List them
+   with \`listVoices\` \`provider=featured\`, best first, and save one as
+   \`voice.provider\` = its \`service\` (\`cartesia\`) with its \`name\` as
+   \`voice_id\`. A Cartesia \`search\` does not find them. If none fits the
+   language or tone, pick another \`cartesia\` voice.
 5. **\`dispatchCall\` returning \`success: true\` does NOT mean a call
    connected.** It means the request was accepted. Proof of a real call is a
    resulting entry in \`listCallLogs\` whose \`getCallLog\` shows a non-empty
@@ -98,27 +105,37 @@ production, grouped by the language your callers speak. Use \`listSTTProviders\`
 
 - Default: \`gpt-4.1-mini\` — fast and accurate across languages, a good first
   choice for almost any agent.
-- Alternatives: \`gemini-2.5-flash\`, \`gpt-4o\` (premium), \`gpt-4.1-nano\` (lighter).
+- Alternatives: any other \`name\` from \`listLLMProviders\`, which lists only the
+  models your organization can use.
+
+## Voice
+
+- Default: one of the OmniDimension voices, our most recommended voices. Our
+  team picks them for each language and tests them on real calls. List them
+  with \`listVoices\` \`provider=featured\`, best first, and save one under its
+  \`service\` (\`cartesia\`). See \`omnidim://reference/voices\`.
 
 ## By caller language
 
-- **Indian English (en-IN):** transcriber \`azure_stream\`; voice \`cartesia\`
-  (default), \`eleven_labs\`, or \`google\`.
+- **Indian English (en-IN):** transcriber \`soniox\`; an OmniDimension voice
+  for English (India).
 - **Hindi / Hinglish (mixed Hindi and English):** transcriber \`soniox\`
-  (handles code-mixed speech in one stream); voice \`cartesia\` or \`eleven_labs\`.
-- **Other Indian languages (Telugu, Bengali, etc.):** transcriber \`soniox\` or
-  \`sarvam\` (tuned for Indian languages); voice \`cartesia\` or \`sarvam\`.
-- **US / UK English:** transcriber \`azure_stream\` or \`deepgram_stream\`; voice
-  \`cartesia\` or \`eleven_labs\`.
+  (handles code-mixed speech in one stream); an OmniDimension voice for Hindi.
+- **Other Indian languages (Tamil, Telugu, Marathi, Bengali, Gujarati,
+  Kannada, Malayalam, Punjabi):** transcriber \`soniox\`, or \`sarvam\` (tuned for
+  Indian languages); an OmniDimension voice for that language.
+- **US English:** transcriber \`soniox\` or \`deepgram_stream\`; an OmniDimension
+  voice for English (American).
+- **No OmniDimension voice for the language:** another \`cartesia\` voice.
 
 ## Field notes
 
-- \`transcriber.provider\` is one of \`deepgram_stream\`, \`azure_stream\`,
-  \`soniox\`, \`sarvam\`, \`cartesia\`. \`deepgram_stream\` also needs a \`model\`
-  (\`nova-3\` or \`nova-2\`); the others do not.
-- \`voice.provider\` is one of \`cartesia\`, \`eleven_labs\`, \`google\`,
-  \`sarvam\`. \`cartesia\` voices need a \`model\` such as \`sonic-3.5\`; for
-  \`eleven_labs\` the model is implied by the voice.
+- \`transcriber.provider\` is a \`name\` from \`listSTTProviders\`, which lists only
+  the transcribers your organization can use. \`deepgram_stream\` also needs a
+  \`model\` (\`nova-3\` or \`nova-2\`); the others do not.
+- \`voice.provider\` is the \`service\` of a voice from \`listVoices\`, which lists
+  only voices your organization can use. Send only \`provider\` and \`voice_id\`:
+  the platform picks the voice model.
 
 ## Responsiveness
 
@@ -127,26 +144,34 @@ production, grouped by the language your callers speak. Use \`listSTTProviders\`
   \`omnidim://reference/voices\`).
 `;
 
-// How to choose a voice, with the synthesizable-voice gotcha and per-provider notes.
+// How to choose a voice: OmniDimension voices first, then other Cartesia voices.
 const VOICES_GUIDE = `# Choosing a voice
 
-\`listVoices\` returns the catalog. Use a voice's \`name\` field as the
-\`voice_id\` you pass to \`createAgent\`. Quality varies by language and not every
-voice synthesizes cleanly, so always place a short test call and listen before
-launch.
+\`listVoices\` returns only the voices your organization can use. Use a voice's
+\`name\` field as the \`voice_id\` and its \`service\` as the \`voice.provider\` you
+pass to \`createAgent\`.
 
-Filter \`listVoices\` by \`provider\` (\`cartesia\`, \`eleven_labs\`, \`google\`,
-\`sarvam\`). ElevenLabs also supports \`language\`, \`accent\`, and \`gender\`.
+## Start with OmniDimension voices
 
-By provider:
+OmniDimension voices are our most recommended voices. Our team picks them for
+each language and tests them on real calls. Use one unless the user asks for
+something else.
 
-- **\`cartesia\`** — low-latency multilingual voices; the platform default. Pass a
-  \`model\` such as \`sonic-3.5\`. Example voice_id
-  \`bf0a246a-8642-498a-9950-80c35e9276b5\` ("Sophie", English female).
-- **\`eleven_labs\`** — premium, expressive voices; the model is implied by the
-  voice. Example voice_id \`JBFqnCBsd6RMkjVDRZzb\` ("George").
-- **\`sarvam\`** — natural prosody for Indian languages.
-- **\`google\`** — broad language coverage.
+- List them with \`listVoices\` \`provider=featured\`. They come back best first.
+- They cover English (India), English (American), Hindi, Tamil, Telugu,
+  Marathi, Bengali, Gujarati, Kannada, Malayalam and Punjabi.
+- Each one runs on Cartesia: save it as \`voice.provider\` \`cartesia\` with its
+  \`name\` as \`voice_id\`.
+- A Cartesia \`search\` does not find them. Only \`provider=featured\` lists them.
+
+Example: Aadya, English (India) and Hindi, voice_id
+\`b521b304-7672-4cf9-9a34-b4eb1df1bde0\`.
+
+## If none fits
+
+Pick another \`cartesia\` voice. \`listVoices\` \`provider=cartesia\` filters by
+\`search\`, \`language\`, \`accent\` and \`gender\`. Not every catalog voice
+synthesizes cleanly, so place a short test call and listen before launch.
 `;
 
 // The createAgent field shape with two complete, copy-ready examples.
@@ -161,8 +186,8 @@ routing guide). The fields inside:
   agent's instructions.
 - \`call_type\` — "Incoming" or "Outgoing".
 - \`model\` — \`{ model, temperature? }\`, e.g. \`{ "model": "gpt-4.1-mini" }\`.
-- \`voice\` — \`{ provider, voice_id, model? }\`. \`model\` (e.g. \`sonic-3.5\`)
-  is only needed for \`cartesia\`.
+- \`voice\` — \`{ provider, voice_id }\`. Start with an OmniDimension voice
+  (\`listVoices\` \`provider=featured\`); its \`service\` is the \`provider\`.
 - \`transcriber\` — \`{ provider, model?, language? }\`. \`model\` (\`nova-3\` /
   \`nova-2\`) is only needed for \`deepgram_stream\`.
 
@@ -177,8 +202,8 @@ routing guide). The fields inside:
     ],
     "call_type": "Incoming",
     "model": { "model": "gpt-4.1-mini" },
-    "voice": { "provider": "cartesia", "model": "sonic-3.5", "voice_id": "bf0a246a-8642-498a-9950-80c35e9276b5" },
-    "transcriber": { "provider": "azure_stream" }
+    "voice": { "provider": "cartesia", "voice_id": "b521b304-7672-4cf9-9a34-b4eb1df1bde0" },
+    "transcriber": { "provider": "soniox" }
   }
 }
 
@@ -193,7 +218,7 @@ routing guide). The fields inside:
     ],
     "call_type": "Outgoing",
     "model": { "model": "gpt-4.1-mini" },
-    "voice": { "provider": "cartesia", "model": "sonic-3.5", "voice_id": "<pick one from listVoices>" },
+    "voice": { "provider": "cartesia", "voice_id": "<a Hindi voice from listVoices provider=featured>" },
     "transcriber": { "provider": "soniox" }
   }
 }
@@ -593,7 +618,7 @@ const RESOURCES: ResourceDef[] = [
     {
         uri: "omnidim://reference/voices",
         name: "Choosing a voice",
-        description: "How to pick a voice from listVoices (use the name as voice_id), per-provider notes, and the verify-on-a-test-call rule.",
+        description: "Start with OmniDimension voices (listVoices provider=featured), our most recommended; how to save one, and what to pick when none fits.",
         mimeType: "text/markdown",
         text: VOICES_GUIDE,
     },
@@ -683,7 +708,7 @@ Read the \`omnidim://guide/workflows\` resource first. It explains triggers, out
             const purpose = a.purpose || "(describe the agent's job)";
             const voiceLine = a.voice_id
                 ? `Use voice_id "${a.voice_id}" (the \`name\` from listVoices).`
-                : `Call \`listVoices\` and pick a premade voice; use its \`name\` as voice_id. Remember not every listed voice synthesizes, so verify audio on the test call.`;
+                : `Start with the OmniDimension voices, our most recommended: call \`listVoices\` with \`provider=featured\` and pick the first one that speaks the caller's language. Use its \`name\` as voice_id and its \`service\` (\`cartesia\`) as the voice provider. Verify audio on the test call.`;
             const testLine = a.test_number
                 ? `5. Place a verification call with \`dispatchCall\` { requestBody: { agent_id, to_number: "${a.test_number}" } } (omit from_number_id to use the default outbound number). Capture the returned requestId.
 6. Poll \`listCallLogs\` { pagesize: 1 } until a new row appears for ${a.test_number}, then \`getCallLog\` on its id. The call is verified ONLY if \`call_conversation\` is non-empty (the agent actually spoke). A successful dispatch response alone is not proof.`
@@ -703,8 +728,8 @@ Follow these steps in order. Each write tool wraps its payload in \`requestBody\
        "context_breakdown": [ { "title": "Purpose", "body": "<the agent's instructions, derived from the purpose above>" } ],
        "call_type": "Outgoing",
        "model": { "model": "gpt-4.1-mini", "temperature": 0.5 },
-       "voice": { "provider": "eleven_labs", "voice_id": "<voice name>" },
-       "transcriber": { "provider": "deepgram_stream", "model": "nova-3", "language": "en-US" }
+       "voice": { "provider": "cartesia", "voice_id": "<name from listVoices provider=featured>" },
+       "transcriber": { "provider": "soniox" }
      }
    }
    Capture the returned \`id\` as agent_id. (\`status\` is always "Completed"; it is not a build signal.)
