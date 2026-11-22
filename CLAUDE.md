@@ -27,4 +27,4 @@ The npm-distributed Model Context Protocol server for OmniDimension. Users insta
 Do not edit `CHANGELOG.md` or any version number by hand. release-please writes both from PR titles.
 
 - PRs are squash-merged, so the PR title becomes the commit and the changelog line. Write it as a conventional commit that a user can read: `feat: ...` lands under Added, `fix: ...` under Fixed, `perf: ...` under Changed. `ci`, `test`, `build`, `docs` and `chore` stay out of the changelog. The `pr-title` check rejects other formats.
-- After each merge to `main`, release-please updates one open release PR with the next version and changelog. Merging it tags the release, publishes to npm, and updates the MCP Registry. A member of the approvers team merges it.
+- After each merge to `main`, release-please updates one open release PR with the next version and changelog. Merging it tags the release, publishes to npm, and updates the MCP Registry. A member of the public-release-approvers team (Ryu, Kevin) approves and merges it.
