@@ -5,7 +5,7 @@
 import { readApiKey } from "./credentials.js";
 import { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";
 import { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";
-import { registerProcedures } from "./procedures.js";
+import { READ_GUIDE_INSTRUCTION, addGuideTool, callGuideTool, isGuideTool, registerProcedures } from "./procedures.js";
 import { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";
 import { addShowWorkflow, toolMeta } from "./workflow-canvas.js";
 import { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";
@@ -73,7 +73,9 @@ Conventions:
 - For details on one item, call get<Resource>(id) after listing.
 - Dispatching calls: run listPhoneNumbers first. If the account has numbers, pass the chosen one as from_number_id. If it has none, omit from_number_id and the platform's default number is used. Never guess a from_number_id.
 - Configure OMNIDIM_API_KEY in your MCP client config to authenticate.
-- API reference: https://docs.omnidim.io`;
+- API reference: https://docs.omnidim.io
+
+${READ_GUIDE_INSTRUCTION}`;
 
 const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
@@ -1880,6 +1882,7 @@ or already-canceled campaign cannot be canceled.
 ]);
 addShowWorkflow(toolDefinitionMap);
 addDocsTools(toolDefinitionMap);
+addGuideTool(toolDefinitionMap);
 if (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);
 
 /**
@@ -1914,6 +1917,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
     return { content: [{ type: "text", text: `Error: Unknown tool requested: ${toolName}` }] };
   }
   if (isDocsTool(toolName)) return await callDocsTool(toolName, toolArgs ?? {});
+  if (isGuideTool(toolName)) return callGuideTool(toolArgs ?? {});
   return await executeApiTool(toolName, toolDefinition, toolArgs ?? {}, securitySchemes);
 });
 

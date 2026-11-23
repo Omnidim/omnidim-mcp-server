@@ -4,8 +4,12 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+    GUIDE_NAMES,
     PROMPT_NAMES,
+    READ_GUIDE_INSTRUCTION,
+    REQUEST_BODY_RULE,
     RESOURCE_URIS,
+    callGuideTool,
     getPromptText,
     getResourceText,
 } from "../src/procedures.js";
@@ -38,7 +42,7 @@ describe("provision_agent prompt", () => {
         expect(t).toContain("book dental appointments");
         expect(t).toContain("createAgent");
         expect(t).toContain("attachPhoneNumber");
-        expect(t).toContain('"transcriber": { "provider": "soniox" }');
+        expect(t).toContain('"transcriber": { "provider": "soniox"');
         expect(t).toContain("requestBody");
     });
 
@@ -56,8 +60,8 @@ describe("audit_calls prompt", () => {
         const t = getPromptText("audit_calls", { focus: "why are calls failing", agent_id: "123", call_status: "failed" }) ?? "";
         expect(t).toContain("why are calls failing");
         expect(t).toContain("listCallLogs");
-        expect(t).toContain('"agentid": 123');
-        expect(t).toContain('"call_status": "failed"');
+        expect(t).toContain("- agent_id: 123");
+        expect(t).toContain("- call_status: failed");
         expect(t).toContain("getCallLog");
     });
 
@@ -86,8 +90,8 @@ describe("build_outbound_campaign prompt", () => {
 
     it("pins the number and agent when given", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x", agent_id: "42", phone_number_id: "177" }) ?? "";
-        expect(t).toContain('phone_number_id "177"');
-        expect(t).toContain("bot_id 42");
+        expect(t).toContain("- phone_number_id: 177");
+        expect(t).toContain("- agent_id: 42");
     });
 
     it("teaches the concurrency arithmetic and the timezone trap", () => {
@@ -119,12 +123,10 @@ describe("reference resources", () => {
         expect(RESOURCE_URIS).toContain("omnidim://reference/agent-config");
     });
 
-    it("recommends providers by language", () => {
+    it("recommends only the default providers", () => {
         const t = getResourceText("omnidim://reference/recommended-stack") ?? "";
-        expect(t).toContain("soniox");
-        expect(t).toContain("sarvam");
-        expect(t).toContain("cartesia");
-        expect(t).toContain("gpt-4.1-mini");
+        for (const name of ["soniox", "cartesia", "gpt-4.1-mini"]) expect(t).toContain(name);
+        for (const name of ["sarvam", "deepgram", "smallest", "eleven_labs"]) expect(t.toLowerCase()).not.toContain(name);
     });
 
     // New accounts lack Azure STT and ElevenLabs TTS, so steering to them fails the agent save.
@@ -212,5 +214,27 @@ describe("reseller client selection", () => {
     it("exposes no user_id on any tool", () => {
         const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
         expect(src).not.toContain("user_id");
+    });
+});
+
+describe("readGuide", () => {
+    it("serves every playbook and guide with the requestBody rule on top", () => {
+        for (const name of GUIDE_NAMES) {
+            const r = callGuideTool({ name });
+            expect(r.isError).toBeUndefined();
+            expect(r.content[0].text.startsWith(REQUEST_BODY_RULE)).toBe(true);
+        }
+        expect(GUIDE_NAMES).toContain("design_agent");
+        expect(GUIDE_NAMES).toContain("omnidim://guide/agent-prompt");
+    });
+
+    it("refuses an unknown name and lists the real ones", () => {
+        const r = callGuideTool({ name: "nope" });
+        expect(r.isError).toBe(true);
+        expect(r.content[0].text).toContain("provision_agent");
+    });
+
+    it("is named in the server instructions with every playbook", () => {
+        for (const name of PROMPT_NAMES) expect(READ_GUIDE_INSTRUCTION).toContain(name);
     });
 });
