@@ -240,3 +240,20 @@ describe("requestIdNote", () => {
         expect(requestIdNote(undefined)).toBe("");
     });
 });
+
+describe("trimLargeResponse paging", () => {
+    it("never hands back a cursor that skips the rows it cut", () => {
+        const rows = Array.from({ length: 150 }, (_, i) => ({ id: i, custom_variables: { note: "x".repeat(2000) } }));
+        const result = trimLargeResponse({ records: rows, has_more: true, next_cursor: "past-row-150" });
+        const data = JSON.parse(result.text);
+        expect(data.records.length).toBeLessThan(150);
+        expect(data).not.toHaveProperty("next_cursor");
+        expect(data).not.toHaveProperty("has_more");
+        expect(result.note).toContain(`pagesize ${data.records.length}`);
+    });
+
+    it("keeps the cursor on a page that fits", () => {
+        const result = trimLargeResponse({ records: [{ id: 1 }], has_more: true, next_cursor: "abc" });
+        expect(JSON.parse(result.text).next_cursor).toBe("abc");
+    });
+});
