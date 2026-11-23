@@ -64,9 +64,9 @@ describe("audit_calls prompt", () => {
         expect(t).toContain("getCallLog");
     });
 
-    it("keeps a small page size to avoid truncation", () => {
+    it("scans with short rows to avoid truncation", () => {
         const t = getPromptText("audit_calls", { focus: "summarize today" }) ?? "";
-        expect(t).toContain('"pagesize": 3');
+        expect(t).toContain('"include_details": false');
     });
 });
 
@@ -97,7 +97,7 @@ describe("build_outbound_campaign prompt", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x" }) ?? "";
         expect(t).toContain("3600 / average call seconds");
         expect(t).toContain("daily_stop_timezone");
-        expect(t).toContain("agent's own `timezone` field");
+        expect(t).toContain("agent's own `timezone`");
     });
 });
 
