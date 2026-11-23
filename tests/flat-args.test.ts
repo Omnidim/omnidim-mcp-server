@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { flatInputSchema, nestBodyArgs } from "../src/flat-args.js";
 import { buildToolSchema } from "../src/tool-schema.js";
 
-const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
+const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8").replace(/\r\n/g, "\n");
 
 function tool(name: string) {
     const start = src.indexOf(`  ["${name}", {`);
