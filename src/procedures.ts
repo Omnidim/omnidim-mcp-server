@@ -10,18 +10,14 @@ import generated from "./playbooks.generated.js";
 import { LEGACY_CANVAS_URI, WORKFLOW_CANVAS_HTML, WORKFLOW_CANVAS_URI } from "./workflow-canvas.js";
 
 interface PromptArg { name: string; description: string; required?: boolean; }
-interface PlaybookDef { name: string; description: string; arguments: PromptArg[]; text: string; }
+interface Variant { given: string[]; text: string; }
+interface PlaybookDef { name: string; description: string; arguments: PromptArg[]; variants: Variant[]; }
 interface ResourceDef { uri: string; name: string; description: string; mimeType: string; text: string; }
-
-export const REQUEST_BODY_RULE =
-    "On this server every write tool takes its body inside `requestBody`. Path, query and header fields, " +
-    "such as `agent_id`, `pageno` and `Idempotency-Key`, stay at the top level. Where this text shows " +
-    "`updateAgent` { agent_id, welcome_message }, send `updateAgent` { agent_id, requestBody: { welcome_message } }.";
 
 const PLAYBOOKS: PlaybookDef[] = generated.playbooks;
 
 const RESOURCES: ResourceDef[] = [
-    ...generated.guides.map((g) => ({ ...g, text: `${REQUEST_BODY_RULE}\n\n${g.text}` })),
+    ...generated.guides,
     {
         uri: WORKFLOW_CANVAS_URI,
         name: "Workflow canvas",
@@ -31,16 +27,13 @@ const RESOURCES: ResourceDef[] = [
     },
 ];
 
-function givenBlock(args: Record<string, string>): string {
-    const given = Object.entries(args).filter(([, v]) => v);
-    if (!given.length) return "";
-    const lines = given.map(([k, v]) => `- ${k}: ${v}`).join("\n");
-    return `Given by the user (these override any line below that says a value was not given):\n${lines}\n\n`;
-}
-
 export function getPromptText(name: string, args: Record<string, string> = {}): string | null {
     const p = PLAYBOOKS.find((x) => x.name === name);
-    return p ? `${REQUEST_BODY_RULE}\n\n${givenBlock(args)}${p.text}` : null;
+    if (!p) return null;
+    const given = p.arguments.map((a) => a.name).filter((a) => args[a]).sort();
+    const variant = p.variants.find((v) => v.given.join() === given.join());
+    if (!variant) return null;
+    return given.reduce((text, a) => text.replaceAll(`\u27e6${a}\u27e7`, args[a]), variant.text);
 }
 function findResource(uri: string): ResourceDef | undefined {
     const current = uri === LEGACY_CANVAS_URI ? WORKFLOW_CANVAS_URI : uri;

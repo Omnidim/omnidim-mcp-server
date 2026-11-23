@@ -7,7 +7,6 @@ import {
     GUIDE_NAMES,
     PROMPT_NAMES,
     READ_GUIDE_INSTRUCTION,
-    REQUEST_BODY_RULE,
     RESOURCE_URIS,
     callGuideTool,
     getPromptText,
@@ -30,7 +29,7 @@ describe("procedure layer registry", () => {
 describe("routing guide resource", () => {
     const text = getResourceText("omnidim://guide/routing") ?? "";
     it("documents the proven gotchas", () => {
-        expect(text).toContain("requestBody");
+        expect(text).toContain("in a `requestBody` object");
         expect(text).toContain("voice_id");
         expect(text).toMatch(/does NOT mean a call\s*\n?\s*connected/);
     });
@@ -43,7 +42,7 @@ describe("provision_agent prompt", () => {
         expect(t).toContain("createAgent");
         expect(t).toContain("attachPhoneNumber");
         expect(t).toContain('"transcriber": { "provider": "soniox"');
-        expect(t).toContain("requestBody");
+        expect(t).toContain("flat top-level arguments (no `requestBody` wrapper)");
     });
 
     it("adds the verification call only when a test_number is given", () => {
@@ -60,8 +59,8 @@ describe("audit_calls prompt", () => {
         const t = getPromptText("audit_calls", { focus: "why are calls failing", agent_id: "123", call_status: "failed" }) ?? "";
         expect(t).toContain("why are calls failing");
         expect(t).toContain("listCallLogs");
-        expect(t).toContain("- agent_id: 123");
-        expect(t).toContain("- call_status: failed");
+        expect(t).toContain('"agentid": 123');
+        expect(t).toContain('"call_status": "failed"');
         expect(t).toContain("getCallLog");
     });
 
@@ -79,7 +78,7 @@ describe("build_outbound_campaign prompt", () => {
         expect(t).toContain("save_as_draft: true");
         expect(t).toContain("addBulkCallContacts");
         expect(t).toContain("startBulkCall");
-        expect(t).toContain("requestBody");
+        expect(t).toContain("flat top-level arguments (no `requestBody` wrapper)");
     });
 
     it("requires explicit user approval before starting", () => {
@@ -90,8 +89,8 @@ describe("build_outbound_campaign prompt", () => {
 
     it("pins the number and agent when given", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x", agent_id: "42", phone_number_id: "177" }) ?? "";
-        expect(t).toContain("- phone_number_id: 177");
-        expect(t).toContain("- agent_id: 42");
+        expect(t).toContain('phone_number_id "177"');
+        expect(t).toContain("bot_id 42");
     });
 
     it("teaches the concurrency arithmetic and the timezone trap", () => {
@@ -132,7 +131,7 @@ describe("reference resources", () => {
     // New accounts lack Azure STT and ElevenLabs TTS, so steering to them fails the agent save.
     it("steers to models every account has", () => {
         const cfg = getResourceText("omnidim://reference/agent-config") ?? "";
-        expect(cfg).toContain("requestBody");
+        expect(cfg).toContain("flat top-level arguments");
         expect(cfg).toContain('"transcriber": { "provider": "soniox" }');
         expect(cfg).not.toContain("azure_stream");
         expect(cfg).not.toContain('"provider": "eleven_labs"');
@@ -218,11 +217,11 @@ describe("reseller client selection", () => {
 });
 
 describe("readGuide", () => {
-    it("serves every playbook and guide with the requestBody rule on top", () => {
+    it("serves every playbook and guide", () => {
         for (const name of GUIDE_NAMES) {
             const r = callGuideTool({ name });
             expect(r.isError).toBeUndefined();
-            expect(r.content[0].text.startsWith(REQUEST_BODY_RULE)).toBe(true);
+            expect(r.content[0].text.length).toBeGreaterThan(200);
         }
         expect(GUIDE_NAMES).toContain("design_agent");
         expect(GUIDE_NAMES).toContain("omnidim://guide/agent-prompt");
@@ -236,5 +235,13 @@ describe("readGuide", () => {
 
     it("is named in the server instructions with every playbook", () => {
         for (const name of PROMPT_NAMES) expect(READ_GUIDE_INSTRUCTION).toContain(name);
+    });
+});
+
+describe("prompt arguments", () => {
+    it("leaves no unfilled marker when a value is given", () => {
+        const t = getPromptText("provision_agent", { purpose: "remind patients", test_number: "+15551234567" }) ?? "";
+        expect(t).toContain("+15551234567");
+        expect(t).not.toContain("\u27e6");
     });
 });

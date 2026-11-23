@@ -16,6 +16,7 @@ const HAND_MARKS: Record<string, ToolAnnotations> = {
   showWorkflow: { title: "Show workflow canvas", readOnlyHint: true, openWorldHint: false },
   searchDocs: { title: "Search the docs", readOnlyHint: true, openWorldHint: false },
   readDoc: { title: "Read a docs page", readOnlyHint: true, openWorldHint: false },
+  readGuide: { title: "Read a playbook or guide", readOnlyHint: true, openWorldHint: false },
 };
 
 // Spec tools get their marks from the spec's x-mcp block, through regen.
