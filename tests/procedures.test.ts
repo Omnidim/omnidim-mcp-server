@@ -4,8 +4,11 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+    GUIDE_NAMES,
     PROMPT_NAMES,
+    READ_GUIDE_INSTRUCTION,
     RESOURCE_URIS,
+    callGuideTool,
     getPromptText,
     getResourceText,
 } from "../src/procedures.js";
@@ -26,7 +29,7 @@ describe("procedure layer registry", () => {
 describe("routing guide resource", () => {
     const text = getResourceText("omnidim://guide/routing") ?? "";
     it("documents the proven gotchas", () => {
-        expect(text).toContain("requestBody");
+        expect(text).toContain("in a `requestBody` object");
         expect(text).toContain("voice_id");
         expect(text).toMatch(/does NOT mean a call\s*\n?\s*connected/);
     });
@@ -38,8 +41,8 @@ describe("provision_agent prompt", () => {
         expect(t).toContain("book dental appointments");
         expect(t).toContain("createAgent");
         expect(t).toContain("attachPhoneNumber");
-        expect(t).toContain('"transcriber": { "provider": "soniox" }');
-        expect(t).toContain("requestBody");
+        expect(t).toContain('"transcriber": { "provider": "soniox"');
+        expect(t).toContain("flat top-level arguments (no `requestBody` wrapper)");
     });
 
     it("adds the verification call only when a test_number is given", () => {
@@ -61,9 +64,9 @@ describe("audit_calls prompt", () => {
         expect(t).toContain("getCallLog");
     });
 
-    it("keeps a small page size to avoid truncation", () => {
+    it("scans with short rows to avoid truncation", () => {
         const t = getPromptText("audit_calls", { focus: "summarize today" }) ?? "";
-        expect(t).toContain('"pagesize": 3');
+        expect(t).toContain('"include_details": false');
     });
 });
 
@@ -75,7 +78,7 @@ describe("build_outbound_campaign prompt", () => {
         expect(t).toContain("save_as_draft: true");
         expect(t).toContain("addBulkCallContacts");
         expect(t).toContain("startBulkCall");
-        expect(t).toContain("requestBody");
+        expect(t).toContain("flat top-level arguments (no `requestBody` wrapper)");
     });
 
     it("requires explicit user approval before starting", () => {
@@ -94,7 +97,7 @@ describe("build_outbound_campaign prompt", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x" }) ?? "";
         expect(t).toContain("3600 / average call seconds");
         expect(t).toContain("daily_stop_timezone");
-        expect(t).toContain("agent's own `timezone` field");
+        expect(t).toContain("agent's own `timezone`");
     });
 });
 
@@ -119,18 +122,16 @@ describe("reference resources", () => {
         expect(RESOURCE_URIS).toContain("omnidim://reference/agent-config");
     });
 
-    it("recommends providers by language", () => {
+    it("recommends only the default providers", () => {
         const t = getResourceText("omnidim://reference/recommended-stack") ?? "";
-        expect(t).toContain("soniox");
-        expect(t).toContain("sarvam");
-        expect(t).toContain("cartesia");
-        expect(t).toContain("gpt-4.1-mini");
+        for (const name of ["soniox", "cartesia", "gpt-4.1-mini"]) expect(t).toContain(name);
+        for (const name of ["sarvam", "deepgram", "smallest", "eleven_labs"]) expect(t.toLowerCase()).not.toContain(name);
     });
 
     // New accounts lack Azure STT and ElevenLabs TTS, so steering to them fails the agent save.
     it("steers to models every account has", () => {
         const cfg = getResourceText("omnidim://reference/agent-config") ?? "";
-        expect(cfg).toContain("requestBody");
+        expect(cfg).toContain("flat top-level arguments");
         expect(cfg).toContain('"transcriber": { "provider": "soniox" }');
         expect(cfg).not.toContain("azure_stream");
         expect(cfg).not.toContain('"provider": "eleven_labs"');
@@ -212,5 +213,42 @@ describe("reseller client selection", () => {
     it("exposes no user_id on any tool", () => {
         const src = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
         expect(src).not.toContain("user_id");
+    });
+});
+
+describe("readGuide", () => {
+    it("serves every playbook and guide", () => {
+        for (const name of GUIDE_NAMES) {
+            const r = callGuideTool({ name });
+            expect(r.isError).toBeUndefined();
+            expect(r.content[0].text.length).toBeGreaterThan(200);
+        }
+        expect(GUIDE_NAMES).toContain("design_agent");
+        expect(GUIDE_NAMES).toContain("omnidim://guide/agent-prompt");
+    });
+
+    it("refuses an unknown name and lists the real ones", () => {
+        const r = callGuideTool({ name: "nope" });
+        expect(r.isError).toBe(true);
+        expect(r.content[0].text).toContain("provision_agent");
+    });
+
+    it("is named in the server instructions with every playbook", () => {
+        for (const name of PROMPT_NAMES) expect(READ_GUIDE_INSTRUCTION).toContain(name);
+    });
+});
+
+describe("prompt arguments", () => {
+    it("leaves no unfilled marker when a value is given", () => {
+        const t = getPromptText("provision_agent", { purpose: "remind patients", test_number: "+15551234567" }) ?? "";
+        expect(t).toContain("+15551234567");
+        expect(t).not.toContain("\u27e6");
+    });
+
+    it("keeps a value with dollar signs exactly as the user typed it", () => {
+        const purpose = "quote $& for $$50 plans, then $' and $`";
+        const t = getPromptText("provision_agent", { purpose }) ?? "";
+        expect(t).toContain(purpose);
+        expect(t).not.toContain("\u27e6");
     });
 });

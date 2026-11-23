@@ -186,16 +186,15 @@ export function trimLargeResponse(data: unknown): { text: string; note?: string 
     if (!list) return { text: full };
 
     const { arr, key } = list;
+    const { next_cursor: _cursor, has_more: _more, ...rest } = (key ? redacted : {}) as Record<string, unknown>;
     let kept = arr.length;
     while (kept > 1) {
         const trimmed = arr.slice(0, kept);
-        const candidate = key
-            ? JSON.stringify({ ...(redacted as Record<string, unknown>), [key]: trimmed }, null, 2)
-            : JSON.stringify(trimmed, null, 2);
+        const candidate = key ? JSON.stringify({ ...rest, [key]: trimmed }, null, 2) : JSON.stringify(trimmed, null, 2);
         if (candidate.length <= MAX_LIST_CHARS) {
             return {
                 text: candidate,
-                note: `[Showing ${kept} of ${arr.length} items.${dropNote} Lower pagesize, filter by name, or fetch a specific item by ID for full detail.]`,
+                note: `[Showing ${kept} of ${arr.length} items.${dropNote} The rest were cut to fit, and the next page would skip them: ask again with pagesize ${kept} to read every row, filter, or fetch a specific item by ID for full detail.]`,
             };
         }
         kept = Math.max(1, Math.floor(kept * 0.6));
