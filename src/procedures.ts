@@ -33,7 +33,7 @@ export function getPromptText(name: string, args: Record<string, string> = {}): 
     const given = p.arguments.map((a) => a.name).filter((a) => args[a]).sort();
     const variant = p.variants.find((v) => v.given.join() === given.join());
     if (!variant) return null;
-    return given.reduce((text, a) => text.replaceAll(`\u27e6${a}\u27e7`, args[a]), variant.text);
+    return given.reduce((text, a) => text.replaceAll(`\u27e6${a}\u27e7`, () => args[a]), variant.text);
 }
 function findResource(uri: string): ResourceDef | undefined {
     const current = uri === LEGACY_CANVAS_URI ? WORKFLOW_CANVAS_URI : uri;

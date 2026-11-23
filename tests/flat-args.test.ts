@@ -49,6 +49,11 @@ describe("flat tool arguments", () => {
             .toEqual({ requestBody: { agent_id: 7, to_number: "+1" } });
     });
 
+    it("sends an empty body when the body is required but no body field was given", () => {
+        expect(acceptsFlat("updateAgent", { agent_id: 7 })).toBe(true);
+        expect(acceptsFlat("setBulkCallRotation", { bulk_call_id: 7 })).toBe(true);
+    });
+
     it("passes a call that already sends requestBody through unchanged", () => {
         const args = { agent_id: 7, requestBody: { welcome_message: "Hi" } };
         expect(nestBodyArgs(tool("updateAgent"), args)).toBe(args);

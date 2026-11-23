@@ -52,5 +52,6 @@ export function nestBodyArgs(def: ToolShape, args: Record<string, unknown>): Rec
     const outer: Record<string, unknown> = {};
     const body: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(args)) (routed.has(k.toLowerCase()) ? outer : body)[k] = v;
-    return Object.keys(body).length ? { ...outer, requestBody: body } : outer;
+    const bodyRequired = (def.inputSchema.required ?? []).includes("requestBody");
+    return Object.keys(body).length || bodyRequired ? { ...outer, requestBody: body } : outer;
 }

@@ -244,4 +244,11 @@ describe("prompt arguments", () => {
         expect(t).toContain("+15551234567");
         expect(t).not.toContain("\u27e6");
     });
+
+    it("keeps a value with dollar signs exactly as the user typed it", () => {
+        const purpose = "quote $& for $$50 plans, then $' and $`";
+        const t = getPromptText("provision_agent", { purpose }) ?? "";
+        expect(t).toContain(purpose);
+        expect(t).not.toContain("\u27e6");
+    });
 });
