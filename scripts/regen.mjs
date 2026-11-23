@@ -295,7 +295,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { READ_GUIDE_INSTRUCTION, addGuideTool, callGuideTool, isGuideTool, registerProcedures } from "./procedures.js";\nimport { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { READ_GUIDE_INSTRUCTION, addGuideTool, callGuideTool, isGuideTool, registerProcedures } from "./procedures.js";\nimport { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";\nimport { flatInputSchema, nestBodyArgs } from "./flat-args.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -512,6 +512,7 @@ src = src.replace(
   `$1,\n    annotations: toolAnnotations(def),\n    _meta: toolMeta(def.name)$2`
 );
 
+
 // Add the hand-written showWorkflow tool (the only tool that draws the workflow canvas).
 src = src.replace(
   /(const toolDefinitionMap: Map<string, McpToolDefinition> = new Map\(\[[\s\S]*?\n\]\);\n)/,
@@ -555,6 +556,11 @@ src = src.replace(
   `\n  if (isDocsTool(toolName)) return await callDocsTool(toolName, toolArgs ?? {});\n  if (isGuideTool(toolName)) return callGuideTool(toolArgs ?? {});$1`
 );
 
+src = src.replace('    inputSchema: def.inputSchema,\n    annotations: toolAnnotations(def)', '    inputSchema: flatInputSchema(def),\n    annotations: toolAnnotations(def)');
+src = src.replace(
+  /\n  return await executeApiTool\(toolName, toolDefinition, toolArgs \?\? \{\}, securitySchemes\);/,
+  '\n  return await executeApiTool(toolName, toolDefinition, nestBodyArgs(toolDefinition, toolArgs ?? {}), securitySchemes);'
+);
 
 // String patches fail silently when the generator's output moves, so prove the critical ones landed.
 const REQUIRED = [
@@ -562,6 +568,11 @@ const REQUIRED = [
   '_meta: toolMeta(def.name)',
   'addShowWorkflow(toolDefinitionMap);',
   'registerProcedures(server);',
+  'inputSchema: flatInputSchema(def),',
+  'nestBodyArgs(toolDefinition, toolArgs ?? {})',
+  'addGuideTool(toolDefinitionMap);',
+  'if (isDocsTool(toolName)) return await callDocsTool',
+  'if (isGuideTool(toolName)) return callGuideTool',
   'export const API_BASE_URL = "https://omnidim.io/api/v1";',
   'process.env.OMNIDIM_API_KEY ||',
   'isError: true, content: [{ type: "text", text: errorMessage }]',

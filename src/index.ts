@@ -9,6 +9,7 @@ import { READ_GUIDE_INSTRUCTION, addGuideTool, callGuideTool, isGuideTool, regis
 import { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";
 import { addShowWorkflow, toolMeta } from "./workflow-canvas.js";
 import { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";
+import { flatInputSchema, nestBodyArgs } from "./flat-args.js";
 import { notifyUpdates } from "./update_notifier.js";
 
 
@@ -1901,7 +1902,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   const toolsForClient: Tool[] = Array.from(toolDefinitionMap.values()).map(def => ({
     name: def.name,
     description: def.description,
-    inputSchema: def.inputSchema,
+    inputSchema: flatInputSchema(def),
     annotations: toolAnnotations(def),
     _meta: toolMeta(def.name)
   }));
@@ -1918,7 +1919,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
   }
   if (isDocsTool(toolName)) return await callDocsTool(toolName, toolArgs ?? {});
   if (isGuideTool(toolName)) return callGuideTool(toolArgs ?? {});
-  return await executeApiTool(toolName, toolDefinition, toolArgs ?? {}, securitySchemes);
+  return await executeApiTool(toolName, toolDefinition, nestBodyArgs(toolDefinition, toolArgs ?? {}), securitySchemes);
 });
 
 
