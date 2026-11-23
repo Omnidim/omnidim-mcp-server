@@ -1,4 +1,4 @@
 openapi_spec_url: https://docs.omnidim.io/openapi.yaml
-openapi_spec_hash: d31b3641432ed68176793d95e12061c9ce3a6ead6a0683cdb0405f7b5705661f
+openapi_spec_hash: 132982d2c3498bfd22201a77731a4fc2fbd68ba9d7f79b810d9e8c4b50040de9
 configured_endpoints: 111
 generator: openapi-mcp-generator

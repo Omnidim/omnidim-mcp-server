@@ -59,7 +59,7 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "attachPhoneNumber": {
     "title": "Attach phone number",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "bulkCallActions": {
@@ -201,7 +201,7 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "editWorkflow": {
     "title": "Edit workflow draft",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "fetchBulkCalls": {
@@ -292,7 +292,7 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "handBackWhatsappConversation": {
     "title": "Hand WhatsApp conversation back to agent",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "importExotelNumber": {
@@ -464,7 +464,7 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "pauseWhatsappCampaign": {
     "title": "Pause WhatsApp campaign",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "previewWhatsappNumbers": {
@@ -499,7 +499,7 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "renameAgentVersion": {
     "title": "Rename agent version",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "restoreAgentVersion": {
@@ -534,25 +534,25 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "setBulkCallConcurrency": {
     "title": "Set campaign concurrency",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "setBulkCallDailyTimeControl": {
     "title": "Set campaign calling hours",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "setBulkCallNumberActive": {
     "title": "Pause or resume pool number",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "setBulkCallRotation": {
     "title": "Set campaign number rotation",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "setPhoneNumberAutoRenew": {
@@ -564,7 +564,7 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "setWhatsappCalling": {
     "title": "Turn WhatsApp calling on or off",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": true
   },
   "startBulkCall": {
@@ -582,7 +582,7 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "takeOverWhatsappConversation": {
     "title": "Take over WhatsApp conversation",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "testWorkflow": {
@@ -594,19 +594,19 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "updateAgent": {
     "title": "Update agent",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "updateClonedVoice": {
     "title": "Update cloned voice",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "updatePostCallAction": {
     "title": "Update a post-call action",
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   },
   "uploadKnowledgeBaseFile": {
