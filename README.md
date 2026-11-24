@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@omnidim-ai/mcp-server)](https://www.npmjs.com/package/@omnidim-ai/mcp-server)
 [![npm downloads](https://img.shields.io/npm/dm/@omnidim-ai/mcp-server)](https://www.npmjs.com/package/@omnidim-ai/mcp-server)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![OmniDimension MCP server on Glama](https://glama.ai/mcp/servers/Omnidim/omnidim-mcp-server/badges/score.svg)](https://glama.ai/mcp/servers/Omnidim/omnidim-mcp-server)
 
 The [Model Context Protocol](https://modelcontextprotocol.io) server for [OmniDimension](https://omnidim.io). Connect Claude, ChatGPT, Cursor, VS Code or any MCP client to build and deploy voice AI agents, make calls, and run call campaigns, workflows and WhatsApp in your account.
 
