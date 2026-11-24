@@ -1,12 +1,9 @@
-import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import {
-    GetPromptRequestSchema,
-    ListPromptsRequestSchema,
-    ListResourcesRequestSchema,
-    ReadResourceRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { ProtocolError, ProtocolErrorCode, type Server } from "@modelcontextprotocol/server";
+import { SKILLS_EXTENSION_ID, SKILLS_GET_METHOD, SKILLS_LIST_METHOD, skillEntry, type Skill } from "@modelcontextprotocol/server/ext/skills";
+import { z } from "zod";
 
 import generated from "./playbooks.generated.js";
+import { readOnlyMode } from "./tool-annotations.js";
 import { LEGACY_CANVAS_URI, WORKFLOW_CANVAS_HTML, WORKFLOW_CANVAS_URI } from "./workflow-canvas.js";
 
 interface PromptArg { name: string; description: string; required?: boolean; }
@@ -85,25 +82,57 @@ export function callGuideTool(args: Record<string, unknown>): { content: { type:
     return { content: [{ type: "text", text }] };
 }
 
+interface SkillDef { name: string; readOnly: boolean; files: { path: string; text: string }[]; }
+
+const SKILLS: SkillDef[] = generated.skills.filter((s) => s.readOnly || !readOnlyMode());
+const SKILL_FILES = new Map<string, string>(
+    SKILLS.flatMap((s) => s.files.map((f) => [`skill://${s.name}/${f.path}`, f.text] as const)),
+);
+const SKILLS_CACHE = { ttlMs: 3_600_000, cacheScope: "public" } as const;
+let skillEntries: Promise<Skill[]> | undefined;
+export function listSkills(): Promise<Skill[]> {
+    skillEntries ??= Promise.all(
+        SKILLS.map((s) => skillEntry(s.name, Object.fromEntries(s.files.map((f) => [f.path, f.text])))),
+    );
+    return skillEntries;
+}
+
 export function registerProcedures(server: Server): void {
-    server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+    server.registerCapabilities({ extensions: { [SKILLS_EXTENSION_ID]: {} } });
+    server.setRequestHandler("prompts/list", async () => ({
         prompts: PLAYBOOKS.map(({ name, description, arguments: args }) => ({ name, description, arguments: args })),
     }));
-    server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    server.setRequestHandler("prompts/get", async (request) => {
         const p = PLAYBOOKS.find((x) => x.name === request.params.name);
-        if (!p) throw new Error(`Unknown prompt: ${request.params.name}`);
+        if (!p) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Unknown prompt: ${request.params.name}`);
         const args = (request.params.arguments ?? {}) as Record<string, string>;
         return {
             description: p.description,
             messages: [{ role: "user", content: { type: "text", text: getPromptText(p.name, args) ?? "" } }],
         };
     });
-    server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+    server.setRequestHandler("resources/list", async () => ({
         resources: listResources(),
     }));
-    server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-        const r = findResource(request.params.uri);
-        if (!r) throw new Error(`Unknown resource: ${request.params.uri}`);
-        return { contents: [{ uri: request.params.uri, mimeType: r.mimeType, text: r.text }] };
+    server.setRequestHandler("resources/read", async (request) => {
+        const { uri } = request.params;
+        const skillText = SKILL_FILES.get(uri);
+        if (skillText !== undefined) return { contents: [{ uri, mimeType: "text/markdown", text: skillText }] };
+        const r = findResource(uri);
+        if (!r) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Unknown resource: ${uri}`);
+        return { contents: [{ uri, mimeType: r.mimeType, text: r.text }] };
+    });
+    server.setRequestHandler(
+        SKILLS_LIST_METHOD,
+        { params: z.looseObject({ cursor: z.string().optional() }).optional() },
+        async (params) => {
+            if (params?.cursor !== undefined) throw new ProtocolError(ProtocolErrorCode.InvalidParams, "Unknown cursor");
+            return { skills: await listSkills(), ...SKILLS_CACHE };
+        },
+    );
+    server.setRequestHandler(SKILLS_GET_METHOD, { params: z.looseObject({ uri: z.string() }) }, async ({ uri }) => {
+        const skill = (await listSkills()).find((s) => s.uri === uri);
+        if (!skill) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `No skill is served at ${uri}`);
+        return { skill, ...SKILLS_CACHE };
     });
 }

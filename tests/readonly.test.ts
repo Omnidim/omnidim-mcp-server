@@ -28,6 +28,6 @@ describe("read-only mode", () => {
         const src = readFileSync(resolve(__dirname, "..", "src", "index.ts"), "utf8");
         const filter = src.indexOf("if (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);");
         expect(filter).toBeGreaterThan(src.indexOf("addShowWorkflow(toolDefinitionMap);"));
-        expect(filter).toBeLessThan(src.indexOf("server.setRequestHandler(ListToolsRequestSchema"));
+        expect(filter).toBeLessThan(src.indexOf('server.setRequestHandler("tools/list"'));
     });
 });

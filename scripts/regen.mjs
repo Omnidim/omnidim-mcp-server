@@ -595,8 +595,23 @@ src = src.replace(
   '    const message = unknownToolMessage(toolName);\n    console.error(`Error: ${message}`);\n    return { content: [{ type: "text", text: `Error: ${message}` }] };'
 );
 
+src = src.replace(
+  /import \{ Server \} from "@modelcontextprotocol\/sdk\/server\/index\.js";\nimport \{ StdioServerTransport \} from "@modelcontextprotocol\/sdk\/server\/stdio\.js";\nimport \{\n  CallToolRequestSchema,\n  ListToolsRequestSchema,\n  type Tool,\n  type CallToolResult,\n  type CallToolRequest\n\} from "@modelcontextprotocol\/sdk\/types\.js";/,
+  'import { Server, type Tool, type CallToolResult, type CallToolRequest } from "@modelcontextprotocol/server";\nimport { serveStdio } from "@modelcontextprotocol/server/stdio";'
+);
+src = src.replace('server.setRequestHandler(ListToolsRequestSchema, ', 'server.setRequestHandler("tools/list", ');
+src = src.replace('server.setRequestHandler(CallToolRequestSchema, ', 'server.setRequestHandler("tools/call", ');
+src = src.replace(
+  '    const transport = new StdioServerTransport();\n    await server.connect(transport);',
+  '    serveStdio(() => server);'
+);
+
 // String patches fail silently when the generator's output moves, so prove the critical ones landed.
 const REQUIRED = [
+  'from "@modelcontextprotocol/server";',
+  'server.setRequestHandler("tools/list", ',
+  'server.setRequestHandler("tools/call", ',
+  'serveStdio(() => server);',
   'annotations: toolAnnotations(def)',
   '_meta: toolMeta(def.name)',
   'addShowWorkflow(toolDefinitionMap);',
