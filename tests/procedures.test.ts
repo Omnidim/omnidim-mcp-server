@@ -55,13 +55,15 @@ describe("provision_agent prompt", () => {
 });
 
 describe("audit_calls prompt", () => {
-    it("weaves the focus in and applies filters", () => {
+    it("passes the focus and filters on after the steps", () => {
         const t = getPromptText("audit_calls", { focus: "why are calls failing", agent_id: "123", call_status: "failed" }) ?? "";
-        expect(t).toContain("why are calls failing");
         expect(t).toContain("listCallLogs");
-        expect(t).toContain('"agentid": 123');
-        expect(t).toContain('"call_status": "failed"');
+        expect(t).toContain("when the user named an agent or a status");
         expect(t).toContain("getCallLog");
+        const given = t.slice(t.indexOf("The user gave:"));
+        expect(given).toContain("- focus: why are calls failing");
+        expect(given).toContain("- agent_id: 123");
+        expect(given).toContain("- call_status: failed");
     });
 
     it("scans with short rows to avoid truncation", () => {
@@ -87,10 +89,13 @@ describe("build_outbound_campaign prompt", () => {
         expect(t.indexOf("go-ahead")).toBeLessThan(t.indexOf("Then `startBulkCall`"));
     });
 
-    it("pins the number and agent when given", () => {
+    it("passes the number and agent on after the steps", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x", agent_id: "42", phone_number_id: "177" }) ?? "";
-        expect(t).toContain('phone_number_id "177"');
-        expect(t).toContain("bot_id 42");
+        expect(t).toContain("If the user named a dialing number, use its phone_number_id");
+        expect(t).toContain("If the user named an agent, pass its id as `bot_id`");
+        const given = t.slice(t.indexOf("The user gave:"));
+        expect(given).toContain("- phone_number_id: 177");
+        expect(given).toContain("- agent_id: 42");
     });
 
     it("teaches the concurrency arithmetic and the timezone trap", () => {
