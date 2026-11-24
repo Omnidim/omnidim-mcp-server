@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 // @ts-expect-error plain ESM helper shared by scripts/regen.mjs and scripts/check-spec.mjs
-import { annotationsFor, applyBriefs, mcpMarks } from "../scripts/x-mcp.mjs";
+import { annotationsFor, applyBriefs, mcpMarks, mergePlan } from "../scripts/x-mcp.mjs";
 
 describe("x-mcp marks", () => {
   it("fails an operation with no block", () => {
@@ -82,5 +82,70 @@ describe("x-mcp-brief", () => {
 
     it.each(["", "  ", 3, "two\nlines", "x".repeat(401)])("fails a bad brief %j", (brief) => {
         expect(() => applyBriefs(spec(brief))).toThrow("bad x-mcp-brief on Big");
+    });
+});
+
+describe("x-mcp merge", () => {
+    const groups = {
+        workflowActions: { title: "Turn workflow on or off", description: "Turn it." },
+    };
+    const member = (opId: string, action: unknown, effect = "destructive", extra = {}) => ({
+        opId,
+        marks: { title: opId, effect, merge: { tool: "workflowActions", action }, ...extra },
+    });
+
+    it.each([
+        [{ tool: "workflowActions" }],
+        [{ tool: "workflowActions", action: "" }],
+        [{ tool: "workflowActions", action: "Turn On" }],
+        [{ tool: 5, action: "on" }],
+        [{ tool: "workflowActions", action: [] }],
+    ])("fails a bad merge mark %j", (merge) => {
+        expect(() => mcpMarks("op", "post", { "x-mcp": { title: "T", effect: "write", merge } })).toThrow(
+            "bad x-mcp on op: merge takes",
+        );
+    });
+
+    it("plans one tool per group, with every action routed to its operation", () => {
+        const plan = mergePlan(groups, [member("activateWorkflow", "activate"), member("deactivateWorkflow", "deactivate")]);
+        expect(plan.groups).toEqual({ workflowActions: { description: "Turn it.", field: "action" } });
+        expect(plan.members).toEqual({
+            activateWorkflow: { tool: "workflowActions", actions: ["activate"], passes: false },
+            deactivateWorkflow: { tool: "workflowActions", actions: ["deactivate"], passes: false },
+        });
+    });
+
+    it("asks before the merged tool's strongest action", () => {
+        const plan = mergePlan(groups, [
+            member("activateWorkflow", "activate", "write", { "open-world": true }),
+            member("deactivateWorkflow", "deactivate", "destructive"),
+        ]);
+        expect(plan.marks.workflowActions).toEqual({
+            title: "Turn workflow on or off",
+            readOnlyHint: false,
+            destructiveHint: true,
+            openWorldHint: true,
+        });
+    });
+
+    it("marks a listed action as passed through to the body", () => {
+        const plan = mergePlan(groups, [member("start", "start"), member("control", ["pause", "resume"])]);
+        expect(plan.members.control).toEqual({ tool: "workflowActions", actions: ["pause", "resume"], passes: true });
+    });
+
+    it("fails a merge into an undeclared tool", () => {
+        expect(() => mergePlan({}, [member("a", "on"), member("b", "off")])).toThrow(
+            "workflowActions is not declared under x-mcp-tools",
+        );
+    });
+
+    it("fails a merged tool with one operation", () => {
+        expect(() => mergePlan(groups, [member("a", "on")])).toThrow("workflowActions folds one operation");
+    });
+
+    it("fails two operations claiming one action", () => {
+        expect(() => mergePlan(groups, [member("a", "on"), member("b", "on")])).toThrow(
+            "workflowActions: action on names two operations",
+        );
     });
 });

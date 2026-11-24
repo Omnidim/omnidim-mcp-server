@@ -17,6 +17,7 @@ The npm-distributed Model Context Protocol server for OmniDimension. Users insta
 
 - **Every behaviour change ships with a test.** typecheck, build, and tests gate every commit and every published release.
 - **`src/index.ts` is generated** from the OpenAPI spec via `npm run regen` and is overwritten on regeneration. Keep customisations as patches in `scripts/regen.mjs`, never as hand-edits to `src/index.ts`, and add a test for any patched behaviour.
+- **Merge tools in the spec, not here.** To serve several operations as one tool with an `action` field, add `merge: {tool, action}` to their `x-mcp` blocks and a `x-mcp-tools` entry in the omnidim-docs spec. Regen folds them (`scripts/x-mcp.mjs` `mergePlan`, `src/merged-tools.ts`) with no code change here. omnidim-mcp-cloud applies the same rules, so change both together.
 - **No marketing copy** in user-facing strings (README, error messages, `.env.example`), and no em dashes in user-visible text.
 - **Comments only when the "why" is non-obvious.** One line.
 - **Commits:** conventional prefixes (`feat`, `fix`, `chore`, `docs`, `ci`, `build`, `test`, `refactor`), single line.
