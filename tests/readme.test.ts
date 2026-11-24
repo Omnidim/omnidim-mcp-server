@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { MERGE_GROUPS, MERGE_MEMBERS } from "../src/tool-merges.js";
+
 // The README tools table is the first thing a visitor and a directory reviewer read,
 // and it went stale before (it listed excluded reseller tools and missed workflows).
 const toolSources = ["index.ts", "workflow-canvas.ts", "docs-tools.ts"].map((f) =>
@@ -10,9 +12,13 @@ const toolSources = ["index.ts", "workflow-canvas.ts", "docs-tools.ts"].map((f) 
 );
 const readme = readFileSync(resolve(__dirname, "../README.md"), "utf8");
 
-const servedTools = toolSources
-    .flatMap((s) => [...s.matchAll(/^\s+name: "([A-Za-z]+)",$/gm)].map((m) => m[1]))
-    .sort();
+const folded = new Set(Object.keys(MERGE_MEMBERS));
+const servedTools = [
+    ...toolSources
+        .flatMap((s) => [...s.matchAll(/^\s+name: "([A-Za-z]+)",$/gm)].map((m) => m[1]))
+        .filter((name) => !folded.has(name)),
+    ...Object.keys(MERGE_GROUPS),
+].sort();
 const toolsSection = readme.split(/^## /m).find((s) => s.startsWith("Tools")) ?? "";
 const listedTools = [...toolsSection.matchAll(/`([a-z][A-Za-z]+)`/g)].map((m) => m[1]).sort();
 
