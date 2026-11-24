@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.22.0...v0.23.0) (2026-11-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* serve 98 MCP tools, folding 24 operations into 9 tools with an action field ([#136](https://github.com/Omnidim/omnidim-mcp-server/issues/136))
+
+### Added
+
+* serve 98 MCP tools, folding 24 operations into 9 tools with an action field ([#136](https://github.com/Omnidim/omnidim-mcp-server/issues/136)) ([92e4709](https://github.com/Omnidim/omnidim-mcp-server/commit/92e4709c249afa337a4887e0f967c978b1eca987))
+* serve one MCP tool for operations the spec marks as merged ([#134](https://github.com/Omnidim/omnidim-mcp-server/issues/134)) ([b1b494a](https://github.com/Omnidim/omnidim-mcp-server/commit/b1b494ae92353ed8173783eee623971a4e371ef1))
+
 ## [0.22.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.21.1...v0.22.0) (2026-11-24)
 
 
