@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.21.1...v0.22.0) (2026-11-24)
+
+
+### Added
+
+* pass prompt inputs after the playbook steps, matching the hosted server ([#132](https://github.com/Omnidim/omnidim-mcp-server/issues/132)) ([96dfd80](https://github.com/Omnidim/omnidim-mcp-server/commit/96dfd80c2c0c61a4afaa065fb539fb7d0c23b2b9))
+
 ## [0.21.1](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.21.0...v0.21.1) (2026-11-24)
 
 
