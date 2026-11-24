@@ -136,3 +136,11 @@ describe("merged tool inputs", () => {
         expect(() => foldMergedTools(map, groups, members)).not.toThrow();
     });
 });
+
+describe("argument checks for merged tools", () => {
+    it("cache each operation's schema by the schema itself, so one action never checks another's inputs", () => {
+        const src = readFileSync(resolve(__dirname, "..", "src", "index.ts"), "utf8");
+        expect(src).toContain("zodSchemaCache.get(jsonSchema)");
+        expect(src).not.toContain("zodSchemaCache.get(toolName)");
+    });
+});

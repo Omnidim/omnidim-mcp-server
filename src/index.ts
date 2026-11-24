@@ -2587,9 +2587,9 @@ function formatApiError(error: AxiosError): string {
  * @param toolName Tool name for error reporting
  * @returns Zod schema
  */
-const zodSchemaCache: Map<string, z.ZodType> = new Map();
-function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodType {
-    let schema = zodSchemaCache.get(toolName);
-    if (!schema) zodSchemaCache.set(toolName, schema = buildToolSchema(jsonSchema));
+const zodSchemaCache: WeakMap<object, z.ZodType> = new WeakMap();
+function getZodSchemaFromJsonSchema(jsonSchema: any, _toolName: string): z.ZodType {
+    let schema = zodSchemaCache.get(jsonSchema);
+    if (!schema) zodSchemaCache.set(jsonSchema, schema = buildToolSchema(jsonSchema));
     return schema;
 }

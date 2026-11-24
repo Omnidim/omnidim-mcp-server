@@ -259,10 +259,10 @@ src = src.replace(
 );
 src = src.replace(
   /function getZodSchemaFromJsonSchema\(jsonSchema: any, toolName: string\): z\.ZodTypeAny \{[\s\S]*?\n\}\n/,
-  `const zodSchemaCache: Map<string, z.ZodType> = new Map();
-function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodType {
-    let schema = zodSchemaCache.get(toolName);
-    if (!schema) zodSchemaCache.set(toolName, schema = buildToolSchema(jsonSchema));
+  `const zodSchemaCache: WeakMap<object, z.ZodType> = new WeakMap();
+function getZodSchemaFromJsonSchema(jsonSchema: any, _toolName: string): z.ZodType {
+    let schema = zodSchemaCache.get(jsonSchema);
+    if (!schema) zodSchemaCache.set(jsonSchema, schema = buildToolSchema(jsonSchema));
     return schema;
 }
 `
