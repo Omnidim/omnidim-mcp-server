@@ -5,6 +5,10 @@ name: registry-publish
 # run by hand to republish the version on main.
 on:
   workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
   workflow_dispatch:
 
 permissions:
@@ -19,6 +23,8 @@ jobs:
       PUBLISHER_SHA256: 4d527ca8f1ced0394c962dc925c2a4a4addef441cbefd62501c875e9481823a8
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - name: Install mcp-publisher
         run: |
           curl -fsSL -o mcp-publisher.tar.gz "https://github.com/modelcontextprotocol/registry/releases/download/${PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
