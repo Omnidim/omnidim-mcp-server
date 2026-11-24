@@ -823,19 +823,6 @@ Outside the window the campaign holds, then resumes the next day.
     tags: ["Knowledge base"],
     deprecated: false
   }],
-  ["canUploadFile", {
-    name: "canUploadFile",
-    description: `Check whether a file can be uploaded based on size and type.
-(Tags: Knowledge base)`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","required":["file_size","file_type"],"properties":{"file_size":{"type":"number","minimum":1,"description":"Size in bytes."},"file_type":{"type":"string","description":"File extension. Only `pdf` is accepted."}},"description":"The JSON request body."}},"required":["requestBody"]},
-    method: "post",
-    pathTemplate: "/knowledge_base/can_upload",
-    executionParameters: [],
-    requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Knowledge base"],
-    deprecated: false
-  }],
   ["uploadKnowledgeBaseFile", {
     name: "uploadKnowledgeBaseFile",
     description: `Upload a PDF file. The file content must be Base64 encoded.
@@ -1220,24 +1207,6 @@ still \`processing\` cannot be deleted.
     pathTemplate: "/voices/{voice_id}",
     executionParameters: [{"name":"voice_id","in":"path"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"BearerAuth":[]}],
-    tags: ["Voice cloning"],
-    deprecated: false
-  }],
-  ["getClonedVoiceSample", {
-    name: "getClonedVoiceSample",
-    description: `Stream the generated mp3 sample of a cloned voice.
-
-Only the owner can fetch it. Send your API key in the \`Authorization\`
-header. If no sample exists yet, the call returns \`404\`
-(\`sample_not_ready\`).
-
-(Tags: Voice cloning)`,
-    inputSchema: {"type":"object","properties":{"voice_id":{"type":"number","description":"Id of the cloned voice."}},"required":["voice_id"]},
-    method: "get",
-    pathTemplate: "/voices/{voice_id}/sample",
-    executionParameters: [{"name":"voice_id","in":"path"}],
-    requestBodyContentType: undefined,
     securityRequirements: [{"BearerAuth":[]}],
     tags: ["Voice cloning"],
     deprecated: false

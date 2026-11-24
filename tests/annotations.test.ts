@@ -14,10 +14,6 @@ describe("toolAnnotations", () => {
         expect(a.title).toBe("List agents");
     });
 
-    it("treats preview/validate POSTs (canUploadFile) as read-only", () => {
-        expect(toolAnnotations({ name: "canUploadFile", method: "post" }).readOnlyHint).toBe(true);
-    });
-
     it("marks plain writes as non-destructive and not open-world", () => {
         const a = toolAnnotations({ name: "createAgent", method: "post" });
         expect(a.readOnlyHint).toBe(false);

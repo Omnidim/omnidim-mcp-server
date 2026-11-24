@@ -44,6 +44,24 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "destructiveHint": false,
     "openWorldHint": false
   },
+  "agentIntegrationActions": {
+    "title": "Attach or detach integration",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "openWorldHint": true
+  },
+  "agentKnowledgeBaseActions": {
+    "title": "Attach or detach knowledge base files",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "openWorldHint": false
+  },
+  "agentVersionActions": {
+    "title": "Rename, delete or restore agent version",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "openWorldHint": false
+  },
   "attachAgentIntegration": {
     "title": "Attach integration to agent",
     "readOnlyHint": false,
@@ -78,11 +96,6 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "title": "Cancel WhatsApp campaign",
     "readOnlyHint": false,
     "destructiveHint": true,
-    "openWorldHint": false
-  },
-  "canUploadFile": {
-    "title": "Check file upload eligibility",
-    "readOnlyHint": true,
     "openWorldHint": false
   },
   "createAgent": {
@@ -239,11 +252,6 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": true,
     "openWorldHint": false
   },
-  "getClonedVoiceSample": {
-    "title": "Get cloned voice sample",
-    "readOnlyHint": true,
-    "openWorldHint": false
-  },
   "getVoice": {
     "title": "Get voice",
     "readOnlyHint": true,
@@ -396,6 +404,11 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": true,
     "openWorldHint": false
   },
+  "listProviders": {
+    "title": "List providers",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
   "listSTTProviders": {
     "title": "List speech-to-text providers",
     "readOnlyHint": true,
@@ -463,6 +476,12 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   },
   "pauseWhatsappCampaign": {
     "title": "Pause WhatsApp campaign",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "openWorldHint": false
+  },
+  "phoneNumberAgentActions": {
+    "title": "Attach or detach phone number",
     "readOnlyHint": false,
     "destructiveHint": true,
     "openWorldHint": false
@@ -618,6 +637,24 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   "validateWorkflow": {
     "title": "Validate workflow",
     "readOnlyHint": true,
+    "openWorldHint": false
+  },
+  "whatsappCampaignActions": {
+    "title": "Control WhatsApp campaign",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "openWorldHint": true
+  },
+  "whatsappConversationActions": {
+    "title": "Take over or hand back WhatsApp conversation",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "openWorldHint": false
+  },
+  "workflowActions": {
+    "title": "Turn workflow on or off",
+    "readOnlyHint": false,
+    "destructiveHint": true,
     "openWorldHint": false
   }
 };
