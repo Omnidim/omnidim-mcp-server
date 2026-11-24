@@ -10,6 +10,7 @@ import { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotat
 import { addShowWorkflow, toolMeta } from "./workflow-canvas.js";
 import { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";
 import { flatInputSchema, nestBodyArgs } from "./flat-args.js";
+import { foldMergedTools, isMergedTool, pickMergedAction, unknownToolMessage } from "./merged-tools.js";
 import { notifyUpdates } from "./update_notifier.js";
 
 
@@ -1992,6 +1993,7 @@ or already-canceled campaign cannot be canceled.
 addShowWorkflow(toolDefinitionMap);
 addDocsTools(toolDefinitionMap);
 addGuideTool(toolDefinitionMap);
+foldMergedTools(toolDefinitionMap);
 if (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);
 
 /**
@@ -2022,11 +2024,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
   const { name: toolName, arguments: toolArgs } = request.params;
   const toolDefinition = toolDefinitionMap.get(toolName);
   if (!toolDefinition) {
-    console.error(`Error: Unknown tool requested: ${toolName}`);
-    return { content: [{ type: "text", text: `Error: Unknown tool requested: ${toolName}` }] };
+    const message = unknownToolMessage(toolName);
+    console.error(`Error: ${message}`);
+    return { isError: true, content: [{ type: "text", text: `Error: ${message}` }] };
   }
   if (isDocsTool(toolName)) return await callDocsTool(toolName, toolArgs ?? {});
   if (isGuideTool(toolName)) return callGuideTool(toolArgs ?? {});
+  if (isMergedTool(toolDefinition)) {
+    const picked = pickMergedAction(toolDefinition, toolArgs ?? {});
+    if ("error" in picked) return { isError: true, content: [{ type: "text", text: `Error: ${picked.error}` }] };
+    return await executeApiTool(toolName, picked.def as McpToolDefinition, nestBodyArgs(picked.def, picked.args), securitySchemes);
+  }
   return await executeApiTool(toolName, toolDefinition, nestBodyArgs(toolDefinition, toolArgs ?? {}), securitySchemes);
 });
 

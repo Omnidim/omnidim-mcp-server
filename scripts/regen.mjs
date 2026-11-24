@@ -18,7 +18,7 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import * as yaml from 'js-yaml';
-import { annotationsFor, applyBriefs, mcpMarks } from './x-mcp.mjs';
+import { annotationsFor, applyBriefs, mcpMarks, mergePlan } from './x-mcp.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -132,6 +132,8 @@ const briefed = applyBriefs(spec);
 let removed = 0;
 let strippedParams = 0;
 const toolMarks = {};
+const mergedOps = [];
+const singleOps = new Set();
 for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
   for (const m of METHODS) {
     const op = item[m];
@@ -144,9 +146,26 @@ for (const [specPath, item] of Object.entries(spec.paths ?? {})) {
     }
     strippedParams += stripParams(op, marks['hide-params']);
     toolMarks[op.operationId] = annotationsFor(marks);
+    if (marks.merge) mergedOps.push({ opId: op.operationId, marks });
+    else singleOps.add(op.operationId);
   }
   if (!METHODS.some((m) => item[m])) delete spec.paths[specPath];
 }
+const plan = mergePlan(spec['x-mcp-tools'] ?? {}, mergedOps);
+for (const name of Object.keys(plan.groups)) {
+  if (singleOps.has(name)) throw new Error(`${name} is both a merged tool and another tool`);
+}
+Object.assign(toolMarks, plan.marks);
+writeFileSync(
+  resolve(ROOT, 'src', 'tool-merges.ts'),
+  `export interface MergeGroup { description: string; field: string }
+export interface MergeMember { tool: string; actions: string[]; passes: boolean }
+
+export const MERGE_GROUPS: Record<string, MergeGroup> = ${JSON.stringify(plan.groups, null, 2)};
+
+export const MERGE_MEMBERS: Record<string, MergeMember> = ${JSON.stringify(plan.members, null, 2)};
+`,
+);
 const FILTERED_SPEC = `${TMP}-filtered-spec.yaml`;
 writeFileSync(FILTERED_SPEC, yaml.dump(spec, { noRefs: true }));
 console.log(`hid ${removed} operations, dropped ${strippedParams} parameters and briefed ${briefed} schemas via x-mcp`);
@@ -295,7 +314,7 @@ if (!src.includes(bannerAnchor)) {
 }
 src = src.replace(
   bannerAnchor,
-  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { READ_GUIDE_INSTRUCTION, addGuideTool, callGuideTool, isGuideTool, registerProcedures } from "./procedures.js";\nimport { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";\nimport { flatInputSchema, nestBodyArgs } from "./flat-args.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
+  `${bannerAnchor}\nimport { readApiKey } from "./credentials.js";\nimport { isInteractive, printInteractiveHelp, requestIdNote, startupBanner, trimLargeResponse, USER_AGENT } from "./helpers.js";\nimport { beginSession, emitSessionCrash, emitSessionEnd, endSession, recordToolError, recordToolResult } from "./telemetry.js";\nimport { READ_GUIDE_INSTRUCTION, addGuideTool, callGuideTool, isGuideTool, registerProcedures } from "./procedures.js";\nimport { keepReadOnlyTools, readOnlyMode, toolAnnotations } from "./tool-annotations.js";\nimport { addShowWorkflow, toolMeta } from "./workflow-canvas.js";\nimport { addDocsTools, callDocsTool, isDocsTool } from "./docs-tools.js";\nimport { flatInputSchema, nestBodyArgs } from "./flat-args.js";\nimport { foldMergedTools, isMergedTool, pickMergedAction, unknownToolMessage } from "./merged-tools.js";\nimport { notifyUpdates } from "./update_notifier.js";\n`
 );
 
 // Fall back to the saved credentials file when neither OMNIDIM_API_KEY
@@ -516,7 +535,7 @@ src = src.replace(
 // Add the hand-written showWorkflow tool (the only tool that draws the workflow canvas).
 src = src.replace(
   /(const toolDefinitionMap: Map<string, McpToolDefinition> = new Map\(\[[\s\S]*?\n\]\);\n)/,
-  `$1addShowWorkflow(toolDefinitionMap);\naddDocsTools(toolDefinitionMap);\naddGuideTool(toolDefinitionMap);\nif (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);\n`
+  `$1addShowWorkflow(toolDefinitionMap);\naddDocsTools(toolDefinitionMap);\naddGuideTool(toolDefinitionMap);\nfoldMergedTools(toolDefinitionMap);\nif (readOnlyMode()) keepReadOnlyTools(toolDefinitionMap);\n`
 );
 
 // A crash never runs the graceful-shutdown path, so flush a session_crash
@@ -561,6 +580,20 @@ src = src.replace(
   /\n  return await executeApiTool\(toolName, toolDefinition, toolArgs \?\? \{\}, securitySchemes\);/,
   '\n  return await executeApiTool(toolName, toolDefinition, nestBodyArgs(toolDefinition, toolArgs ?? {}), securitySchemes);'
 );
+src = src.replace(
+  '\n  return await executeApiTool(toolName, toolDefinition, nestBodyArgs(toolDefinition, toolArgs ?? {}), securitySchemes);',
+  `
+  if (isMergedTool(toolDefinition)) {
+    const picked = pickMergedAction(toolDefinition, toolArgs ?? {});
+    if ("error" in picked) return { isError: true, content: [{ type: "text", text: \`Error: \${picked.error}\` }] };
+    return await executeApiTool(toolName, picked.def as McpToolDefinition, nestBodyArgs(picked.def, picked.args), securitySchemes);
+  }
+  return await executeApiTool(toolName, toolDefinition, nestBodyArgs(toolDefinition, toolArgs ?? {}), securitySchemes);`
+);
+src = src.replace(
+  '    console.error(`Error: Unknown tool requested: ${toolName}`);\n    return { content: [{ type: "text", text: `Error: Unknown tool requested: ${toolName}` }] };',
+  '    const message = unknownToolMessage(toolName);\n    console.error(`Error: ${message}`);\n    return { isError: true, content: [{ type: "text", text: `Error: ${message}` }] };'
+);
 
 // String patches fail silently when the generator's output moves, so prove the critical ones landed.
 const REQUIRED = [
@@ -571,6 +604,9 @@ const REQUIRED = [
   'inputSchema: flatInputSchema(def),',
   'nestBodyArgs(toolDefinition, toolArgs ?? {})',
   'addGuideTool(toolDefinitionMap);',
+  'foldMergedTools(toolDefinitionMap);',
+  'if (isMergedTool(toolDefinition))',
+  'unknownToolMessage(toolName)',
   'if (isDocsTool(toolName)) return await callDocsTool',
   'if (isGuideTool(toolName)) return callGuideTool',
   'export const API_BASE_URL = "https://omnidim.io/api/v1";',

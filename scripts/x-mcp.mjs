@@ -2,7 +2,22 @@
 // tool's title, its confirm hints, whether it is hidden, and inputs to drop.
 // The hosted server (omnidim-mcp-cloud scripts/regen.py) applies the same rules.
 
-const KEYS = new Set(['title', 'effect', 'open-world', 'hide-params', 'hidden']);
+const KEYS = new Set(['title', 'effect', 'open-world', 'hide-params', 'hidden', 'merge']);
+const ACTION = /^[a-z][a-z_]*$/;
+const EFFECT_RANK = { read: 0, write: 1, destructive: 2 };
+const GROUP_KEYS = new Set(['title', 'description', 'field']);
+
+export function mergeActions(merge) {
+  return Array.isArray(merge.action) ? merge.action : [merge.action];
+}
+
+function validMerge(merge) {
+  if (!merge || typeof merge !== 'object' || Array.isArray(merge)) return false;
+  if (Object.keys(merge).sort().join() !== 'action,tool') return false;
+  if (typeof merge.tool !== 'string' || !merge.tool) return false;
+  const actions = mergeActions(merge);
+  return actions.length > 0 && actions.every((a) => typeof a === 'string' && ACTION.test(a));
+}
 const EFFECTS = ['read', 'write', 'destructive'];
 
 /** The operation's x-mcp block, checked. Throws on a missing or bad one. */
@@ -31,7 +46,50 @@ export function mcpMarks(opId, method, op) {
   if (!Array.isArray(hide) || !hide.every((n) => typeof n === 'string')) {
     throw bad('hide-params is a list of input names');
   }
+  if ('merge' in marks && !validMerge(marks.merge)) {
+    throw bad('merge takes tool, as text, and action, a snake_case word or a list of them');
+  }
   return marks;
+}
+
+function mergeGroup(name, groups) {
+  const group = groups?.[name];
+  if (!group || typeof group !== 'object') throw new Error(`${name} is not declared under x-mcp-tools`);
+  const unknown = Object.keys(group).filter((k) => !GROUP_KEYS.has(k));
+  if (unknown.length) throw new Error(`bad x-mcp-tools entry ${name}: unknown keys ${unknown.join(', ')}`);
+  for (const key of ['title', 'description']) {
+    if (typeof group[key] !== 'string' || !group[key].trim()) {
+      throw new Error(`bad x-mcp-tools entry ${name}: ${key} is required, as text`);
+    }
+  }
+  if (typeof (group.field ?? 'action') !== 'string') throw new Error(`bad x-mcp-tools entry ${name}: field is text`);
+  return group;
+}
+
+export function mergePlan(groups, merged) {
+  const byTool = {};
+  for (const m of merged) (byTool[m.marks.merge.tool] ??= []).push(m);
+  const plan = { groups: {}, members: {}, marks: {} };
+  for (const [name, members] of Object.entries(byTool)) {
+    const group = mergeGroup(name, groups);
+    if (members.length < 2) throw new Error(`${name} folds one operation: merge two or more, or drop the mark`);
+    const seen = new Set();
+    for (const { opId, marks } of members) {
+      const actions = mergeActions(marks.merge);
+      for (const a of actions) {
+        if (seen.has(a)) throw new Error(`${name}: action ${a} names two operations`);
+        seen.add(a);
+      }
+      plan.members[opId] = { tool: name, actions, passes: Array.isArray(marks.merge.action) };
+    }
+    const effect = members
+      .map((m) => m.marks.effect)
+      .reduce((a, b) => (EFFECT_RANK[b] > EFFECT_RANK[a] ? b : a));
+    const openWorld = members.some((m) => m.marks['open-world']);
+    plan.groups[name] = { description: group.description, field: group.field ?? 'action' };
+    plan.marks[name] = annotationsFor({ title: group.title, effect, ...(openWorld ? { 'open-world': true } : {}) });
+  }
+  return plan;
 }
 
 /** MCP annotations, set explicitly because the spec defaults are conservative. */
