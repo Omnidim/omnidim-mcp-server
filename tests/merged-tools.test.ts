@@ -124,7 +124,7 @@ describe("merged tool inputs", () => {
             ["bulkCallActions", def("bulkCallActions", "/bulk/{id}/actions", { properties: { action: { type: "string", enum: ["pause", "resume"] } }, required: ["action"] })],
         ]);
         foldMergedTools(map, groups, members);
-        const picked = pickMergedAction(map.get("bulkCallActions"), { action: "pause", id: 4, "idempotency-key": "k" });
+        const picked = pickMergedAction(map.get("bulkCallActions"), { action: "pause", id: 4, "IDEMPOTENCY-KEY": "k" });
         expect("args" in picked && picked.args).toEqual({ action: "pause", id: 4 });
     });
 
