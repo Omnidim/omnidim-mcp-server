@@ -115,3 +115,24 @@ describe("merged tools", () => {
         expect(src).toContain("unknownToolMessage(toolName)");
     });
 });
+
+describe("merged tool inputs", () => {
+    it("drops another action's input whatever its case", () => {
+        const map = new Map<string, any>([
+            ["startBulkCall", { ...def("startBulkCall", "/bulk/{id}/start"), executionParameters: [{ name: "id", in: "path" }, { name: "Idempotency-Key", in: "header" }],
+                inputSchema: { type: "object", properties: { id: { type: "integer" }, "Idempotency-Key": { type: "string" } }, required: ["id", "Idempotency-Key"] } }],
+            ["bulkCallActions", def("bulkCallActions", "/bulk/{id}/actions", { properties: { action: { type: "string", enum: ["pause", "resume"] } }, required: ["action"] })],
+        ]);
+        foldMergedTools(map, groups, members);
+        const picked = pickMergedAction(map.get("bulkCallActions"), { action: "pause", id: 4, "idempotency-key": "k" });
+        expect("args" in picked && picked.args).toEqual({ action: "pause", id: 4 });
+    });
+
+    it("treats inputs that differ only in key order as the same", () => {
+        const map = new Map<string, any>([
+            ["attachPhoneNumber", { ...def("attachPhoneNumber", "/a/{id}"), inputSchema: { type: "object", properties: { id: { type: "integer", minimum: 1 } }, required: ["id"] } }],
+            ["detachPhoneNumber", { ...def("detachPhoneNumber", "/d/{id}"), inputSchema: { type: "object", properties: { id: { minimum: 1, type: "integer" } }, required: ["id"] } }],
+        ]);
+        expect(() => foldMergedTools(map, groups, members)).not.toThrow();
+    });
+});

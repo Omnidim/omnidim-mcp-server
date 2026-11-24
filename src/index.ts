@@ -2026,7 +2026,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
   if (!toolDefinition) {
     const message = unknownToolMessage(toolName);
     console.error(`Error: ${message}`);
-    return { isError: true, content: [{ type: "text", text: `Error: ${message}` }] };
+    return { content: [{ type: "text", text: `Error: ${message}` }] };
   }
   if (isDocsTool(toolName)) return await callDocsTool(toolName, toolArgs ?? {});
   if (isGuideTool(toolName)) return callGuideTool(toolArgs ?? {});

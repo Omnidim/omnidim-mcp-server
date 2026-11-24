@@ -592,7 +592,7 @@ src = src.replace(
 );
 src = src.replace(
   '    console.error(`Error: Unknown tool requested: ${toolName}`);\n    return { content: [{ type: "text", text: `Error: Unknown tool requested: ${toolName}` }] };',
-  '    const message = unknownToolMessage(toolName);\n    console.error(`Error: ${message}`);\n    return { isError: true, content: [{ type: "text", text: `Error: ${message}` }] };'
+  '    const message = unknownToolMessage(toolName);\n    console.error(`Error: ${message}`);\n    return { content: [{ type: "text", text: `Error: ${message}` }] };'
 );
 
 // String patches fail silently when the generator's output moves, so prove the critical ones landed.

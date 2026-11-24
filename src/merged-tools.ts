@@ -30,7 +30,15 @@ export function isMergedTool(def: unknown): def is MergedTool {
     return typeof def === "object" && def !== null && "routes" in def;
 }
 
-const withoutDescription = ({ description: _said, ...rest }: Schema) => JSON.stringify(rest);
+function canonical(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === "object") {
+        return Object.fromEntries(Object.keys(value).sort().map((k) => [k, canonical((value as Schema)[k])]));
+    }
+    return value;
+}
+
+const withoutDescription = ({ description: _said, ...rest }: Schema) => JSON.stringify(canonical(rest));
 const withoutTags = (description: string) => description.replace(/\n\(Tags: [^)]*\)\s*$/, "").trim();
 
 function mergedTool(name: string, group: MergeGroup, defs: [ToolDef, MergeMember][]): MergedTool {
@@ -106,9 +114,12 @@ export function pickMergedAction(
     const action = args[tool.field];
     const route = typeof action === "string" ? tool.routes[action] : undefined;
     if (!route) return { error: `${tool.field} must be one of: ${Object.keys(tool.routes).join(", ")}` };
-    const others = new Set(Object.keys(tool.inputSchema.properties).filter((k) => !route.inputs.includes(k)));
-    if (route.sendsField) others.delete(tool.field);
-    const kept = Object.fromEntries(Object.entries(args).filter(([k]) => !others.has(k)));
+    const others = new Set(
+        Object.keys(tool.inputSchema.properties)
+            .filter((k) => !route.inputs.includes(k) && !(route.sendsField && k === tool.field))
+            .map((k) => k.toLowerCase()),
+    );
+    const kept = Object.fromEntries(Object.entries(args).filter(([k]) => !others.has(k.toLowerCase())));
     const missing = route.required.filter((r) => !(r in kept));
     if (missing.length) return { error: `${tool.field} ${action} needs: ${missing.join(", ")}` };
     return { def: route.def, args: kept };
