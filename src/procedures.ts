@@ -90,7 +90,7 @@ const SKILL_FILES = new Map<string, string>(
 );
 const SKILLS_CACHE = { ttlMs: 3_600_000, cacheScope: "public" } as const;
 let skillEntries: Promise<Skill[]> | undefined;
-export function listSkills(): Promise<Skill[]> {
+function listSkills(): Promise<Skill[]> {
     skillEntries ??= Promise.all(
         SKILLS.map((s) => skillEntry(s.name, Object.fromEntries(s.files.map((f) => [f.path, f.text])))),
     );

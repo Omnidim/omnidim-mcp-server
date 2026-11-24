@@ -13,7 +13,7 @@ const META = {
     "io.modelcontextprotocol/clientCapabilities": {},
 };
 
-type Rpc = (method: string, params?: Record<string, unknown>) => Promise<any>;
+type Rpc = (method: string, params?: Record<string, unknown>, era?: "modern" | "legacy") => Promise<any>;
 
 async function withServer<T>(env: Record<string, string>, run: (rpc: Rpc) => Promise<T>): Promise<T> {
     const dir = mkdtempSync(join(tmpdir(), "omnidim-skills-"));
@@ -37,11 +37,12 @@ async function withServer<T>(env: Record<string, string>, run: (rpc: Rpc) => Pro
         }
     });
     let id = 0;
-    const rpc: Rpc = (method, params = {}) =>
+    const rpc: Rpc = (method, params = {}, era = "modern") =>
         new Promise((done) => {
             id += 1;
             waiting.set(id, done);
-            child.stdin!.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params: { ...params, _meta: META } })}\n`);
+            const body = era === "modern" ? { ...params, _meta: META } : params;
+            child.stdin!.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params: body })}\n`);
         });
     try {
         return await run(rpc);
@@ -105,5 +106,21 @@ describe("skills over MCP on the stdio server", () => {
         });
 
         expect(list.result.skills.map((s: any) => s.frontmatter.name)).toEqual(["omnidim-audit-calls"]);
+    }, 15_000);
+
+    it("still serves clients that open with the 2025 handshake", async () => {
+        const [init, call] = await withServer({}, async (rpc) => {
+            const init = await rpc(
+                "initialize",
+                { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "cursor", version: "0" } },
+                "legacy",
+            );
+            const call = await rpc("tools/call", { name: "readGuide", arguments: { name: "audit_calls" } }, "legacy");
+            return [init, call];
+        });
+
+        expect(init.result.protocolVersion).toBe("2025-06-18");
+        expect(call.result.isError).toBeFalsy();
+        expect(call.result.content[0].text).toContain("listCallLogs");
     }, 15_000);
 });
