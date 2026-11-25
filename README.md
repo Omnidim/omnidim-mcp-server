@@ -109,7 +109,7 @@ Each tool maps to one endpoint of the [OmniDimension API](https://docs.omnidim.i
 | Calls | Place a call and read call logs and transcripts | 3 |
 | Call campaigns | Create, start, pace and retry bulk call campaigns | 15 |
 | Phone numbers | Search, buy, attach and import numbers (Twilio, Exotel, SIP) | 9 |
-| Workflows | Build, test and publish post-call workflows | 14 |
+| Workflows | Build, test and publish post-call workflows | 4 |
 | Knowledge base | Upload files and attach them to agents | 4 |
 | Voices and providers | Pick voices, models and providers, and manage cloned voices | 8 |
 | Integrations | Connect agents to your APIs and apps | 4 |
@@ -126,7 +126,7 @@ Each tool maps to one endpoint of the [OmniDimension API](https://docs.omnidim.i
 | Calls | `dispatchCall`, `listCallLogs`, `getCallLog` |
 | Call campaigns | `fetchBulkCalls`, `createBulkCall`, `addBulkCallContact`, `getBulkCall`, `bulkCallActions`, `listBulkCallLines`, `listBulkCallNumbers`, `addBulkCallNumber`, `setBulkCallNumberActive`, `addBulkCallContacts`, `setBulkCallConcurrency`, `setBulkCallRotation`, `retryBulkCall`, `setBulkCallDailyTimeControl`, `getBulkCallLiveStatus` |
 | Phone numbers | `listPhoneNumbers`, `searchPhoneNumbers`, `purchasePhoneNumber`, `releasePhoneNumber`, `setPhoneNumberAutoRenew`, `phoneNumberAgentActions`, `importTwilioNumber`, `importExotelNumber`, `importSipTrunk` |
-| Workflows | `listWorkflowNodeTypes`, `getWorkflowNodeType`, `listWorkflowFieldOptions`, `listWorkflows`, `createWorkflow`, `getWorkflow`, `deleteWorkflow`, `editWorkflow`, `validateWorkflow`, `publishWorkflow`, `workflowActions`, `testWorkflow`, `getWorkflowExecution`, `showWorkflow` |
+| Workflows | `workflow`, `workflowActions`, `deleteWorkflow`, `showWorkflow` |
 | Knowledge base | `listKnowledgeBaseFiles`, `uploadKnowledgeBaseFile`, `agentKnowledgeBaseActions`, `deleteKnowledgeBaseFile` |
 | Voices and providers | `listProviders`, `listVoices`, `getVoice`, `listClonedVoices`, `getClonedVoice`, `deleteClonedVoice`, `updateClonedVoice`, `regenerateClonedVoiceSample` |
 | Integrations | `listIntegrations`, `createCustomApiIntegration`, `listAgentIntegrations`, `agentIntegrationActions` |

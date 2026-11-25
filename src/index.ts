@@ -1448,6 +1448,24 @@ result.
     tags: ["Workflows"],
     deprecated: false
   }],
+  ["listWorkflowExecutions", {
+    name: "listWorkflowExecutions",
+    description: `List recent runs of a workflow, newest first, with the step that failed.
+
+Use it to find the run behind "my workflow didn't run after the call":
+filter by \`state=failed\`, or by the \`call_sid\` of the call that should
+have started it. Read one run's steps with \`getWorkflowExecution\`.
+
+(Tags: Workflows)`,
+    inputSchema: {"type":"object","properties":{"workflow_id":{"type":"number","description":"Id of the workflow."},"state":{"type":"string","enum":["running","waiting","completed","failed","cancelled"],"description":"Only runs in this state."},"call_sid":{"type":"string","description":"Only runs started by this call."},"limit":{"type":"number","default":20,"minimum":1,"maximum":100,"description":"How many runs to return."}},"required":["workflow_id"]},
+    method: "get",
+    pathTemplate: "/workflows/{workflow_id}/executions",
+    executionParameters: [{"name":"workflow_id","in":"path"},{"name":"state","in":"query"},{"name":"call_sid","in":"query"},{"name":"limit","in":"query"}],
+    requestBodyContentType: undefined,
+    securityRequirements: [{"BearerAuth":[]}],
+    tags: ["Workflows"],
+    deprecated: false
+  }],
   ["getWorkflowExecution", {
     name: "getWorkflowExecution",
     description: `Get one workflow run with the result of each step.
@@ -1456,7 +1474,7 @@ Use it to read the outcome of \`testWorkflow\`. The run is finished when
 \`state\` is \`completed\`, \`failed\` or \`cancelled\`.
 
 (Tags: Workflows)`,
-    inputSchema: {"type":"object","properties":{"workflow_id":{"type":"number","description":"Id of the workflow."},"execution_id":{"type":"number","description":"The `execution_id` from `testWorkflow`."}},"required":["workflow_id","execution_id"]},
+    inputSchema: {"type":"object","properties":{"workflow_id":{"type":"number","description":"Id of the workflow."},"execution_id":{"type":"number","description":"The `execution_id` from `testWorkflow` or `listWorkflowExecutions`."}},"required":["workflow_id","execution_id"]},
     method: "get",
     pathTemplate: "/workflows/{workflow_id}/executions/{execution_id}",
     executionParameters: [{"name":"workflow_id","in":"path"},{"name":"execution_id","in":"path"}],
