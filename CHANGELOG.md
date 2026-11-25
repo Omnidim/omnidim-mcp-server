@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.24.1...v0.25.0) (2026-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* serve the 14 workflow operations as two merged tools, workflow and workflowActions ([#143](https://github.com/Omnidim/omnidim-mcp-server/issues/143))
+
+### Added
+
+* serve the 14 workflow operations as two merged tools, workflow and workflowActions ([#143](https://github.com/Omnidim/omnidim-mcp-server/issues/143)) ([8b67585](https://github.com/Omnidim/omnidim-mcp-server/commit/8b67585d9116ec9c8ad761c34a3aab76e0bbc5e4))
+
 ## [0.24.1](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.24.0...v0.24.1) (2026-11-25)
 
 
