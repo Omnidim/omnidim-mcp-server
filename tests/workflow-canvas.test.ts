@@ -96,15 +96,18 @@ describe("canvas page security", () => {
         expect(() => new Function(script.slice("<script>".length))).not.toThrow();
     });
 
-    it("calls only the merged workflow tools' get, validate and edit actions, by literal name", () => {
-        const calls = [...script.matchAll(/(?<!function )callTool\(("\w+"), \{ action: ("\w+")/g)].map((m) => `${m[1]} ${m[2]}`);
-        expect(calls.length).toBe([...script.matchAll(/(?<!function )callTool\(/g)].length);
-        for (const c of calls) expect(['"workflow" "get"', '"workflow" "validate"', '"workflowActions" "edit"']).toContain(c);
+    it("calls only the three workflow tools, by literal name", () => {
+        const calls = [...script.matchAll(/(?<!function )callTool\(([^,]+),/g)].map((m) => m[1].trim());
+        expect(calls.length).toBeGreaterThan(0);
+        for (const c of calls) expect(['"getWorkflow"', '"validateWorkflow"', '"editWorkflow"']).toContain(c);
     });
 
-    it("calls actions the spec's merge groups serve, so a spec change cannot strand the canvas", () => {
-        const served = Object.values(MERGE_MEMBERS).flatMap((m) => m.actions.map((a) => `"${m.tool}" "${a}"`));
-        for (const c of ['"workflow" "get"', '"workflow" "validate"', '"workflowActions" "edit"']) expect(served).toContain(c);
+    it("calls tools the server serves on their own, so a spec change cannot strand the canvas", () => {
+        const index = readFileSync(resolve(__dirname, "../src/index.ts"), "utf8");
+        for (const t of ["getWorkflow", "validateWorkflow", "editWorkflow"]) {
+            expect(index).toContain(`name: "${t}",`);
+            expect(MERGE_MEMBERS).not.toHaveProperty(t);
+        }
     });
 
     it("loads nothing from the network and links only to the dashboard", () => {

@@ -54,9 +54,6 @@ export function startServer() {
     }
 
     async function callTool(name, a) {
-        if (name === "workflow" || name === "workflowActions") {
-            name = { get: "getWorkflow", validate: "validateWorkflow", edit: "editWorkflow" }[a.action] ?? name;
-        }
         if (a.workflow_id !== wf.id) return apiError(404, { error: "not_found", error_description: "Workflow not found." });
         if (name === "showWorkflow") return ok({ workflow: wf });
         if (name === "getWorkflow") { await pause("slowGet"); return ok({ workflow: wf }); }
