@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.1](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.25.0...v0.25.1) (2026-11-25)
+
+
+### Fixed
+
+* call each workflow tool by its own name in the canvas, README and workflow guide ([#146](https://github.com/Omnidim/omnidim-mcp-server/issues/146)) ([c69fe69](https://github.com/Omnidim/omnidim-mcp-server/commit/c69fe69ba24cb6c7dcd34ab8311a5d5f967d550f))
+* refresh tool descriptions from the updated API spec ([#144](https://github.com/Omnidim/omnidim-mcp-server/issues/144)) ([1ba850f](https://github.com/Omnidim/omnidim-mcp-server/commit/1ba850f52a438b764a539cddbeb75fb3087ef920))
+
 ## [0.25.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.24.1...v0.25.0) (2026-11-25)
 
 
