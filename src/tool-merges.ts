@@ -26,14 +26,6 @@ export const MERGE_GROUPS: Record<string, MergeGroup> = {
     "description": "List the LLM, speech-to-text or text-to-speech providers your organization can use, or all of them with their voices.",
     "field": "type"
   },
-  "workflow": {
-    "description": "Read workflows and their runs: list workflows, get one, validate a draft, list\na workflow's runs and read one, and look up node types and field choices.\n",
-    "field": "action"
-  },
-  "workflowActions": {
-    "description": "Create a workflow, edit its draft, publish it, test it, or turn it on or off.\nDeleting a workflow is its own tool, deleteWorkflow.\n",
-    "field": "action"
-  },
   "whatsappConversationActions": {
     "description": "Take a conversation from the agent so your team answers, or hand it back to the agent.",
     "field": "action"
@@ -156,104 +148,6 @@ export const MERGE_MEMBERS: Record<string, MergeMember> = {
     "tool": "listProviders",
     "actions": [
       "all"
-    ],
-    "passes": false
-  },
-  "listWorkflowNodeTypes": {
-    "tool": "workflow",
-    "actions": [
-      "node_types"
-    ],
-    "passes": false
-  },
-  "getWorkflowNodeType": {
-    "tool": "workflow",
-    "actions": [
-      "node_type"
-    ],
-    "passes": false
-  },
-  "listWorkflowFieldOptions": {
-    "tool": "workflow",
-    "actions": [
-      "field_options"
-    ],
-    "passes": false
-  },
-  "listWorkflows": {
-    "tool": "workflow",
-    "actions": [
-      "list"
-    ],
-    "passes": false
-  },
-  "getWorkflow": {
-    "tool": "workflow",
-    "actions": [
-      "get"
-    ],
-    "passes": false
-  },
-  "validateWorkflow": {
-    "tool": "workflow",
-    "actions": [
-      "validate"
-    ],
-    "passes": false
-  },
-  "listWorkflowExecutions": {
-    "tool": "workflow",
-    "actions": [
-      "runs"
-    ],
-    "passes": false
-  },
-  "getWorkflowExecution": {
-    "tool": "workflow",
-    "actions": [
-      "run"
-    ],
-    "passes": false
-  },
-  "createWorkflow": {
-    "tool": "workflowActions",
-    "actions": [
-      "create"
-    ],
-    "passes": false
-  },
-  "editWorkflow": {
-    "tool": "workflowActions",
-    "actions": [
-      "edit"
-    ],
-    "passes": false
-  },
-  "publishWorkflow": {
-    "tool": "workflowActions",
-    "actions": [
-      "publish"
-    ],
-    "passes": false
-  },
-  "activateWorkflow": {
-    "tool": "workflowActions",
-    "actions": [
-      "activate"
-    ],
-    "passes": false
-  },
-  "deactivateWorkflow": {
-    "tool": "workflowActions",
-    "actions": [
-      "deactivate"
-    ],
-    "passes": false
-  },
-  "testWorkflow": {
-    "tool": "workflowActions",
-    "actions": [
-      "test"
     ],
     "passes": false
   },

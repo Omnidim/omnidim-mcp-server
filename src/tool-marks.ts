@@ -655,16 +655,5 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": false,
     "destructiveHint": true,
     "openWorldHint": false
-  },
-  "workflow": {
-    "title": "Read workflows",
-    "readOnlyHint": true,
-    "openWorldHint": false
-  },
-  "workflowActions": {
-    "title": "Change workflows",
-    "readOnlyHint": false,
-    "destructiveHint": true,
-    "openWorldHint": true
   }
 };
