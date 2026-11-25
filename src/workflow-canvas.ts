@@ -249,7 +249,7 @@ async function refresh() {
   if (state.id == null || state.busy) return;
   state.busy = true;
   try {
-    const r = readWorkflow(await callTool("getWorkflow", { workflow_id: state.id }));
+    const r = readWorkflow(await callTool("workflow", { action: "get", workflow_id: state.id }));
     if (r.error) notice("Could not load the workflow: " + errorText(r.error));
     else if (r.workflow) show(r.workflow, null);
   } catch (e) { notice("Could not load the workflow: " + e.message); }
@@ -272,10 +272,10 @@ function show(wf, issues) {
   validate();
 }
 
-// getWorkflow carries no problems, so ask validateWorkflow which nodes to mark, like the dashboard does.
+// A get carries no problems, so ask validate which nodes to mark, like the dashboard does.
 async function validate() {
   try {
-    const r = readWorkflow(await callTool("validateWorkflow", { workflow_id: state.id }));
+    const r = readWorkflow(await callTool("workflow", { action: "validate", workflow_id: state.id }));
     if (!r.error) { state.issues = r.issues; render(); }
   } catch { /* the marks are a hint; the canvas works without them */ }
 }
@@ -475,10 +475,10 @@ async function save(ops, what, rollback, button) {
   if (button) { button.disabled = true; button.dataset.text = button.textContent; button.textContent = "Saving…"; }
   let ok = false;
   try {
-    const r = readWorkflow(await callTool("editWorkflow", editArgs(state.id, state.wf.draft.revision, ops)) || {});
+    const r = readWorkflow(await callTool("workflowActions", { action: "edit", ...editArgs(state.id, state.wf.draft.revision, ops) }) || {});
     if (r.error) throw new Error(errorText(r.error));
     ok = true;
-    notify("ui/update-model-context", { content: [{ type: "text", text: "In the workflow canvas the user " + what + " on workflow " + state.id + ". Call getWorkflow for the new revision before your next edit." }] });
+    notify("ui/update-model-context", { content: [{ type: "text", text: "In the workflow canvas the user " + what + " on workflow " + state.id + ". Call workflow with action get for the new revision before your next edit." }] });
   } catch (e) {
     if (rollback) rollback();
     notice("Not saved: " + e.message);

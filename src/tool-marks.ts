@@ -459,6 +459,11 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": true,
     "openWorldHint": false
   },
+  "listWorkflowExecutions": {
+    "title": "List workflow runs",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
   "listWorkflowFieldOptions": {
     "title": "List choices for a workflow field",
     "readOnlyHint": true,
@@ -651,10 +656,15 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "destructiveHint": true,
     "openWorldHint": false
   },
+  "workflow": {
+    "title": "Read workflows",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
   "workflowActions": {
-    "title": "Turn workflow on or off",
+    "title": "Change workflows",
     "readOnlyHint": false,
     "destructiveHint": true,
-    "openWorldHint": false
+    "openWorldHint": true
   }
 };
