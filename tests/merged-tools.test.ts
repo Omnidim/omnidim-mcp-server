@@ -56,6 +56,18 @@ describe("merged tools", () => {
         expect([...folded().keys()].sort()).toEqual(["bulkCallActions", "listAgents", "phoneNumberAgentActions"]);
     });
 
+    it("names the merged tool where a description names a folded operation", () => {
+        const map = new Map<string, any>([
+            ["attachPhoneNumber", def("attachPhoneNumber", "/numbers/{id}/attach")],
+            ["detachPhoneNumber", { ...def("detachPhoneNumber", "/numbers/{id}/detach"), description: "Undo `attachPhoneNumber`." }],
+            ["listAgents", { ...def("listAgents", "/agents"), description: "Give it a number with `attachPhoneNumber`." }],
+        ]);
+        foldMergedTools(map, groups, members);
+
+        expect(map.get("listAgents").description).toBe("Give it a number with `phoneNumberAgentActions` with `action` `attach`.");
+        expect(map.get("phoneNumberAgentActions").description).toContain("Undo `phoneNumberAgentActions` with `action` `attach`.");
+    });
+
     it("gives the merged tool an action field and the inputs every action needs", () => {
         const tool = folded().get("phoneNumberAgentActions");
         expect(isMergedTool(tool)).toBe(true);
