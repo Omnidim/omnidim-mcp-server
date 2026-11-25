@@ -40,7 +40,7 @@ describe("provision_agent prompt", () => {
         const t = getPromptText("provision_agent", { purpose: "book dental appointments" }) ?? "";
         expect(t).toContain("book dental appointments");
         expect(t).toContain("createAgent");
-        expect(t).toContain("attachPhoneNumber");
+        expect(t).toContain("phoneNumberAgentActions");
         expect(t).toContain('"transcriber": { "provider": "soniox"');
         expect(t).toContain("flat top-level arguments (no `requestBody` wrapper)");
     });
@@ -79,14 +79,14 @@ describe("build_outbound_campaign prompt", () => {
         expect(t).toContain("createBulkCall");
         expect(t).toContain("save_as_draft: true");
         expect(t).toContain("addBulkCallContacts");
-        expect(t).toContain("startBulkCall");
+        expect(t).toContain('`bulkCallActions` with `action: "start"`');
         expect(t).toContain("flat top-level arguments (no `requestBody` wrapper)");
     });
 
     it("requires explicit user approval before starting", () => {
         const t = getPromptText("build_outbound_campaign", { goal: "x" }) ?? "";
         expect(t).toContain("never start one they have not approved");
-        expect(t.indexOf("go-ahead")).toBeLessThan(t.indexOf("Then `startBulkCall`"));
+        expect(t.indexOf("go-ahead")).toBeLessThan(t.indexOf("Then `bulkCallActions` with `action: \"start\"`"));
     });
 
     it("passes the number and agent on after the steps", () => {

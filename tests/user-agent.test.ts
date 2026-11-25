@@ -21,12 +21,14 @@ vi.mock("axios", () => {
     });
     return { default: Object.assign(axios, { isAxiosError: () => false }) };
 });
-vi.mock("@modelcontextprotocol/sdk/server/stdio.js", () => ({
-    StdioServerTransport: class {
-        onmessage?: (m: unknown) => void;
-        async start() { h.transport = this; }
-        async send(m: { id?: number }) { h.replies.push(m); }
-        async close() {}
+vi.mock("@modelcontextprotocol/server/stdio", () => ({
+    serveStdio: (factory: () => { connect(transport: unknown): Promise<void> }) => {
+        void factory().connect({
+            onmessage: undefined as ((m: unknown) => void) | undefined,
+            async start() { h.transport = this; },
+            async send(m: { id?: number }) { h.replies.push(m); },
+            async close() {},
+        });
     },
 }));
 vi.mock("../src/helpers.js", async (original) => ({

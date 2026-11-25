@@ -14,15 +14,8 @@ import { foldMergedTools, isMergedTool, pickMergedAction, unknownToolMessage } f
 import { notifyUpdates } from "./update_notifier.js";
 
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  type Tool,
-  type CallToolResult,
-  type CallToolRequest
-} from "@modelcontextprotocol/sdk/types.js";
+import { Server, type Tool, type CallToolResult, type CallToolRequest } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 
 import { z, ZodError } from 'zod';
 import { buildToolSchema } from './tool-schema.js';
@@ -1977,7 +1970,7 @@ const securitySchemes =   {
   };
 
 
-server.setRequestHandler(ListToolsRequestSchema, async () => {
+server.setRequestHandler("tools/list", async () => {
   const toolsForClient: Tool[] = Array.from(toolDefinitionMap.values()).map(def => ({
     name: def.name,
     description: def.description,
@@ -1989,7 +1982,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 
-server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest): Promise<CallToolResult> => {
+server.setRequestHandler("tools/call", async (request: CallToolRequest): Promise<CallToolResult> => {
   const { name: toolName, arguments: toolArgs } = request.params;
   const toolDefinition = toolDefinitionMap.get(toolName);
   if (!toolDefinition) {
@@ -2459,8 +2452,7 @@ async function main() {
     process.exit(0);
   }
   try {
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
+    serveStdio(() => server);
     console.error(startupBanner(SERVER_VERSION, toolDefinitionMap.size));
     beginSession();
     // Only for the stdio server: a client that closes the pipe or hangs up (not kill -9) sends no other end signal.

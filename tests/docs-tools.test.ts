@@ -96,7 +96,7 @@ describe("docs tools", () => {
     it("are served and routed by the generated server", () => {
         const src = readFileSync(resolve(__dirname, "..", "src", "index.ts"), "utf8");
         expect(src).toContain("addDocsTools(toolDefinitionMap);");
-        const call = src.slice(src.indexOf("server.setRequestHandler(CallToolRequestSchema"));
+        const call = src.slice(src.indexOf('server.setRequestHandler("tools/call"'));
         expect(call.indexOf("if (isDocsTool(toolName)) return await callDocsTool(")).toBeGreaterThan(-1);
         expect(call.indexOf("if (isDocsTool(toolName))")).toBeLessThan(call.indexOf("executeApiTool("));
     });
