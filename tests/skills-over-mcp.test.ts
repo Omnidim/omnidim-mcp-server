@@ -74,7 +74,6 @@ describe("skills over MCP on the stdio server", () => {
             "omnidim-audit-calls",
             "omnidim-build-agent",
             "omnidim-build-workflow",
-            "omnidim-onboard-client",
             "omnidim-run-campaign",
         ]);
         const resources = list.result.skills.flatMap((s: any) => s.resources);
