@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.23.0...v0.24.0) (2026-11-25)
+
+
+### Added
+
+* serve the OmniDimension skills over MCP on SDK v2, for Claude Code ([#137](https://github.com/Omnidim/omnidim-mcp-server/issues/137)) ([7af65fc](https://github.com/Omnidim/omnidim-mcp-server/commit/7af65fcda1e5e7f7f3716a2da7648e42334a2c2d))
+
+
+### Fixed
+
+* name the merged tool where a tool description names a folded operation ([#138](https://github.com/Omnidim/omnidim-mcp-server/issues/138)) ([87611d9](https://github.com/Omnidim/omnidim-mcp-server/commit/87611d91eab21683cba7860e37f58f85d825b323))
+* sync the skills from mcp-cloud, so served skills point at the MCP setup docs ([#140](https://github.com/Omnidim/omnidim-mcp-server/issues/140)) ([ee81a40](https://github.com/Omnidim/omnidim-mcp-server/commit/ee81a402ba5a94ec35288525f6af2e9eef9ae7e7))
+
 ## [0.23.0](https://github.com/Omnidim/omnidim-mcp-server/compare/v0.22.0...v0.23.0) (2026-11-24)
 
 
