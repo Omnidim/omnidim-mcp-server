@@ -100,10 +100,17 @@ export function foldMergedTools(
         const def = map.get(opId);
         if (def) (byTool[member.tool] ??= []).push([def, member]);
     }
+    const folded = new Map<string, string>();
     for (const [name, defs] of Object.entries(byTool)) {
         const tool = mergedTool(name, groups[name], defs);
-        for (const [def] of defs) map.delete(def.name);
+        for (const [def, member] of defs) {
+            map.delete(def.name);
+            if (def.name !== name) folded.set(def.name, `\`${name}\` with \`${tool.field}\` \`${member.actions[0]}\``);
+        }
         map.set(name, tool);
+    }
+    for (const def of map.values()) {
+        def.description = def.description.replace(/`(\w+)`/g, (said: string, op: string) => folded.get(op) ?? said);
     }
 }
 
