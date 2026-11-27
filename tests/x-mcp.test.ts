@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 // @ts-expect-error plain ESM helper shared by scripts/regen.mjs and scripts/check-spec.mjs
-import { annotationsFor, applyBriefs, mcpMarks, mergePlan } from "../scripts/x-mcp.mjs";
+import { annotationsFor, applyBriefs, mcpMarks, mergePlan, strictPagination } from "../scripts/x-mcp.mjs";
 
 describe("x-mcp marks", () => {
   it("fails an operation with no block", () => {
@@ -148,4 +148,15 @@ describe("x-mcp merge", () => {
             "workflowActions: action on names two operations",
         );
     });
+});
+
+describe("strictPagination", () => {
+  it("makes pagination integer >= 1", () => {
+    expect(strictPagination('"pageno":{"type":"number","default":1}')).toBe('"pageno":{"type":"integer","minimum":1,"default":1}');
+  });
+  it("keeps a minimum the spec already set, so tsc sees one key", () => {
+    const out = strictPagination('"pagesize":{"type":"number","minimum":1,"default":30,"maximum":150}');
+    expect(out).toBe('"pagesize":{"type":"integer","minimum":1,"default":30,"maximum":150}');
+    expect(out.match(/"minimum"/g)).toHaveLength(1);
+  });
 });

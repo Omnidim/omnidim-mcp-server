@@ -106,16 +106,16 @@ Each tool maps to one endpoint of the [OmniDimension API](https://docs.omnidim.i
 | Area | What your agent can do | Tools |
 |---|---|---|
 | Agents | Build, edit and version voice agents, and set what happens after each call | 13 |
-| Calls | Place a call and read call logs and transcripts | 3 |
+| Calls | Place a call, read call logs and transcripts, and see what happened on a call step by step | 4 |
 | Call campaigns | Create, start, pace and retry bulk call campaigns | 15 |
-| Phone numbers | Search, buy, attach and import numbers (Twilio, Exotel, SIP) | 9 |
+| Phone numbers | Search, buy, attach and import numbers (Twilio, Exotel, SIP), and see released numbers | 10 |
 | Workflows | Build, test and publish post-call workflows | 16 |
 | Knowledge base | Upload files and attach them to agents | 4 |
 | Voices and providers | Pick voices, models and providers, and manage cloned voices | 8 |
 | Integrations | Connect agents to your APIs and apps | 4 |
-| WhatsApp | Numbers, templates, conversations and campaigns | 23 |
+| WhatsApp | Numbers, templates, conversations and campaigns | 25 |
 | Docs | Search and read [docs.omnidim.io](https://docs.omnidim.io), with no access to your account | 2 |
-| Account | Check your balance and start a web call session | 2 |
+| Account | Balance and its history, payments, plan, referrals, support cases, and a web call session | 8 |
 
 <details>
 <summary>All tool names</summary>
@@ -123,16 +123,16 @@ Each tool maps to one endpoint of the [OmniDimension API](https://docs.omnidim.i
 | Area | Tools |
 |---|---|
 | Agents | `listAgents`, `createAgent`, `getAgent`, `updateAgent`, `deleteAgent`, `listPostCallActions`, `addPostCallAction`, `deletePostCallAction`, `updatePostCallAction`, `listAgentVersions`, `createAgentVersion`, `diffAgentVersion`, `agentVersionActions` |
-| Calls | `dispatchCall`, `listCallLogs`, `getCallLog` |
+| Calls | `dispatchCall`, `listCallLogs`, `getCallLog`, `getCallEvents` |
 | Call campaigns | `fetchBulkCalls`, `createBulkCall`, `addBulkCallContact`, `getBulkCall`, `bulkCallActions`, `listBulkCallLines`, `listBulkCallNumbers`, `addBulkCallNumber`, `setBulkCallNumberActive`, `addBulkCallContacts`, `setBulkCallConcurrency`, `setBulkCallRotation`, `retryBulkCall`, `setBulkCallDailyTimeControl`, `getBulkCallLiveStatus` |
-| Phone numbers | `listPhoneNumbers`, `searchPhoneNumbers`, `purchasePhoneNumber`, `releasePhoneNumber`, `setPhoneNumberAutoRenew`, `phoneNumberAgentActions`, `importTwilioNumber`, `importExotelNumber`, `importSipTrunk` |
+| Phone numbers | `listPhoneNumbers`, `searchPhoneNumbers`, `purchasePhoneNumber`, `releasePhoneNumber`, `setPhoneNumberAutoRenew`, `phoneNumberAgentActions`, `importTwilioNumber`, `importExotelNumber`, `importSipTrunk`, `listReleasedPhoneNumbers` |
 | Workflows | `listWorkflows`, `createWorkflow`, `getWorkflow`, `editWorkflow`, `validateWorkflow`, `publishWorkflow`, `activateWorkflow`, `deactivateWorkflow`, `testWorkflow`, `listWorkflowExecutions`, `getWorkflowExecution`, `listWorkflowNodeTypes`, `getWorkflowNodeType`, `listWorkflowFieldOptions`, `deleteWorkflow`, `showWorkflow` |
 | Knowledge base | `listKnowledgeBaseFiles`, `uploadKnowledgeBaseFile`, `agentKnowledgeBaseActions`, `deleteKnowledgeBaseFile` |
 | Voices and providers | `listProviders`, `listVoices`, `getVoice`, `listClonedVoices`, `getClonedVoice`, `deleteClonedVoice`, `updateClonedVoice`, `regenerateClonedVoiceSample` |
 | Integrations | `listIntegrations`, `createCustomApiIntegration`, `listAgentIntegrations`, `agentIntegrationActions` |
-| WhatsApp | `listWhatsappNumbers`, `importWhatsappNumbers`, `previewWhatsappNumbers`, `getWhatsappNumber`, `listWhatsappTemplates`, `syncWhatsappTemplates`, `getWhatsappCalling`, `setWhatsappCalling`, `listWhatsappConversations`, `getWhatsappConversation`, `whatsappConversationActions`, `listWhatsappMessages`, `sendWhatsappMessage`, `getWhatsappMessage`, `listWhatsappOptOuts`, `addWhatsappOptOut`, `liftWhatsappOptOut`, `listWhatsappCampaigns`, `createWhatsappCampaign`, `getWhatsappCampaign`, `listWhatsappCampaignContacts`, `addWhatsappCampaignContacts`, `whatsappCampaignActions` |
+| WhatsApp | `listWhatsappNumbers`, `importWhatsappNumbers`, `previewWhatsappNumbers`, `getWhatsappNumber`, `listWhatsappTemplates`, `createWhatsappTemplate`, `deleteWhatsappTemplate`, `syncWhatsappTemplates`, `getWhatsappCalling`, `setWhatsappCalling`, `listWhatsappConversations`, `getWhatsappConversation`, `whatsappConversationActions`, `listWhatsappMessages`, `sendWhatsappMessage`, `getWhatsappMessage`, `listWhatsappOptOuts`, `addWhatsappOptOut`, `liftWhatsappOptOut`, `listWhatsappCampaigns`, `createWhatsappCampaign`, `getWhatsappCampaign`, `listWhatsappCampaignContacts`, `addWhatsappCampaignContacts`, `whatsappCampaignActions` |
 | Docs | `searchDocs`, `readDoc` |
-| Account | `getAccountBalance`, `createSession` |
+| Account | `getAccountBalance`, `getBalanceHistory`, `listPayments`, `getPlanAndAddons`, `getReferrals`, `listSupportCases`, `getSupportCase`, `createSession` |
 
 </details>
 
