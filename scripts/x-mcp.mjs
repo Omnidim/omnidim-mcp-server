@@ -122,3 +122,9 @@ export function applyBriefs(spec) {
   }
   return swapped;
 }
+
+// Pagination params become integer >= 1; a spec param that sets its own minimum keeps it.
+export function strictPagination(text) {
+  return text.replace(/"(pageno|pagesize|page|page_size)":\{"type":"number"([^{}]*)\}/g, (_m, name, rest) =>
+    `"${name}":{"type":"integer"${rest.includes('"minimum"') ? '' : ',"minimum":1'}${rest}}`);
+}

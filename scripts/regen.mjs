@@ -18,7 +18,7 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import * as yaml from 'js-yaml';
-import { annotationsFor, applyBriefs, mcpMarks, mergePlan } from './x-mcp.mjs';
+import { annotationsFor, applyBriefs, mcpMarks, mergePlan, strictPagination } from './x-mcp.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -378,10 +378,8 @@ src = src.replace(
 
 // Make pagination params strict (integer ≥1) so invalid values are
 // rejected by Zod before reaching the backend (which 500s on them).
-src = src.replaceAll('"pageno":{"type":"number"', '"pageno":{"type":"integer","minimum":1');
-src = src.replaceAll('"pagesize":{"type":"number"', '"pagesize":{"type":"integer","minimum":1');
-src = src.replaceAll('"page":{"type":"number","default":1', '"page":{"type":"integer","minimum":1,"default":1');
-src = src.replaceAll('"page_size":{"type":"number","default":30', '"page_size":{"type":"integer","minimum":1,"default":30');
+// A spec param that already sets its own minimum keeps it (a second key fails tsc).
+src = strictPagination(src);
 
 // Replace the "no credentials" warning-and-continue branch with an
 // early return so the model sees a helpful instruction, not a 401.
@@ -647,3 +645,4 @@ generator: openapi-mcp-generator
 writeFileSync(resolve(ROOT, '.spec.yml'), specYml);
 
 console.log(`done. ${endpoints} endpoints. spec hash ${specHash.slice(0, 12)}`);
+

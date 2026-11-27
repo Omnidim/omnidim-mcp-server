@@ -134,6 +134,12 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "destructiveHint": false,
     "openWorldHint": false
   },
+  "createWhatsappTemplate": {
+    "title": "Create WhatsApp template",
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "openWorldHint": false
+  },
   "createWorkflow": {
     "title": "Create workflow",
     "readOnlyHint": false,
@@ -172,6 +178,12 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   },
   "deletePostCallAction": {
     "title": "Delete a post-call action",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "openWorldHint": false
+  },
+  "deleteWhatsappTemplate": {
+    "title": "Delete WhatsApp template",
     "readOnlyHint": false,
     "destructiveHint": true,
     "openWorldHint": false
@@ -232,6 +244,11 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": true,
     "openWorldHint": false
   },
+  "getBalanceHistory": {
+    "title": "Get balance history",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
   "getBulkCall": {
     "title": "Get bulk campaign",
     "readOnlyHint": true,
@@ -242,6 +259,11 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": true,
     "openWorldHint": false
   },
+  "getCallEvents": {
+    "title": "Get call events",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
   "getCallLog": {
     "title": "Get call log",
     "readOnlyHint": true,
@@ -249,6 +271,21 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
   },
   "getClonedVoice": {
     "title": "Get cloned voice",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
+  "getPlanAndAddons": {
+    "title": "Get plan and add-ons",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
+  "getReferrals": {
+    "title": "Get referrals",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
+  "getSupportCase": {
+    "title": "Get support case",
     "readOnlyHint": true,
     "openWorldHint": false
   },
@@ -394,6 +431,11 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": true,
     "openWorldHint": false
   },
+  "listPayments": {
+    "title": "List payments",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
   "listPhoneNumbers": {
     "title": "List phone numbers",
     "readOnlyHint": true,
@@ -409,8 +451,18 @@ export const TOOL_MARKS: Record<string, ToolAnnotations> = {
     "readOnlyHint": true,
     "openWorldHint": false
   },
+  "listReleasedPhoneNumbers": {
+    "title": "List released phone numbers",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
   "listSTTProviders": {
     "title": "List speech-to-text providers",
+    "readOnlyHint": true,
+    "openWorldHint": false
+  },
+  "listSupportCases": {
+    "title": "List support cases",
     "readOnlyHint": true,
     "openWorldHint": false
   },
